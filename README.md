@@ -5,7 +5,7 @@ __Dependencies:__ `app_wrapper.sh` is a wrapper of 3 functions (located in `bin/
 
 To deply any app, run:  
 ```
-bash app_wrapper.sh -f=APP.NAME
+bash bin/app_wrapper.sh -f=APP.NAME
 ```
 This will execute the following commands (in the appropriate folder):  
 1. ```bash bin/import.data.sh ${APP_PATH}```  
