@@ -1,18 +1,25 @@
-This folder contains one folder per Shiny app.  
-The attached script (`prepare.env.sh`) is used to:
-1. Import some required data (i.e. `_tissuesTSNE/.tSNE.RData` and some R functions)
-2. Create a minimal self-contained data file (`./${APP_PATH}/bin/data/tSNE.minimal.RData`).
-3. Eventually, it tries to upload the app automatically, by sourcing global.R then deploying with
-```r
-rsconnect::deployApp()
+# Steps to set up a Dashboard Shiny app:
+
+__PURPOSE:__ This markdown contains instructions to create and upload a Shiny app to present results obtained during my PhD.  
+__Dependencies:__ `app_wrapper.sh` is a wrapper of 3 functions (located in `bin/`) which aim to upload an existing Shiny App folder. It will first attempt to fetch foreign data from GI server. The rest of the project is self-contained.  
+
+To deply any app, run:  
 ```
+bash app_wrapper.sh -f=APP.NAME
+```
+This will execute the following commands (in the appropriate folder):  
+1. ```bash bin/import.data.sh ${APP_PATH}```  
+This script will automatically fetch the data from the Gurdom Institute server.
 
-*Remarque:*  
-Within each application folder, 3 files are important:  
-—> ui.R defines the UI of the app  
-—> server.R defines the backend app computation part  
-—> global.R is ran each time the app wakes up, to load required dependencies (i.e. libraries, data files, etc).  
+2. ```Rscript bin/get.mininaldataset.R```  
+This script will reduce the size of the original data to a more manageable minimal self-contained object.
 
-!!! WARNING !!!  
-`${APP_PATH}` is hard-coded: it is the name of the app being developed.  
-!!! WARNING !!!  
+3. ```Rscript bin/deployApp.R```  
+This script will deploy the application to Shiny server
+
+This app is backed-up on Github. To push changes to Github, run:
+```
+git add --all
+git commit -m "update"
+git push -u origin master
+```
