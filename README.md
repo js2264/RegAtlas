@@ -3,7 +3,7 @@
 __PURPOSE:__ This markdown contains instructions to create and upload a Shiny app to present results obtained during my PhD.  
 __Dependencies:__ `app_wrapper.sh` is a wrapper of 3 functions (located in `bin/`) which aim to upload an existing Shiny App folder. It will first attempt to fetch foreign data from GI server. The rest of the project is self-contained.  
 
-To deply any app, run:  
+To deploy any app, run:  
 ```
 bash bin/app_wrapper.sh -f=APP.NAME
 ```
@@ -19,7 +19,7 @@ This script will deploy the application to Shiny server
 
 This app is backed-up on Github. To push changes to Github, run:
 ```
-git add --all
+git add .
 git commit -m "update"
 git push -u origin master
 ```
