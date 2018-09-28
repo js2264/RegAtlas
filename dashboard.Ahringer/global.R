@@ -11,18 +11,18 @@
 
 ## Load data and libraries ----------------------------------------------------------------------------------------------------
 
-library(shiny)
-library(shinydashboard)
-library(devtools)
-library(shinyWidgets)
-library(DT)
-library(urltools)
-library(htmltools)
-library(raster)
-library(magrittr)
-library(gProfileR)
-library(dplyr)
-library(tidyr)
+require(shiny)
+require(shinydashboard)
+require(devtools)
+require(shinyWidgets)
+require(DT)
+require(urltools)
+require(htmltools)
+require(raster)
+require(magrittr)
+require(gProfileR)
+require(dplyr)
+require(tidyr)
 if (!require(trewjb)) { devtools::install_github("Marlin-Na/trewjb") ; require(trewjb)}
 if (!require(GenomicRanges)) { source("https://bioconductor.org/biocLite.R") ; biocLite("GenomicRanges") ; require(GenomicRanges)}
 options("repos" = BiocInstaller::biocinstallRepos())
@@ -74,7 +74,8 @@ iframeJbrowse.2 <- function (link, width = NULL, height = "900px", elementId = N
 }
 
 # Function to input several genes separated by newlines
-textareaInput <- function(inputId, label, value = "", placeholder = "", rows = 2){
+textareaInput <- function(inputId, label, value = "", placeholder = "", rows = 2)
+{
   tagList(
     div(strong(label), style="margin-top: 5px;"),
     tags$style(type="text/css", "textarea {width:100%; margin-top: 5px;}"),
