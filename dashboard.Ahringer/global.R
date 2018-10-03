@@ -49,10 +49,11 @@ lcap.dt$gene_biotype <- factor(lcap.dt$gene_biotype)
 lcap.dt$domain <- factor(lcap.dt$domain)
 
 # Function to generate an URL to visit jserizay.site/JBrowse
-getURL <- function (chr, start, end, release = "1.12.5", tracks = c("genes", "regulatory_elements", "hypod", "neurons", "gonad", "muscle", "intest"),
+getURL <- function (chr, start, end, release = "1.12.5", 
+                    tracks = c("genes", "regulatory_elements", "hypod.atac", "neurons.atac", "gonad.atac", "muscle.atac", "intest.atac", "hypod.lcap.fwd", "neurons.lcap.fwd", "gonad.lcap.fwd", "muscle.lcap.fwd", "intest.lcap.fwd", "hypod.lcap.rev", "neurons.lcap.rev", "gonad.lcap.rev", "muscle.lcap.rev", "intest.lcap.rev", "transcripts"),
                     show_navigation = TRUE, show_tracklist = TRUE, show_overview = TRUE)
 {
-  baseurl <- paste0("https://jserizay.site/JBrowse-", release, "/index.html")
+  baseurl <- paste0("http://tispelegans.site/JBrowse-", release, "/index.html")
   range <- if (missing(start) || missing(end)) {""} else {paste0("%3A", parseRange(start = as.numeric(start), end = as.numeric(end), resizeFactor = 1.5))}
   tracks <- paste(unique(tracks), collapse = "%2C")
   navigation <- if (show_navigation) {"&nav=1"} else {"&nav=0"}
