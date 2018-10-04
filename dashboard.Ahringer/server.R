@@ -48,15 +48,14 @@ shinyServer <- function(input, output) {
     ) })
     gene.coords <- reactive ({ c(
       paste0('chr', as.character(seqnames(genes.gtf[infos.gene()$Gene.info[1]]))),
-      as.character(start(genes.gtf[infos.gene()$Gene.info[1]])-1000),
-      as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+1000)
+      as.character(start(genes.gtf[infos.gene()$Gene.info[1]])-3000),
+      as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+3000)
     ) })
     coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
     #-->
     url <- renderText({ getURL(coords()[1], coords()[2], coords()[3], "1.12.5") })
     output$url <- reactive ({ getURL(coords()[1], coords()[2], coords()[3], "1.12.5") })
-    output$jbrowser <- renderJbrowse({ iframeJbrowse.2(url(), height = '900px') })
-    output$jbrowser.2 <- renderJbrowse({ iframeJbrowse.2(url(), height = '900px') })
+    output$jbrowser <- renderJbrowse({ iframeJbrowse.2(url()) })
   }
 
   # Generate the REs subset table

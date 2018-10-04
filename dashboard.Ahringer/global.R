@@ -51,25 +51,26 @@ lcap.dt$domain <- factor(lcap.dt$domain)
 # Function to generate an URL to visit jserizay.site/JBrowse
 getURL <- function (chr, start, end, release = "1.12.5", 
                     tracks = c("genes", "regulatory_elements", "hypod.atac", "neurons.atac", "gonad.atac", "muscle.atac", "intest.atac", "hypod.lcap.fwd", "neurons.lcap.fwd", "gonad.lcap.fwd", "muscle.lcap.fwd", "intest.lcap.fwd", "hypod.lcap.rev", "neurons.lcap.rev", "gonad.lcap.rev", "muscle.lcap.rev", "intest.lcap.rev", "transcripts"),
-                    show_navigation = TRUE, show_tracklist = TRUE, show_overview = TRUE)
+                    show_menu = TRUE, show_navigation = TRUE, show_tracklist = TRUE, show_overview = TRUE)
 {
   baseurl <- paste0("http://tispelegans.site/JBrowse-", release, "/index.html")
   range <- if (missing(start) || missing(end)) {""} else {paste0("%3A", parseRange(start = as.numeric(start), end = as.numeric(end), resizeFactor = 1.5))}
   tracks <- paste(unique(tracks), collapse = "%2C")
+  menu <- if (show_menu) {"&menu=1"} else {"&menu=0"}
   navigation <- if (show_navigation) {"&nav=1"} else {"&nav=0"}
   tracklist <- if (show_tracklist) {"&tracklist=1"} else {"&tracklist=0"}
   overview <- if (show_overview) {"&overview=1"} else {"&overview=0"}
   url <- param_set(baseurl, key = "data", value = "data%2Fjson%2Fce11")
   url <- param_set(url, key = "loc", value = paste0(chr, range))
   url <- param_set(url, key = "tracks", value = tracks)
-  return(paste0(url, "&highlight=&menu=0", navigation, tracklist, overview))
+  return(paste0(url, "&highlight=", navigation, tracklist, overview))
 }
 
 # Re-WRITE iframeJBrowse to get functional height setting
 iframeJbrowse.2 <- function (link, width = NULL, height = "900px", elementId = NULL)
 {
     div_style = paste0("width: 100%; height: ", height, ";")
-    iframe_html <- htmltools::tags$iframe(src = link, style = "border: 1px solid black", width = "100%", height = "100%", "Sorry, your browser does not support iframe.")
+    iframe_html <- htmltools::tags$iframe(src = link, style = "border: 1px solid white", width = "100%", height = "100%", "Sorry, your browser does not support iframe.")
     div_html <- htmltools::tags$div(iframe_html, style = div_style)
     htmlwidgets::createWidget(name = "trewjb", list(html = as.character(div_html)), package = "trewjb", elementId = elementId)
 }

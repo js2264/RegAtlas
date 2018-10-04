@@ -42,8 +42,8 @@ TAB1 <- tabItem(
 
     ## Row 3: OUTPUT tSNE plots (ATAC / LCAP)
     h4('t-SNE plots of promoters (left) and genes (right)'),
+    h5("Black dots represent the gene and its associated promoters."),
     fluidRow( column(width = 10, { plotOutput("tSNE.plots") } ) ),
-    h6("Black dots represent the gene and its associated promoters."),
     br(),
     hr(),
     br(),
@@ -58,9 +58,10 @@ TAB1 <- tabItem(
 
 # Genome browser
 TAB2 <- tabItem(
-    tabName = 'browser',
-    h2("Tissue-specific genome browser"),
-    fluidRow( column(width = 12, { JbrowseOutput("jbrowser", height = "900px") } ) )
+    fluidPage( fluidRow( { 
+        JbrowseOutput("jbrowser") 
+    } ) ), 
+    tabName = 'browser'
 )
 
 # Multiple-genes entry
@@ -166,6 +167,12 @@ shinyUI <- dashboardPage(
     dashboardHeader(title = "Ahringer lab"),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
+        tags$head(tags$style(HTML('
+          .main-header .sidebar-toggle:before {
+            content: "\\f0d9";}'))),
+        tags$head(tags$style(HTML('
+          .main-header .sidebar-toggle:after {
+            content: "\\f0da";}'))),
         tags$head( tags$style(HTML("hr {border-top: 1px solid #000000;}")) ),
         BODY
     )
