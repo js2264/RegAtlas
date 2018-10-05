@@ -60,6 +60,6 @@ cd ${APP_PATH}/
 Rscript ../bin/get.minimaldataset.R
 
 #3. Deploy App
-Rscript ../bin/deployApp.R
+#Rscript ../bin/deployApp.R
 
 cd ..

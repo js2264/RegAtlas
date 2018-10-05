@@ -3,7 +3,7 @@ heatmap_parmfrow <- function (x, margins = c(5, 3, 6.5, 5), outmargins = c(2, 2,
     cexRow = 0.2 + 1/log10(nrow(x)), cexCol = 0.2 + 1/log10(ncol(x)), cex.main = 1.2,
     col = heat.colors, breaks = NULL,
     main = NULL, key.lab = NULL, ylab = NULL, xlab = NULL, scaleUP = 1.2, scaleUP.bis = NULL,
-    nticks = 10, doClust = F, plotSep = F, colSep = '#00000064', plotKey = T, printCell = F)
+    nticks = 10, doClust = F, plotSep = F, colSep = '#00000064', plotKey = T, printCell = F, CellCex = 1)
 
 {
 
@@ -70,6 +70,10 @@ if (doClust) {
     x <- x[hclust(dist(x, method = 'max'))$order,]
 }
 
+# Save values
+values <- as.character(hm$x)
+values[values == 0] = ""
+
 # Transpose the matrix (because image() is used to plot the matrix) and add some extra empty columns (which are going to be top rows when plotted) for plotting space for the color key
 x <- t(x)
 x <- cbind(x, matrix(rep(NA, nc * (round(nr * scaleUP)-(nr))), nrow = nc))
@@ -109,10 +113,8 @@ if (!is.null(key.lab)) { mtext(key.lab, side = 3, line = 2, cex=0.8) }
 mtext(main, side = 3, line = 4, cex = cex.main)
 
 # Plot cell values
-values <- as.character(hm$x)
-values[values == 0] = ""
-if (is.logical(printCell) & printCell == T) {text(x = rep(1:nrow(x), each = ncol(x)), y = 1:ncol(x), values)}
-if (!is.logical(printCell)) {text(x = rep(1:nrow(x), each = ncol(x)), y = 1:ncol(x), printCell)}
+if (is.logical(printCell) & printCell == T) { text(x = rep(1:nrow(x), each = ncol(x)), y = 1:ncol(x), values, cex = CellCex) }
+if (!is.logical(printCell)) {text(x = rep(1:nrow(x), each = ncol(x)), y = 1:ncol(x), printCell, cex = CellCex)}
 
 return(hm)
 
