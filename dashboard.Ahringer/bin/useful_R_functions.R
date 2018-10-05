@@ -267,7 +267,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         colnames(FCs) <- gsub('ratio.|.v.others', '', colnames(FCs))
         # Get REs associated with gene (which ones, associated tissues and dev. dynamics)
         REs <- all[grep(WBID, all$WormBaseID),]
-        if (nrow(REs) == 0) {message('!!! WARNING !!! No associated REs are found !!!') ; REs.coords <- NULL ; REs.tau <- 0 ; REs.tissues <- NULL ; REs.TFs <- NULL ; REs.TFs.nb <- NULL ; ATAC.GENE <- NULL ; ATACdev.GENE <- NULL ; l2mean.ATAC.GENE <- NULL ; l2mean.ATACdev.GENE <- NULL } else {
+        if (nrow(REs) == 0) {message('!!! WARNING !!! No associated REs are found !!!') ; REs.coords <- NULL ; REs.tau <- 0 ; REs.tissues <- NULL ; REs.TFs <- NULL ; REs.TFs.nb <- NULL ; ATAC.GENE <- 0 ; ATACdev.GENE <- 0 ; l2mean.ATAC.GENE <- 0 ; l2mean.ATACdev.GENE <- 0 } else {
             REs.coords <- REs[,c(1:3, 7)]
             row.names(REs.coords) <- paste0('RE_', seq(1:nrow(REs.coords)))
             REs.tau <- REs$TauScore
@@ -408,6 +408,16 @@ bedIntersectR <- function(functionstring = "bedtools intersect", bed1, bed2, opt
   return(res)
 }
 
+# Write bed file from dataframe
+writeBed <- function(df, file, col = 1:3) {
+  
+  # Check if data is a data table
+  if (!is.data.frame(df[,col])){stop("Data is not formatted as a data.frame. Stopping function.")}
+  
+  # Write bed file
+  write.table(df[,col], file = file, quote = F, sep = "\t", col.names = F, row.names = F)
+
+}
 
 # Function to load libraries to get genes infos
 #geneInfos <- function(GENE) {
@@ -436,4 +446,11 @@ makeCounts <- function(vec1, vec2, lev.vec1 = NULL, lev.vec2 = NULL) {
     }
 
     return(tab)
+}
+
+# Make a .bak object of an existing object, i.e. `XX.bak <- XX`
+bak <- function(X) { 
+    assign(paste0(deparse(substitute(X)), ".bak"), envir = parent.frame(), X)
+    warning("Use this function with care")
+    message(paste0(deparse(substitute(X)), " object copied to ", deparse(substitute(X)), ".bak"))
 }
