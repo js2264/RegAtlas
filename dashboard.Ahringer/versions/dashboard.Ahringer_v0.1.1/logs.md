@@ -14,7 +14,7 @@ It will be released once synchronizing with the server (tispelegans.site = 167.9
 
 
 
-## [0.1.1] - 2018-10-05
+## [0.1.1] - 2018-10-06
 ##### Added
 - APP AES. CHANGES: 
 	- Added Coordinates to geneInfos
