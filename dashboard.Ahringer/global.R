@@ -5,7 +5,7 @@
 #                                                                             #
 #     AUTHOR: Jacques SERIZAY                                                 #
 #     CREATED: 2018/07/13                                                     #
-#     REVISION: ..../../..                                                    #
+#     REVISION: 2018/10/05                                                    #
 #                                                                             #
 #=============================================================================#
 
@@ -70,7 +70,7 @@ getURL <- function (chr, start, end, release = "1.12.5",
 iframeJbrowse.2 <- function (link, width = NULL, height = "900px", elementId = NULL)
 {
     div_style = paste0("width: 100%; height: ", height, ";")
-    iframe_html <- htmltools::tags$iframe(src = link, style = "border: 1px solid white", width = "100%", height = "100%", "Sorry, your browser does not support iframe.")
+    iframe_html <- htmltools::tags$iframe(src = link, style = "border: 1px solid black", width = "100%", height = "100%", "Sorry, your browser does not support iframe.")
     div_html <- htmltools::tags$div(iframe_html, style = div_style)
     htmlwidgets::createWidget(name = "trewjb", list(html = as.character(div_html)), package = "trewjb", elementId = elementId)
 }

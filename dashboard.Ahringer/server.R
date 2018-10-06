@@ -5,13 +5,13 @@
 #                                                                             #
 #     AUTHOR: Jacques SERIZAY                                                 #
 #     CREATED: 2018/07/13                                                     #
-#     REVISION: ..../../..                                                    #
+#     REVISION: 2018/10/05                                                    #
 #                                                                             #
 #=============================================================================#
 
 ## Define server function ----------------------------------------------------------------------------------------------------
 
-shinyServer <- function(input, output) {
+shinyServer <- function(input, output, session) {
 
   # Read gene name and get gene infos
   {
@@ -21,10 +21,11 @@ shinyServer <- function(input, output) {
 
     output$geneInfos <- renderUI({
         WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[1])
-        LOCUS <- paste("<b>Locus ID:</b>   ", infos.gene()$Gene.info[2])
+        LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
+        COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
         BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[3])
         ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[5])
-        HTML(paste("", WBID, LOCUS, BIOTYPE, ENRICHED, sep = '<br/>'))
+        HTML(paste("", WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
     })
   }
 
@@ -39,6 +40,12 @@ shinyServer <- function(input, output) {
           }
       )
   }
+  
+  # Generate button to access to Genome Browser
+  {
+      observeEvent(input$switchToGenome, { updateTabItems(session, "tabs", "browser") })
+  }
+
   # Generate browser
   {
     RE.coords <- reactive ({ c(
@@ -88,23 +95,25 @@ shinyServer <- function(input, output) {
 
   # Generate the expression profiles plots
   {
-      output$Expr.plots <- renderPlot({
-          lay <- layout(matrix(seq(1:2), nrow = 1))
-          #1: Plot expr. during development
-          par(mar=c(4,5,2,2))
+      #1: Plot expr. during development
+      output$Expr.plots_dev <- renderPlot({
+          par(mar=c(6,5,2,5))
           plot(
               as.numeric(infos.gene()$Gene.expr.dev.TPM),
               type = 'l', lty = 1, lwd = 3, xlab = "", ylab = "Expr. (TPM) over time", bty = 'n',
               main = "Stage-specific gene expression (mixed)", xaxt = 'n'
           )
           axis(1, labels = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'), at = 1:6)
-          #2: Plot expr. / tissue
-          par(mar=c(4,5,2,2))
+      })
+      #2: Plot expr. / tissue
+      output$Expr.plots_tis <- renderPlot({
+          par(mar=c(6,5,2,5))
           barplot(
               as.numeric(infos.gene()$Gene.expr.TPM[2,]),
               col = color.tissues, ylab = "Expr. / tissue (TPM)",
               names = order.tissues[1:5],
-              main = "Tissue-specific gene expression (YA)"
+              main = "Tissue-specific gene expression (YA)", 
+              las = 3
           )
       })
 
@@ -112,67 +121,72 @@ shinyServer <- function(input, output) {
 
   # Generate tSNE plots (proms and genes)
   {
-    #-->
-    output$tSNE.plots <- renderPlot({
-      lay <- layout(matrix(seq(1:3), nrow = 1), widths = c(0.5, 0.4, 0.5))
-      par(oma = c(1, 5, 1, 5))
-      # Plot genes
-      par(mar=c(2,2,2,2))
-      plot(tSNE.df.LCAP,
-           col = CLASSES.genes,
-           pch = 20,
-           cex = 2,
-           xlab = '',
-           ylab = '',
-           axes = T,
-           xaxt='n',
-           yaxt='n',
-           bty = 'o',
-           main = 'Genes tSNE (RNA-seq)',
-           cex.main = 2
-      )
-      points(
-        tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V1'],
-        tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V2'],
-        col = 'black',
-        pch=20,
-        cex = 4
-      )
-      #
-      # Plot legend
-      plot.new()
-      par(mar=c(0,0,0,0))
-      legend("center",
-            legend = c(order.tissues[1:5], '2 tissues', '3 tissues', '4 tissues', order.tissues[32:34]),
-            fill = c(color.tissues[1:5], color.tissues[6], color.tissues[16], color.tissues[26], color.tissues[32:34]),
-            ncol = 1, cex = 2, bty = 'n'
-      )
-      #
-      # Plot proms
-      par(mar=c(2,2,2,2))
-      plot(tSNE.df.proms,
-           col = CLASSES.proms,
-           pch = 20,
-           cex = 2,
-           xlab = '',
-           ylab = '',
-           axes = T,
-           xaxt='n',
-           yaxt='n',
-           bty = 'o',
-           main = 'Promoters tSNE (ATAC-seq)',
-           cex.main = 2
-      )
-      if (!all(infos.gene()$Associated.REs == 0)) {
-          points(
-              tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V1'],
-              tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V2'],
-              col = 'black',
-              pch=20,
-              cex = 4
-          )
-      }
-      #
+
+    # Plot genes
+    output$tSNE.plots_genes <- renderPlot({
+        par(mar=c(2,4,2,2))
+        plot(tSNE.df.LCAP,
+            col = CLASSES.genes,
+            pch = 20,
+            cex = 1.5,
+            xlab = '',
+            ylab = '',
+            axes = T,
+            xaxt='n',
+            yaxt='n',
+            bty = 'o',
+            main = 't-SNE projection of genes',
+            cex.main = 1.5
+        )
+        points(
+            tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V1'],
+            tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V2'],
+            col = 'black',
+            pch=20,
+            cex = 4
+        )
+        mtext(line = 1, side = 1, 'tSNE dim. 1')
+        mtext(line = 1, side = 2, 'tSNE dim. 2')
+    })
+    
+    # Plot promoters
+    output$tSNE.plots_proms <- renderPlot({
+        par(mar=c(2,4,2,2))
+        plot(tSNE.df.proms,
+            col = CLASSES.proms,
+            pch = 20,
+            cex = 1.5,
+            xlab = '',
+            ylab = '',
+            axes = T,
+            xaxt='n',
+            yaxt='n',
+            bty = 'o',
+            main = 't-SNE projection of promoters',
+            cex.main = 1.5
+        )
+        if (!all(infos.gene()$Associated.REs == 0)) {
+            points(
+                tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V1'],
+                tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V2'],
+                col = 'black',
+                pch=20,
+                cex = 4
+            )
+        }
+        mtext(line = 1, side = 1, 'tSNE dim. 1')
+        mtext(line = 1, side = 2, 'tSNE dim. 2')
+    })
+    
+    # Plot legend
+    output$tSNE.plots_legend <- renderPlot({
+        plot.new()
+        par(mar=c(0,0,0,0), oma = c(0,0,0,0), xpd = NA)
+        legend("left",
+              legend = c(order.tissues[1:5], '2 tissues', '3 tissues', '4 tissues', order.tissues[32:34]),
+              fill = c(color.tissues[1:5], color.tissues[6], color.tissues[16], color.tissues[26], color.tissues[32:34]),
+              ncol = 1, cex = 1.5, bty = 'n'
+        )
     })
 
   }
@@ -262,8 +276,50 @@ shinyServer <- function(input, output) {
 
   # Generate tables to download
   {
-      output$downloadATAC <- downloadHandler( "tissue-specific.ATAC-seq.dataset.txt", content = function(file) {write.table(atac.dt, file, quote = F, row = F, col = T, sep = '\t')} )
-      output$downloadLCAP <- downloadHandler( "tissue-specific.RNA-seq.dataset.txt", content = function(file) {write.table(lcap.dt, file, quote = F, row = F, col = T, sep = '\t')}  )
+      output$downloadATAC.txt <- downloadHandler( "tissue-specific.ATAC-seq.dataset.txt", content = function(file) {write.table(atac.dt, file, quote = F, row = F, col = T, sep = '\t')} )
+      output$downloadATAC.gff <- downloadHandler( "tissue-specific.ATAC-seq.dataset.gff", content = function(file) {
+          infos=paste0("ID=", make.unique(paste(all$gene_name, all$regulatory_class, sep = '--'), sep = '_'), ";Associated-gene-Name=", all$gene_name, ";Associated-gene-WB=", all$WormBaseID, ";CV=", round(all$cv, 3), ";domain=", all$domain)
+          values <- paste0(';color=', color.tissues[max.tissue.df$which.tissues], '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', ';Ranked-tissues=', apply(max.tissue.df[,5:9], 1, function(x) paste0(x, collapse = ' * ')), ';Tissue-ATACeq-TPM=', apply(max.tissue.df[,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ';Consecutive-ratios=', apply(max.tissue.df[,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ";Enriched-tissue.s.=", gsub('\\.', '', max.tissue.df$which.tissues))
+          GFF=cbind(as.character(all$chr), rep('Ahringer-JJ-JA', times = nrow(all)), as.character(all$regulatory_class), all$start, all$stop, rep(".", times=nrow(all)), ifelse(is.null(all$strand), ".", all$strand), rep(".", times=nrow(all)), paste0(infos, values))
+          write.table(rbind(c("##gffTags=on\n##displayName=Name\n##gff-version 3", rep(" ", 8)), GFF), file, quote = F, row = F, col = F, sep = '\t')
+      } )
+      output$downloadLCAP.txt <- downloadHandler( "tissue-specific.RNA-seq.dataset.txt", content = function(file) {write.table(lcap.dt, file, quote = F, row = F, col = T, sep = '\t')}  )
+      output$downloadLCAP.gff <- downloadHandler( "tissue-specific.RNA-seq.dataset.gff", content = function(file) {
+          
+            names(genes.gtf) <- genes.gtf$gene_name
+            cv <- genes.gtf$cv
+
+            infos=paste0(
+                "ID=", genes.gtf$gene_id,
+                ";Name=", genes.gtf$gene_name,
+                ";CV=", cv,
+                ';color=', color.tissues[c(1:5,33:35)][max.tissue.df.LCAP$which.tissues],
+                '; =: : : : : : : : : : : : : : : : : : : : : : : : : ',
+                ';Ranked-tissues=', apply(max.tissue.df.LCAP[,2:6], 1, function(x) paste0(x, collapse = ' / ')),
+                ';Tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[,7:12], 1, function(x) paste0(round(x, 3), collapse = ' / ')),
+                ';Hypod-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Hypod..v.others'],
+                ';Neurons-FCvs-mean=', max.tissue.df.LCAP[,'ratio.Neurons.v.others'],
+                ';Gonad-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Gonad.v.others'],
+                ';Muscle-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Muscle.v.others'],
+                ';Intest-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Intest..v.others'],
+                ";Enriched-in=", max.tissue.df.LCAP$which.tissues
+            )
+
+            GFF=cbind(
+                as.character(as.character(seqnames(genes.gtf))),
+                rep('WormBase', times = length(genes.gtf)),
+                as.character(genes.gtf$gene_biotype),
+                start(genes.gtf),
+                end(genes.gtf),
+                rep(".", length(genes.gtf)),
+                as.character(strand(genes.gtf)),
+                rep(".", length(genes.gtf)),
+                infos
+            )
+            
+            write.table(rbind(c("##gffTags=on\n##displayName=Name\n##gff-version 3", rep(" ", 8)), GFF), file, quote = F, row = F, col = F, sep = '\t')
+            
+      }  )
   }
   {
       output$atac.table <- renderDataTable({
