@@ -29,6 +29,8 @@ shinyServer <- function(input, output, session) {
         HTML(paste("", WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
     })
     
+    output$geneDescr <- renderUI({ INFOS <- HTML(paste0("<h4>Description:</h4><br/>", fetchWBinfos(infos.gene()$Gene.info[2]))) })
+    
   }
 
   # Generate buttons to download gene-specific text file, all tracks in zip, and genes list full report
@@ -223,7 +225,7 @@ shinyServer <- function(input, output, session) {
 
     # Plot genes
     output$tSNE.plots_genes <- renderPlot({
-        par(mar=c(2,4,2,2))
+        par(mar=c(2,4,2,2), oma = c(0,0,0,0))
         plot(tSNE.df.LCAP,
             col = CLASSES.genes,
             pch = 20,
@@ -250,7 +252,7 @@ shinyServer <- function(input, output, session) {
     
     # Plot promoters
     output$tSNE.plots_proms <- renderPlot({
-        par(mar=c(2,4,2,2))
+        par(mar=c(2,4,2,2), oma = c(0,0,0,0))
         plot(tSNE.df.proms,
             col = CLASSES.proms,
             pch = 20,
@@ -284,7 +286,7 @@ shinyServer <- function(input, output, session) {
         legend("left",
               legend = c(order.tissues[1:5], '2 tissues', '3 tissues', '4 tissues', order.tissues[32:34]),
               fill = c(color.tissues[1:5], color.tissues[6], color.tissues[16], color.tissues[26], color.tissues[32:34]),
-              ncol = 1, cex = 1.5, bty = 'n'
+              ncol = 1, cex = 2, bty = 'n'
         )
     })
 

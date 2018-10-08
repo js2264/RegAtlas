@@ -29,7 +29,7 @@ TAB1 <- tabItem(
             })
         ),
         fluidRow(
-          column(width = 4, { htmlOutput("geneInfos", height = '200px') %>% withSpinner(type = 6, color = "#421500", size = 0.5) }),
+          column(width = 2, { htmlOutput("geneInfos", height = '200px') %>% withSpinner(type = 6, color = "#421500", size = 0.5) }),
           column(width = 2, { 
             fluidRow(
               br(),
@@ -40,7 +40,8 @@ TAB1 <- tabItem(
               actionBttn("WBlink", label = "View gene in WormBase", icon = icon("book", lib = "font-awesome"), size = "sm", style = "fill", color = "primary", block = T),
               bsModal("openWB", "WormBase gene entry", "WBlink", size = "large", htmlOutput("Link"))
             )
-          })
+          }),
+          column(width = 8, htmlOutput("geneDescr") %>% withSpinner(type = 6, color = "#421500", size = 0.5) )
         ),
         br(),
         hr(),

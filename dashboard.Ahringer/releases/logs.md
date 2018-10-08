@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.2.1] - 2018-10-08
+##### Added
+- Gene description fetched from WB
+
 ##### Changed
 - Modified directories architecture
 - Modified procedure to upload the app
