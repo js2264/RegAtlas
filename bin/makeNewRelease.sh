@@ -14,10 +14,10 @@
 #=============================================================================#
  
 ## Define functions
-function checkfolder() {
-    if [ ! -d ${1} ]; then
-        echo "ERROR: app folder not found."
-        exit
+function checkVersionNumber() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No version number provided (-v X.X.X)"
+        exit 0
     fi
 }
 
@@ -29,6 +29,13 @@ function usage() {
     echo -e ""
 }
 
+
+## Check that there are arguemnts
+if [[ $# -eq 0 ]] ; then
+    echo 'ERROR: No version number provided (-v X.X.X)'
+    exit 0
+fi
+
 ## Read the argument
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -36,6 +43,7 @@ while [[ $# -gt 0 ]]; do
     case $key in
         -v | --version)
             VERSION="$2"
+            checkVersionNumber ${VERSION}
             shift # past argument
             shift # past value
             ;;

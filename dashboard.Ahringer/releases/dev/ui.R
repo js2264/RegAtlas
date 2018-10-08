@@ -26,22 +26,31 @@ TAB1 <- tabItem(
                     btnReset = icon("remove", lib = "glyphicon"),
                     width = "95%"
                 )
-            })
+            } )
         ),
         fluidRow(
-          column(width = 2, { htmlOutput("geneInfos", height = '200px') %>% withSpinner(type = 6, color = "#421500", size = 0.5) }),
+          column(width = 2, { 
+              fluidRow(
+                  htmlOutput("geneInfos", height = '200px') %>% withSpinner(type = 6, color = "#421500", size = 0.5),
+                  br(),
+                  actionBttn("WBdescr", label = "Get gene description", icon = icon("search", lib = "font-awesome"), size = "sm", style = "minimal"),
+                  bsModal("WBDESCR", "WormBase gene description", "WBdescr", size = "large", { htmlOutput("geneDescr") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } )
+              )
+          } ),
           column(width = 2, { 
             fluidRow(
               br(),
-              downloadBttn("downloadINFOS", label = "Download full gene report (.txt file)", size = "sm", style = "fill", color = "primary", block = T),
               br(),
-              actionBttn("switchToGenome", label = "Go to Genome Browser", icon = icon("area-chart", lib = "font-awesome"), size = "sm", style = "fill", color = "primary", block = T),
+              downloadBttn("downloadINFOS", label = "Download full gene report (.txt file)", size = "sm", style = "fill", color = "primary"),
               br(),
-              actionBttn("WBlink", label = "View gene in WormBase", icon = icon("book", lib = "font-awesome"), size = "sm", style = "fill", color = "primary", block = T),
+              br(),
+              actionBttn("switchToGenome", label = "Go to Genome Browser", icon = icon("area-chart", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
+              br(),
+              br(),
+              actionBttn("WBlink", label = "View gene in WormBase", icon = icon("book", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
               bsModal("openWB", "WormBase gene entry", "WBlink", size = "large", htmlOutput("Link"))
             )
-          }),
-          column(width = 8, htmlOutput("geneDescr") %>% withSpinner(type = 6, color = "#421500", size = 0.5) )
+          } )
         ),
         br(),
         hr(),
@@ -90,15 +99,15 @@ TAB2 <- tabItem(
             column(width = 2, {
                 textAreaInput(
                     inputId = "searchMulitpleGenePaste",
-                    label = "Paste gene names:",
+                    label = h4("Paste gene names:"),
                     value = "",
                     placeholder = 'Paste here (one gene per line)',
                     rows = 8
                 )
             }), 
-            column(width = 1, h4("... And ...")),
+            column(width = 1, h4("... And / Or ...")),
             column(width = 2, { 
-                tags$div(class = "multicol2", checkboxGroupInput("checkGroupGeneClasses", label = h4("Select the classes of genes to query"), selected = "germline.genes", choices = list(
+                tags$div(class = "multicol2", checkboxGroupInput("checkGroupGeneClasses", label = h4("Select a class of genes to query:"), selected = "germline.genes", choices = list(
                     "Hypodermis-enriched genes" = "hypod.genes", 
                     "Neurons-enriched genes" = "neurons.genes", 
                     "Germline-enriched genes" = "germline.genes", 
@@ -106,7 +115,7 @@ TAB2 <- tabItem(
                     "Intestine-enriched genes" = "intest.genes"
                 )))
             }),
-            column(width = 1, h4("... And ...")),
+            column(width = 1, h4("... And / Or ...")),
             column(width = 4, {
                 fluidRow(
                     actionBttn("MoreChoicesGenesList", label = "Choose genes based on their promoters", icon = icon("filter", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
@@ -169,7 +178,7 @@ TAB2 <- tabItem(
         br(),
         h6("Plots in this tab may take a while to load..."),
         br(), 
-        downloadBttn("downloadGenesListGFF", label = "Download detailed report of input genes and associated REs (GFF file, IGV friendly)", size = "sm", style = "fill", color = "primary", block = T),
+        downloadBttn("downloadGenesListGFF", label = "Download detailed report of input genes and associated REs (GFF file, IGV friendly)", size = "sm", style = "fill", color = "primary", block = F),
         br(),
         hr(),
         br(),
@@ -198,6 +207,7 @@ TAB2 <- tabItem(
         
         ## Row 3: OUTPUT GO.plot
         fluidRow( 
+            column(width = 1, actionBttn("runGO", label = "Perform GO analysis", icon = icon("chart-bar", lib = "font-awesome"), style = 'minimal') ), 
             column(width = 7, { plotOutput("GO.plot") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } ),
             column(width = 2, { 
                 checkboxGroupInput("checkGroupGOs", label = h4("GO databases"), 
@@ -206,9 +216,6 @@ TAB2 <- tabItem(
                 )
             } ),
             column(width = 2, { fluidRow(
-                actionBttn("runGO", label = "Perform GO analysis"),
-                br(),
-                br(),
                 br(),
                 downloadBttn("downloadGO", label = "Download full GO report (.txt file)", size = "sm", style = "fill", color = "primary", block = T)
             ) } )
@@ -327,6 +334,7 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML("hr {border-top: 1px dashed #b7b7b7;}"))),
         tags$head(tags$style(HTML(".btn {border-radius: 30px;} .btn:hover {transform: scale(1.05); background-color: #bebebe}"))),
         tags$head(tags$style(HTML(".bttn-fill.bttn-primary {background: #ddd;color: #333;}.bttn-fill.bttn-sm {padding: 4px 10px;font-size: 16px;font-family: inherit;}.bttn {border-radius: 0px;border-color: #555;}"))),
+        tags$head(tags$style(HTML(".bttn-minimal.bttn-default {background: #fff;color: #333;border-color: #fff;}"))),
         tags$head(tags$style(HTML("a {color: #333} a:hover, a:focus, a:active, a:visited {color: #1d89ff;}"))),
         tags$head(tags$style(HTML(".multicol2 {-webkit-column-count: 1; /* Chrome, Safari, Opera */ -moz-column-count: 1; /* Firefox */ column-count: 1;}"))),
         tags$head(tags$style(HTML(".multicol5 {-webkit-column-count: 5; /* Chrome, Safari, Opera */ -moz-column-count: 5; /* Firefox */ column-count: 5;}"))),

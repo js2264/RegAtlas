@@ -13,11 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1] - 2018-10-08
 ##### Added
-- Gene description fetched from WB
+- Gene description fetched from WB, when clicking on a button
 
 ##### Changed
 - Modified directories architecture
 - Modified procedure to upload the app
+- Style of actionBttns (to launch GO analysis and get gene description)
 
 ## [0.2.0] - 2018-10-08
 ##### Added
