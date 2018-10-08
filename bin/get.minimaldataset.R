@@ -47,7 +47,8 @@ save(file = "data/tSNE.minimal.RData", list = c(
 
     'getGeneInfos',
     'name2WB',
-    'WB2name'
+    'WB2name',
+    'fetchWBinfos'
     )
 )
 

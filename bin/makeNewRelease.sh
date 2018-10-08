@@ -53,7 +53,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
-## Make a new release
+## Copy new release in a new numbered folder and in releases/current/
 FOLDER=$(echo "../dashboard.Ahringer_v"${VERSION})
 rm -rf ${FOLDER}
 mkdir ${FOLDER}
@@ -63,3 +63,4 @@ FOLDER="../current/"
 rm -rf ${FOLDER}
 mkdir ${FOLDER}
 cp -rf * ${FOLDER}
+

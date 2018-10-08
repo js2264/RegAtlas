@@ -7,6 +7,8 @@
 #     CREATED: 2018/07/13                                                     #
 #     REVISION: 2018/10/05                                                    #
 #                                                                             #
+#     Must be in ./dev/ folder                                                #
+#                                                                             #
 #=============================================================================#
 
 ## Load data and libraries ----------------------------------------------------------------------------------------------------
@@ -20,6 +22,7 @@ require(devtools)
 require(DT)
 require(urltools)
 require(htmltools)
+require(httr)
 require(raster)
 require(magrittr)
 require(gProfileR)
