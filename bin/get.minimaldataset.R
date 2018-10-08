@@ -1,10 +1,17 @@
 #!/usr/bin/env Rscript
 
+#=============================================================================#
+#                                                                             #
+#     USAGE: Run from the app folder (./dashboard.Ahringer)                   #
+#     This script takes data from ../../_tissuesTSNE and minimize it          #
+#                                                                             #
+#=============================================================================#
+
 message('\n\n-- Getting minimal datasets object --\n\n')
 
-load('../.tSNE.RData')
+load('../../_tissuesTSNE/.tSNE.RData')
 library(GenomicRanges)
-source("bin/useful_R_functions.R")
+source("../../_scripts/bin/useful_R_functions.R")
 
 valid.groups = c(1:33)
 CLASSES.proms <- colortransp[factor(order.tissues[all[which(all$is.prom & all$clustersATAC.tissues %in% valid.groups),]$clustersATAC.tissues], levels = order.tissues)]
@@ -18,6 +25,7 @@ save(file = "data/tSNE.minimal.RData", list = c(
     'color.tissues',
     'order.tissues',
 
+    'mat.proms.gene',
     'cao03',
     'ATAC',
     'all',

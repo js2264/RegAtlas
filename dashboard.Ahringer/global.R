@@ -13,8 +13,10 @@
 
 require(shiny)
 require(shinydashboard)
-require(devtools)
 require(shinyWidgets)
+require(shinyBS)
+require(shinycssloaders)
+require(devtools)
 require(DT)
 require(urltools)
 require(htmltools)
@@ -23,6 +25,8 @@ require(magrittr)
 require(gProfileR)
 require(dplyr)
 require(tidyr)
+require(pheatmap)
+require(RColorBrewer)
 if (!require(trewjb)) { devtools::install_github("Marlin-Na/trewjb") ; require(trewjb)}
 if (!require(GenomicRanges)) { source("https://bioconductor.org/biocLite.R") ; biocLite("GenomicRanges") ; require(GenomicRanges)}
 options("repos" = BiocInstaller::biocinstallRepos())
@@ -33,7 +37,6 @@ source('bin/heatmap_parmfrrow.R')
 # Define variables
 colorGO=c("#52c23164","#20109564","#ef690664", "white")
 names(colorGO)=c("MF", "BP", "CC", "kegg")
-germline.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Gonad']
 all.deconv <- cbind(all, ATAC, max.tissue.df[,5:19]) %>% mutate(uniqueWormBaseID = strsplit(as.character(WormBaseID),',')) %>% unnest(uniqueWormBaseID)
 atac.dt <- cbind(all[,c(1:5,7,10)], which.tissues = max.tissue.df$which.tissues, round(ATAC, 3), max.tissue.df[,5:9])
 row.names(atac.dt) <- all$coords
@@ -47,6 +50,14 @@ colnames(lcap.dt)[5] <- "WormBaseID"
 colnames(lcap.dt)[6] <- "geneID"
 lcap.dt$gene_biotype <- factor(lcap.dt$gene_biotype)
 lcap.dt$domain <- factor(lcap.dt$domain)
+cv <- genes.gtf$cv
+hypod.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Hypod.']
+neurons.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Neurons']
+germline.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Gonad']
+muscle.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Muscle']
+intest.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Intest.']
+list.genes <- list(hypod.genes, neurons.genes, germline.genes, muscle.genes, intest.genes)
+names(list.genes) <- c("hypod.genes", "neurons.genes", "germline.genes", "muscle.genes", 'intest.genes')
 
 # Function to generate an URL to visit jserizay.site/JBrowse
 getURL <- function (chr, start, end, release = "1.12.5", 

@@ -15,6 +15,7 @@ shinyServer <- function(input, output, session) {
 
   # Read gene name and get gene infos
   {
+    
     gene <- reactive ({ input$searchGene })
     output$gene <- renderText({ gene() })
     infos.gene <- reactive ({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
@@ -27,9 +28,10 @@ shinyServer <- function(input, output, session) {
         ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[5])
         HTML(paste("", WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
     })
+    
   }
 
-  # Generate button to download gene-specific text file
+  # Generate buttons to download gene-specific text file, all tracks in zip, and genes list full report
   {
       output$downloadINFOS <- downloadHandler(
           reactive(paste0(infos.gene()$Gene.info[2], "_summary.txt")),
@@ -39,19 +41,116 @@ shinyServer <- function(input, output, session) {
               writeLines(readLines(temp), file)
           }
       )
+      
+      output$downloadBWLCAP <- downloadHandler(
+        "tissue-specific-RNA-seq_bigwig-tracks.zip",
+        content <- function(file) {
+            file.copy("tissue-specific-RNA-seq_bigwig-tracks.zip", file)
+        }
+      )
+      
+      output$downloadBWATAC <- downloadHandler(
+        "tissue-specific-ATAC-seq_bigwig-tracks.zip",
+        content <- function(file) {
+            file.copy("tissue-specific-ATAC-seq_bigwig-tracks.zip", file)
+        }
+      )
+      
+      output$downloadGenesListGFF <- downloadHandler(
+        "gene-list_full-report.gff",
+        content <- function(file) {
+            
+            # Generate HEADER
+            HEADER <- rbind(
+                c("##gffTags=on\n##displayName=Name\n##gff-version 3", rep(" ", 8)),
+                c(paste0("##FILE GENERATE ON: ", date(), ".\n##NUMBER OF GENES FOUND IN THE QUERY: ", length(multipleGenes())), rep(" ", 8)),
+                c("##\n##This file contains both genes and associated regulatory elements annotations. Last column contains general information as well as details of tissue-specific expression / accessibility of the genes / associated REs.", rep(" ", 8)),
+                c("##This file can easily be loaded in IGV. Coordinates are ce11.", rep(" ", 8))
+            )
+            
+            # Generate genes GFF part
+            infos <- paste0(
+                "ID=", genes.gtf$gene_id,
+                ";Name=", genes.gtf$gene_name,
+                ";CV=", cv,
+                ';color=', color.tissues[c(1:5,33:35)][max.tissue.df.LCAP$which.tissues],
+                '; =: : : : : : : : : : : : : : : : : : : : : : : : : ',
+                ';Ranked-tissues=', apply(max.tissue.df.LCAP[,2:6], 1, function(x) paste0(x, collapse = ' / ')),
+                ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[,7:12], 1, function(x) paste0(round(x, 3), collapse = ' / ')),
+                ';Hypod-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Hypod..v.others'],
+                ';Neurons-FCvs-mean=', max.tissue.df.LCAP[,'ratio.Neurons.v.others'],
+                ';Gonad-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Gonad.v.others'],
+                ';Muscle-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Muscle.v.others'],
+                ';Intest-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Intest..v.others'],
+                ";Enriched-in=", max.tissue.df.LCAP$which.tissues
+            )
+
+            GFF_LCAP <- cbind(
+                as.character(as.character(seqnames(genes.gtf))),
+                rep('WormBase', times = length(genes.gtf)),
+                as.character(genes.gtf$gene_biotype),
+                start(genes.gtf),
+                end(genes.gtf),
+                rep(".", length(genes.gtf)),
+                as.character(strand(genes.gtf)),
+                rep(".", length(genes.gtf)),
+                infos
+            )
+            
+            # Generate REs GFF part
+            infos <- paste0(
+                "ID=", make.unique(paste(all.deconv$gene_name, all.deconv$regulatory_class, sep = '--'), sep = '_'), 
+                ";Associated-gene-Name=", all.deconv$gene_name, 
+                ";Associated-gene-WB=", all.deconv$WormBaseID, 
+                ";CV=", round(all.deconv$cv, 3), 
+                ";domain=", all.deconv$domain
+            )
+            
+            values <- paste0(
+                ';color=', color.tissues[all.deconv$which.tissues], 
+                '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', 
+                ';Ranked-tissues=', apply(all.deconv[,20:24], 1, function(x) paste0(x, collapse = ' / ')), 
+                ';Ranked-tissue-ATACseq-TPM=', apply(all.deconv[,25:29], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                ';Consecutive-ratios=', apply(all.deconv[,30:33], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                ";Enriched-tissue.s.=", gsub('\\.', '', all.deconv$which.tissues)
+            )
+            
+            GFF_ATAC <- cbind(
+                as.character(all.deconv$chr), 
+                rep('Ahringer-tissue-spe-REs', times = nrow(all.deconv)), 
+                as.character(all.deconv$regulatory_class), 
+                all.deconv$start, 
+                all.deconv$stop, 
+                rep(".", times=nrow(all.deconv)), 
+                ifelse(is.null(all.deconv$strand), ".", all.deconv$strand), 
+                rep(".", times=nrow(all.deconv)), 
+                paste0(infos, values)
+            )
+            
+            # Export GFF file
+            write.table(rbind(HEADER, GFF_LCAP[names(genes.gtf) %in% multipleGenes(),], GFF_ATAC[all.deconv$uniqueWormBaseID %in% multipleGenes(),]), file, quote = F, row = F, col = F, sep = '\t')
+
+        }
+      )
+     
   }
   
-  # Generate button to access to Genome Browser
+  # Generate buttons to access to Genome Browser and WormBase
   {
       observeEvent(input$switchToGenome, { updateTabItems(session, "tabs", "browser") })
+      
+      output$Link <- renderUI({
+          tags$a( "WormBase Link", href = paste0("https://www.wormbase.org/species/c_elegans/gene/", infos.gene()$Gene.info[1]), target = "_blank" )
+      })
+      
   }
-
+  
   # Generate browser
   {
     RE.coords <- reactive ({ c(
       as.character(infos.gene()$Associated.REs[1,1]),
-      as.character(min(infos.gene()$Associated.REs[,2])-1000),
-      as.character(max(infos.gene()$Associated.REs[,3])+1000)
+      as.character(min(infos.gene()$Associated.REs[,2])-3000),
+      as.character(max(infos.gene()$Associated.REs[,3])+3000)
     ) })
     gene.coords <- reactive ({ c(
       paste0('chr', as.character(seqnames(genes.gtf[infos.gene()$Gene.info[1]]))),
@@ -191,28 +290,106 @@ shinyServer <- function(input, output, session) {
 
   }
 
-  # Get multiple gene names
+  # Get the list of multiple genes
   {
-    multipleGenes <- reactive ({ unlist(strsplit(x = input$searchMulitpleGenePaste, split = '[\r\n]' )) %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)]})
-    output$multipleGenes <- renderText ({ multipleGenes() })
+    
+    multipleGenes <- reactive ({ 
+        
+        text.list <- unique(unlist(strsplit(x = input$searchMulitpleGenePaste, split = '[\r\n]' )) %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
+        checkbox.list <- unlist(list.genes[input$checkGroupGeneClasses])
+        bsmodal.list <- row.names(mat.proms.gene)[which(apply(mat.proms.gene, 1, function(x) {all(names(x)[x == T] %in% input$checkGroupGeneClasses_2) & all(input$checkGroupGeneClasses_2 %in% names(x)[x == T])}))]
+        
+        genes <- unique(c(text.list, checkbox.list, bsmodal.list))
+        return(genes[genes %in% names(genes.gtf)])
+        
+    })
+    
+    observe( if (input$resetGenes > 0) {
+          
+          updateTextAreaInput(
+              session, 
+              "searchMulitpleGenePaste", 
+              value = "", 
+              placeholder = 'Paste here (one gene per line)'
+          )
+          updateCheckboxGroupInput(
+              session, 
+              "checkGroupGeneClasses", 
+              choices = list(
+                  "Hypodermis-enriched genes" = "hypod.genes", 
+                  "Neurons-enriched genes" = "neurons.genes", 
+                  "Germline-enriched genes" = "germline.genes", 
+                  "Muscle-enriched genes" = "muscle.genes", 
+                  "Intestine-enriched genes" = "intest.genes" 
+              ),
+              selected = NULL
+          )
+          updateCheckboxGroupInput(
+              session, 
+              "checkGroupGeneClasses_2", 
+              choiceNames = c(
+                  "Hypodermis-specific promoter(s)",
+                  "Neurons-specific promoter(s)",
+                  "Germline-specific promoter(s)",
+                  "Muscle-specific promoter(s)",
+                  "Intestine-specific promoter(s)",
+                  "Hypodermis & Neurons-specific promoter(s)",
+                  "Hypodermis & Germline-specific promoter(s)",
+                  "Hypodermis & Muscle-specific promoter(s)",
+                  "Hypodermis & Intestine-specific promoter(s)",
+                  "Neurons & Germline-specific promoter(s)",
+                  "Neurons & Muscle-specific promoter(s)",
+                  "Neurons & Intestine-specific promoter(s)",
+                  "Germline & Muscle-specific promoter(s)",
+                  "Germline & Intestine-specific promoter(s)",
+                  "Muscle & Intestine-specific promoter(s)",
+                  "Hypodermis & Neurons & Germline-specific promoter(s)",
+                  "Hypodermis & Neurons & Muscle-specific promoter(s)",
+                  "Hypodermis & Neurons & Intestine-specific promoter(s)",
+                  "Hypodermis & Germline & Muscle-specific promoter(s)",
+                  "Hypodermis & Germline & Intestine-specific promoter(s)",
+                  "Hypodermis & Muscle & Intestine-specific promoter(s)",
+                  "Neurons & Germline & Muscle-specific promoter(s)",
+                  "Neurons & Germline & Intestine-specific promoter(s)",
+                  "Neurons & Muscle & Intestine-specific promoter(s)",
+                  "Gonad & Muscle & Intestine-specific promoter(s)",
+                  "Neurons & Gonad & Muscle & Intestine-specific promoter(s)",
+                  "Hypodermis & Gonad & Muscle & Intestine-specific promoter(s)",
+                  "Hypodermis & Neurons & Gonad & Intestine-specific promoter(s)",
+                  "Hypodermis & Neurons & Gonad & Muscle-specific promoter(s)",
+                  "Soma-specific promoter(s)",
+                  "Ubiquitous promoter(s)"
+              ),
+              choiceValues = order.tissues[c(1:27, 29, 30, 32:33)],
+              selected = NULL
+          )
+          
+      } )
+
+    output$multipleGenesPromsGroupsLength <- reactive ({ paste(length(input$checkGroupGeneClasses_2), "group(s) selected.") })
     output$multipleGenesLength <- reactive ({ paste(length(multipleGenes()), "valid gene(s) found.") })
+    
+    output$genesList <- renderUI({ HTML(paste(c("<h3>Genes query</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
+
   }
 
-  # Get GOs plot (enriched in multiple genes)
+  # Get GOs plot (enriched in multiple genes) and button to download results
   {
+    
+    pathways <- reactive ({ input$checkGroupGOs })
+    
+    gProfileR_results <- eventReactive( input$runGO, {gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering='none')} )
 
     output$GO.plot <- renderPlot({
 
-        lay <- layout(matrix(seq(1:2), nrow = 1), widths = c(3,1))
-        # Plot GOs
-        reduced_c <- gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering='moderate')
+        reduced_c <- gProfileR_results()
         reduced_c <- reduced_c[order(reduced_c$p.value),]
-        d <- reduced_c[reduced_c$domain %in% c("MF", "BP", "CC", "keg"),]
+        d <- reduced_c[reduced_c$domain %in% pathways(),]
         d <- d[!duplicated(d[, c("p.value", "overlap.size")],),]
         d <- d[1:min(20, dim(d)[1]),]
         if (nrow(d) > 0) {
           par(las = 0, mar = c(4,20,4,1))
-          plot <- barplot(height=-log10(d$p.value), col=colorGO[d$domain], horiz=T, xlim=c(0,25))
+          plot <- barplot(height=-log10(d$p.value), col=colorGO[d$domain], horiz=T, main = "Enrichment of associated GOs", xlim = c(0, max(25, d$p.value)))
           par(xpd=T)
           #text(x=rep(-1, times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 40), ifelse(nchar(d$term.name) > 40, '...', ''), ' (n=', d$overlap.size, ')'), pos = 2)
           text(x=rep(-1, times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 40), ifelse(nchar(d$term.name) > 40, '...', '')), pos = 2)
@@ -221,66 +398,87 @@ shinyServer <- function(input, output, session) {
           mtext(text="-log10(adj-p.val)",side=1,line=3,outer=FALSE, cex=0.85)
         } else { plot.new() }
     })
+    
+    output$downloadGO <- downloadHandler(
+        "gene-list_GO-summary.txt",
+        content = function(file) {
+            reduced_c <- gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering='none')
+            reduced_c <- reduced_c[order(reduced_c$p.value),]
+            write.table(reduced_c, file, row.names = F, quote = F, sep = "\t")
+        }
+    )
+
 
   }
 
   # Get HMs.plot (multiple genes heatmaps of LCAP/ATAC fold-changes)
   {
-    output$HMs.plot <- renderPlot({
-        mat.LCAP <- log2(as.matrix(max.tissue.df.LCAP[multipleGenes(), 12:16]))
-        mat.ATAC <- as.matrix(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19])
-        mat.ATAC2 <- mat.ATAC
-        for (NCOL in 1:ncol(mat.ATAC)) { mat.ATAC2[,NCOL] <- log2((mat.ATAC[,NCOL]+1)/(rowMeans(mat.ATAC[,-NCOL]+1))) }
+    
+    colorScale_LCAP <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAP,1], input$colorScale_LCAP))(100) })
+    colorScale2_LCAP <- reactive ({ if( input$colorScale_doRev_LCAP ) { rev(colorScale_LCAP()) } else { colorScale_LCAP() } })
+    titleLab_LCAP <- reactive ({ if( input$LCAP_TPMZscore ) { "log2TPM" } else { "z-score" } })
 
-        lay <- layout(matrix(seq(1:2), nrow = 1))
-        # Plot LCAP
-        hm <- heatmap_parmfrow(
+    colorScale_ATAC <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_ATAC,1], input$colorScale_ATAC))(100) })
+    colorScale2_ATAC <- reactive ({ if( input$colorScale_doRev_ATAC ) { rev(colorScale_ATAC()) } else { colorScale_ATAC() } })
+    titleLab_ATAC <- reactive ({ if( input$ATAC_TPMZscore ) { "log2TPM" } else { "z-score" } })
+
+    # Plot LCAP
+    output$HMs.plot_LCAP <- renderPlot({
+        par(mar = c(6,1,4,1))
+        if(titleLab_LCAP() == "log2TPM") {
+            mat.LCAP <- log2(LCAP[multipleGenes(),]+1)
+            breaks <- NA
+        } else {
+            mat.LCAP <- t(apply(LCAP[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
+            colnames(mat.LCAP) <- order.tissues[1:5]
+            breaks <- seq(-2, 2, length.out = 101)
+        }
+        row.names(mat.LCAP) <- WB2name(row.names(mat.LCAP))
+        pheatmap(
             mat.LCAP,
-            margins = c(6,1,4,1),
-            col = colorRampPalette(c("royalblue", "white", "darkred"))(99),
-            breaks = seq(-5, 5, length.out = 100),
-            main = '',
-            key.lab = "Tissue-specific gene expression enrichment (log2)",
-            cexCol = 1,
-            cexRow = 0.4,
-            ylab = "",
-            scaleUP = 1.05,
-            scaleUP.bis = 1.04,
-            nticks = 15,
-            doClust = T,
-            labRow = 'none',
-            labCol = order.tissues[1:5]
+            color = colorScale2_LCAP(),
+            scale = "none", 
+            breaks = breaks, 
+            cluster_rows = T, 
+            cluster_cols = F, 
+            treeheight_row = 20,
+            show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
+            main = paste0("Gene expression (", titleLab_LCAP(), "), in each tissue")
         )
-        # Plot ATAC
-        hm <- heatmap_parmfrow(
-            mat.ATAC2,
-            margins = c(6,1,4,1),
-            col = colorRampPalette(c("royalblue", "white", "darkred"))(99),
-            breaks = seq(-5, 5, length.out = 100),
-            main = '',
-            key.lab = "Tissue-specific RE accessibility enrichment (log2)",
-            cexCol = 1,
-            cexRow = 0.4,
-            ylab = "",
-            scaleUP = 1.05,
-            scaleUP.bis = 1.04,
-            nticks = 15,
-            doClust = T,
-            labRow = 'none',
-            labCol = order.tissues[1:5]
+    })
+    
+    output$HMs.plot_ATAC <- renderPlot({
+        par(mar = c(6,1,4,1))
+        if(titleLab_ATAC() == "log2TPM") {
+            mat.ATAC <- log2(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19] + 1)
+            breaks <- NA
+        } else {
+            mat.ATAC <- t(apply(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19], 1, scale)) %>% na.replace(., 0)
+            colnames(mat.ATAC) <- order.tissues[1:5]
+            breaks <- seq(-2, 2, length.out = 101)
+        }
+        pheatmap(
+            mat.ATAC,
+            color = colorScale2_ATAC(),
+            scale = "none", 
+            breaks = breaks, 
+            cluster_rows = T, 
+            cluster_cols = F, 
+            treeheight_row = 20, 
+            show_rownames = F,
+            main = paste0("Associated REs accessibility (", titleLab_ATAC(), "), in each tissue")
         )
-
     })
 
   }
 
-  # Generate tables to download
+  # Generate tables to display and button to download them
   {
       output$downloadATAC.txt <- downloadHandler( "tissue-specific.ATAC-seq.dataset.txt", content = function(file) {write.table(atac.dt, file, quote = F, row = F, col = T, sep = '\t')} )
       output$downloadATAC.gff <- downloadHandler( "tissue-specific.ATAC-seq.dataset.gff", content = function(file) {
           infos=paste0("ID=", make.unique(paste(all$gene_name, all$regulatory_class, sep = '--'), sep = '_'), ";Associated-gene-Name=", all$gene_name, ";Associated-gene-WB=", all$WormBaseID, ";CV=", round(all$cv, 3), ";domain=", all$domain)
-          values <- paste0(';color=', color.tissues[max.tissue.df$which.tissues], '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', ';Ranked-tissues=', apply(max.tissue.df[,5:9], 1, function(x) paste0(x, collapse = ' * ')), ';Tissue-ATACeq-TPM=', apply(max.tissue.df[,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ';Consecutive-ratios=', apply(max.tissue.df[,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ";Enriched-tissue.s.=", gsub('\\.', '', max.tissue.df$which.tissues))
-          GFF=cbind(as.character(all$chr), rep('Ahringer-JJ-JA', times = nrow(all)), as.character(all$regulatory_class), all$start, all$stop, rep(".", times=nrow(all)), ifelse(is.null(all$strand), ".", all$strand), rep(".", times=nrow(all)), paste0(infos, values))
+          values <- paste0(';color=', color.tissues[max.tissue.df$which.tissues], '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', ';Ranked-tissues=', apply(max.tissue.df[,5:9], 1, function(x) paste0(x, collapse = ' / ')), ';Ranked-tissue-ATACseq-TPM=', apply(max.tissue.df[,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ';Consecutive-ratios=', apply(max.tissue.df[,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ";Enriched-tissue.s.=", gsub('\\.', '', max.tissue.df$which.tissues))
+          GFF=cbind(as.character(all$chr), rep('Ahringer-tissue-spe-REs', times = nrow(all)), as.character(all$regulatory_class), all$start, all$stop, rep(".", times=nrow(all)), ifelse(is.null(all$strand), ".", all$strand), rep(".", times=nrow(all)), paste0(infos, values))
           write.table(rbind(c("##gffTags=on\n##displayName=Name\n##gff-version 3", rep(" ", 8)), GFF), file, quote = F, row = F, col = F, sep = '\t')
       } )
       output$downloadLCAP.txt <- downloadHandler( "tissue-specific.RNA-seq.dataset.txt", content = function(file) {write.table(lcap.dt, file, quote = F, row = F, col = T, sep = '\t')}  )
@@ -296,7 +494,7 @@ shinyServer <- function(input, output, session) {
                 ';color=', color.tissues[c(1:5,33:35)][max.tissue.df.LCAP$which.tissues],
                 '; =: : : : : : : : : : : : : : : : : : : : : : : : : ',
                 ';Ranked-tissues=', apply(max.tissue.df.LCAP[,2:6], 1, function(x) paste0(x, collapse = ' / ')),
-                ';Tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[,7:12], 1, function(x) paste0(round(x, 3), collapse = ' / ')),
+                ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[,7:12], 1, function(x) paste0(round(x, 3), collapse = ' / ')),
                 ';Hypod-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Hypod..v.others'],
                 ';Neurons-FCvs-mean=', max.tissue.df.LCAP[,'ratio.Neurons.v.others'],
                 ';Gonad-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Gonad.v.others'],
