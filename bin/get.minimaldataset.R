@@ -2,16 +2,16 @@
 
 #=============================================================================#
 #                                                                             #
-#     USAGE: Run from the app folder (./dashboard.Ahringer)                   #
+#     USAGE: Run from the app folder (./dashboard.Ahringer/releases/dev/)     #
 #     This script takes data from ../../_tissuesTSNE and minimize it          #
 #                                                                             #
 #=============================================================================#
 
 message('\n\n-- Getting minimal datasets object --\n\n')
 
-load('../../_tissuesTSNE/.tSNE.RData')
+load('~/Documents/PhD/__Bioinfo/_tissuesTSNE/.tSNE.RData')
 library(GenomicRanges)
-source("../../_scripts/bin/useful_R_functions.R")
+source("~/Documents/PhD/__Bioinfo/_scripts/bin/useful_R_functions.R")
 
 valid.groups = c(1:33)
 CLASSES.proms <- colortransp[factor(order.tissues[all[which(all$is.prom & all$clustersATAC.tissues %in% valid.groups),]$clustersATAC.tissues], levels = order.tissues)]

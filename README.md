@@ -24,6 +24,24 @@ git commit -m "update"
 git push -u origin master
 ```
 
+#### Edits on 2018-10-08: updated the procedure to upload the app to a server:
+
+To deploy dashboard.Ahringer, run:  
+```
+cd ~/Documents/PhD/__Bioinfo/_shinyapps/dashboard.Ahringer/releases/dev/  
+bash ~/Documents/PhD/__Bioinfo/_shinyapps/bin/get.minimaldataset.R  
+```
+
+Then test the app locally:  
+```
+shiny::runApp("~/Documents/PhD/__Bioinfo/_shinyapps/dashboard.Ahringer/releases/dev/")  
+```
+
+Then release a new version from dev/  
+```
+bash ~/Documents/PhD/__Bioinfo/_shinyapps/bin/makeNewRelease.sh -v VERSION_NB  
+```
+
 -------------------
 
 # Edits 2018/09/28:

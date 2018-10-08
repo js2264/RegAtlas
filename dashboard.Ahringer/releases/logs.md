@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [0.2.1] - 2018-10-08
+##### Changed
+- Modified directories architecture
+- Modified procedure to upload the app
+
+## [0.2.0] - 2018-10-08
 ##### Added
 - Heavily enhanced the heatmaps plotted in multi-genes tab (possibility to choose which colors, which units to use, reverse colors)
 - Button to download GO results

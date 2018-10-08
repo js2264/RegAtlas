@@ -9,6 +9,8 @@
 #     CREATED: 2018/07/12                                                     #
 #     REVISION: 2018-08-04                                                    #
 #                                                                             #
+#     DO NOT USE; THIS IS OBSOLETE !!                                         #
+#                                                                             #
 #=============================================================================#
  
 ## Define functions
@@ -19,10 +21,14 @@ function checkfolder() {
     fi
 }
 function usage() {
+    echo -e "\nTHIS SCRIPT IS OBSOLETE"
+    echo -e "THIS SCRIPT IS OBSOLETE"
+    echo -e "THIS SCRIPT IS OBSOLETE"
     echo -e "\nThis script is a wrapper to develop a Shiny app located in the directory ./APP_PATH/"
     echo -e ""
     echo -e "USAGE:\tapp_wrapper.sh -f APP_PATH"
     echo -e ""
+    echo -e "THIS SCRIPT IS OBSOLETE"
 }
 
 ## Read the argument
@@ -52,6 +58,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ## Go to the appropriate app folder
 cd ${APP_PATH}/
+echo -e "\nTHIS SCRIPT IS OBSOLETE"
 
 #1. Import data from GI server
 ../bin/import.data.sh
