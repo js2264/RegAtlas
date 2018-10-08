@@ -30,6 +30,7 @@ require(dplyr)
 require(tidyr)
 require(pheatmap)
 require(RColorBrewer)
+require(apputils)
 if (!require(trewjb)) { devtools::install_github("Marlin-Na/trewjb") ; require(trewjb)}
 if (!require(GenomicRanges)) { source("https://bioconductor.org/biocLite.R") ; biocLite("GenomicRanges") ; require(GenomicRanges)}
 options("repos" = BiocInstaller::biocinstallRepos())

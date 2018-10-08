@@ -185,20 +185,24 @@ TAB2 <- tabItem(
 
         ## Row 2: OUTPUT HMs.plot
         fluidRow( 
-            column(width = 3, { selectizeInput("colorScale_LCAP", "Choose a color scale (RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
+            column(width = 2, { selectizeInput("colorScale_LCAPdev", "Choose a color scale (dev. RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
+            column(width = 2, { switchInput("colorScale_doRev_LCAPdev", label = "Reverse color scale?", value = T, onLabel = "Yes", offLabel = "No", onStatus = 'success', offStatus = 'error', labelWidth = 100, handleWidth = 0, size = 'small', inline = T) } ),
+            column(width = 2, { selectizeInput("colorScale_LCAP", "Choose a color scale (RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
             column(width = 2, { switchInput("colorScale_doRev_LCAP", label = "Reverse color scale?", value = T, onLabel = "Yes", offLabel = "No", onStatus = 'success', offStatus = 'error', labelWidth = 100, handleWidth = 0, size = 'small', inline = T) } ),
-            column(width = 3, { selectizeInput("colorScale_ATAC", "Choose a color scale (ATAC-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "YlOrBr", multiple = FALSE) } ),
+            column(width = 2, { selectizeInput("colorScale_ATAC", "Choose a color scale (ATAC-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "YlOrBr", multiple = FALSE) } ),
             column(width = 2, { switchInput("colorScale_doRev_ATAC", label = "Reverse color scale?", value = F, onLabel = "Yes", offLabel = "No", onStatus = 'success', offStatus = 'error', labelWidth = 100, handleWidth = 0, size = 'small', inline = T) } )
         ),
         
         fluidRow(
-            column(width = 5, { switchInput("LCAP_TPMZscore", label = "Which values to plot (RNA-seq)?", value = F, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } ),
-            column(width = 5, { switchInput("ATAC_TPMZscore", label = "Which values to plot (ATAC-seq)?", value = T, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } )
+            column(width = 4, { switchInput("LCAPdev_TPMZscore", label = "Which values to plot (RNA-seq)?", value = T, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } ),
+            column(width = 4, { switchInput("LCAP_TPMZscore", label = "Which values to plot (RNA-seq)?", value = F, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } ),
+            column(width = 4, { switchInput("ATAC_TPMZscore", label = "Which values to plot (ATAC-seq)?", value = T, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } )
         ),
 
         fluidRow(
-            column(width = 5, { plotOutput("HMs.plot_LCAP")  }),
-            column(width = 5, { plotOutput("HMs.plot_ATAC")  })
+            column(width = 4, { plotOutput("HMs.plot_LCAPdev")  }),
+            column(width = 4, { plotOutput("HMs.plot_LCAP")  }),
+            column(width = 4, { plotOutput("HMs.plot_ATAC")  })
         ),
 
         br(),
@@ -206,15 +210,31 @@ TAB2 <- tabItem(
         br(),
         
         ## Row 3: OUTPUT GO.plot
-        fluidRow( 
-            column(width = 1, actionBttn("runGO", label = "Perform GO analysis", icon = icon("chart-bar", lib = "font-awesome"), style = 'minimal') ), 
-            column(width = 7, { plotOutput("GO.plot") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } ),
-            column(width = 2, { 
-                checkboxGroupInput("checkGroupGOs", label = h4("GO databases"), 
-                    choices = list("MF (Molecular Function)" = "MF", "BP (Biological Process)" = "BP", "CC (Cellular Component)" = "CC", "kegg (KEGG pathway)" = "keg"),
-                    selected = c("MF", "BP", "CC", "keg")
+        fluidRow(
+            column(width = 2, {
+                fluidRow(
+                    actionBttn("runGO", label = "Perform GO analysis", icon = icon("search", lib = "font-awesome"), style = 'minimal'), 
+                    br(),
+                    br(),
+                    dropdownButton(
+                        tags$h4("Select GO databses"),
+                        checkboxGroupInput("checkGroupGOs", label = "", 
+                            choices = list("MF (Molecular Function)" = "MF", "BP (Biological Process)" = "BP", "CC (Cellular Component)" = "CC", "kegg (KEGG pathway)" = "keg"),
+                            selected = c("MF", "BP", "CC", "keg")
+                        ),
+                        tags$h4("Apply filtering?"),
+                        selectInput(
+                            inputId = 'hierarchyFiltering', 
+                            label = '', 
+                            choices = c("none", "moderate", "strong"), 
+                            selected = "moderate"
+                        ),
+                        circle = TRUE, status = "warning", icon = icon("gear"),
+                        tooltip = tooltipOptions(title = "Set filtering")
+                    )
                 )
             } ),
+            column(width = 7, { plotOutput("GO.plot") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } ),
             column(width = 2, { fluidRow(
                 br(),
                 downloadBttn("downloadGO", label = "Download full GO report (.txt file)", size = "sm", style = "fill", color = "primary", block = T)
@@ -314,16 +334,37 @@ SIDEBAR <- sidebarMenu(
     menuItem("Look-up multiple genes", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
     menuItem("Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
-	menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome"))
+	menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
+    sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search...")
 )
 
 BODY <- tabItems(TAB1, TAB2, TAB3, TAB4, TAB5)
+
+FOOTER <- {
+    tags$footer(
+        HTML(paste("Ahringer lab -", icon("copyright", lib = "font-awesome"), "2018")), 
+        align = "left",
+        style = "
+            position: fixed;
+            bottom: 0;
+            height: 30px;
+            color: #b8c7ce;
+            padding: 5px 230px;
+            background-color: #333;
+            margin: 0px;
+            left: 0px;
+            right: 0px;
+        "
+    )
+}
+
 
 shinyUI <- dashboardPage(
     dashboardHeader(title = "Ahringer lab C. elegans tissue-specific database", titleWidth = 450),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
-        tags$head(tags$style(HTML('.left-side, .main-sidebar {background-image: "sidebar-img_230x700.jpg"; background-size: 230px;}'))),
+        tags$head(tags$style(HTML('.logo .sidebar-toogle .navbar-navbar-static-top {position: fixed;}'))),
+        tags$head(tags$style(HTML('.left-side, .main-sidebar {background-image: "http://tispelegans.site/img/sidebar-img_230x700.jpg"; background-size: 230px;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .logo {background-color: #333;} .skin-blue .main-header .logo:hover {background-color: #333;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .navbar {background-color: #333;} .skin-blue .main-header .navbar {background-color: #333;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .navbar .sidebar-toggle {background-color: #333;} .skin-blue .main-header .navbar .sidebar-toggle:hover {background-color: #444;}'))),
@@ -338,7 +379,15 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML("a {color: #333} a:hover, a:focus, a:active, a:visited {color: #1d89ff;}"))),
         tags$head(tags$style(HTML(".multicol2 {-webkit-column-count: 1; /* Chrome, Safari, Opera */ -moz-column-count: 1; /* Firefox */ column-count: 1;}"))),
         tags$head(tags$style(HTML(".multicol5 {-webkit-column-count: 5; /* Chrome, Safari, Opera */ -moz-column-count: 5; /* Firefox */ column-count: 5;}"))),
-        BODY
+        BODY, 
+        bsModal(
+            id = "quickGENE", 
+            title = "Quick gene view",
+            trigger = '', 
+            size = "large", 
+            htmlOutput("quickResults")
+        ), 
+        FOOTER
     )
 )
 
