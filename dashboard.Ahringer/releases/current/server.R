@@ -139,6 +139,7 @@ shinyServer <- function(input, output, session) {
   
   # Generate buttons to access to Genome Browser and WormBase
   {
+      
       observeEvent(input$switchToGenome, { updateTabItems(session, "tabs", "browser") })
       
       output$Link <- renderUI({
@@ -165,7 +166,31 @@ shinyServer <- function(input, output, session) {
     output$url <- reactive ({ getURL(coords()[1], coords()[2], coords()[3], "1.12.5") })
     output$jbrowser <- renderJbrowse({ iframeJbrowse.2(url()) })
   }
-
+  
+  # Generate the quickView bsModal 
+  {
+    
+    output$quickResults <- renderUI({
+        
+        gene <- reactive ({ input$quickGene })
+        infos.gene <- reactive ({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
+        WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[1])
+        LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
+        COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
+        BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[3])
+        ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[5])
+        
+        h3("Quick gene view")
+        HTML(paste("", WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
+        
+    })
+    
+    observeEvent(input$quickSearch, {
+        toggleModal(session, "quickGENE", toggle = "open")
+    })
+    
+  }
+  
   # Generate the REs subset table
   {
     #-->
@@ -379,9 +404,9 @@ shinyServer <- function(input, output, session) {
   {
     
     pathways <- reactive ({ input$checkGroupGOs })
+    filteringSetting <- reactive ({ input$hierarchyFiltering })
+    gProfileR_results <- eventReactive( input$runGO, { gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering=filteringSetting()) } )
     
-    gProfileR_results <- eventReactive( input$runGO, {gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering='none')} )
-
     output$GO.plot <- renderPlot({
 
         reduced_c <- gProfileR_results()
@@ -415,7 +440,10 @@ shinyServer <- function(input, output, session) {
 
   # Get HMs.plot (multiple genes heatmaps of LCAP/ATAC fold-changes)
   {
-    
+    colorScale_LCAPdev <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAPdev,1], input$colorScale_LCAPdev))(100) })
+    colorScale2_LCAPdev <- reactive ({ if( input$colorScale_doRev_LCAPdev ) { rev(colorScale_LCAPdev()) } else { colorScale_LCAPdev() } })
+    titleLab_LCAPdev <- reactive ({ if( input$LCAPdev_TPMZscore ) { "log2TPM" } else { "z-score" } })
+
     colorScale_LCAP <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAP,1], input$colorScale_LCAP))(100) })
     colorScale2_LCAP <- reactive ({ if( input$colorScale_doRev_LCAP ) { rev(colorScale_LCAP()) } else { colorScale_LCAP() } })
     titleLab_LCAP <- reactive ({ if( input$LCAP_TPMZscore ) { "log2TPM" } else { "z-score" } })
@@ -423,6 +451,31 @@ shinyServer <- function(input, output, session) {
     colorScale_ATAC <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_ATAC,1], input$colorScale_ATAC))(100) })
     colorScale2_ATAC <- reactive ({ if( input$colorScale_doRev_ATAC ) { rev(colorScale_ATAC()) } else { colorScale_ATAC() } })
     titleLab_ATAC <- reactive ({ if( input$ATAC_TPMZscore ) { "log2TPM" } else { "z-score" } })
+
+    # Plot LCAPdev
+    output$HMs.plot_LCAPdev <- renderPlot({
+        par(mar = c(6,1,4,1))
+        if(titleLab_LCAPdev() == "log2TPM") {
+            mat.LCAP <- log2(LCAPdev[multipleGenes(),]+1)
+            breaks <- NA
+        } else {
+            mat.LCAP <- t(apply(LCAPdev[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
+            colnames(mat.LCAP) <- colnames(LCAPdev)
+            breaks <- seq(-2, 2, length.out = 101)
+        }
+        row.names(mat.LCAP) <- WB2name(row.names(mat.LCAP))
+        pheatmap(
+            mat.LCAP,
+            color = colorScale2_LCAPdev(),
+            scale = "none", 
+            breaks = breaks, 
+            cluster_rows = T, 
+            cluster_cols = F, 
+            treeheight_row = 20,
+            show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
+            main = paste0("Mixed-tissue gene expression (", titleLab_LCAPdev(), ") at each developmental stage")
+        )
+    })
 
     # Plot LCAP
     output$HMs.plot_LCAP <- renderPlot({
@@ -449,6 +502,7 @@ shinyServer <- function(input, output, session) {
         )
     })
     
+    # Plot ATAC
     output$HMs.plot_ATAC <- renderPlot({
         par(mar = c(6,1,4,1))
         if(titleLab_ATAC() == "log2TPM") {
