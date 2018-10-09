@@ -392,7 +392,7 @@ shinyServer <- function(input, output, session) {
           )
           
       } )
-
+    
     output$multipleGenesPromsGroupsLength <- reactive ({ paste(length(input$checkGroupGeneClasses_2), "group(s) selected.") })
     output$multipleGenesLength <- reactive ({ paste(length(multipleGenes()), "valid gene(s) found.") })
     
@@ -527,7 +527,18 @@ shinyServer <- function(input, output, session) {
     })
 
   }
-
+  
+  # Get venn Diagrams
+  {
+      
+      output$Venn.Hypod <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich. genes", "Genes query", color.tissues[1], 'grey50') })
+      output$Venn.Neurons <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich. genes", "Genes query", color.tissues[2], 'grey50') })
+      output$Venn.Germline <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich. genes", "Genes query", color.tissues[3], 'grey50') })
+      output$Venn.Muscle <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich. genes", "Genes query", color.tissues[4], 'grey50') })
+      output$Venn.Intest <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich. genes", "Genes query", color.tissues[5], 'grey50') })
+      
+  }
+  
   # Generate tables to display and button to download them
   {
       output$downloadATAC.txt <- downloadHandler( "tissue-specific.ATAC-seq.dataset.txt", content = function(file) {write.table(atac.dt, file, quote = F, row = F, col = T, sep = '\t')} )

@@ -107,7 +107,7 @@ TAB2 <- tabItem(
             }), 
             column(width = 1, h4("... And / Or ...")),
             column(width = 2, { 
-                tags$div(class = "multicol2", checkboxGroupInput("checkGroupGeneClasses", label = h4("Select a class of genes to query:"), selected = "germline.genes", choices = list(
+                tags$div(class = "multicol2", checkboxGroupInput("checkGroupGeneClasses", label = h4("Select a class of genes to query:"), selected = "neurons.genes", choices = list(
                     "Hypodermis-enriched genes" = "hypod.genes", 
                     "Neurons-enriched genes" = "neurons.genes", 
                     "Germline-enriched genes" = "germline.genes", 
@@ -183,7 +183,20 @@ TAB2 <- tabItem(
         hr(),
         br(),
 
-        ## Row 2: OUTPUT HMs.plot
+        ## Row 2a: OUTPUT Venn diagrms
+        fluidRow(
+            h4("Intersection of genes query with tissue-enriched genes"),
+            column(width = 2, { plotOutput("Venn.Hypod")  }),
+            column(width = 2, { plotOutput("Venn.Neurons")  }),
+            column(width = 2, { plotOutput("Venn.Germline")  }),
+            column(width = 2, { plotOutput("Venn.Muscle")  }),
+            column(width = 2, { plotOutput("Venn.Intest")  })
+        ),
+        br(),
+        hr(),
+        br(),
+
+        ## Row 2b: OUTPUT HMs.plot
         fluidRow( 
             column(width = 2, { selectizeInput("colorScale_LCAPdev", "Choose a color scale (dev. RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
             column(width = 2, { switchInput("colorScale_doRev_LCAPdev", label = "Reverse color scale?", value = T, onLabel = "Yes", offLabel = "No", onStatus = 'success', offStatus = 'error', labelWidth = 100, handleWidth = 0, size = 'small', inline = T) } ),

@@ -31,6 +31,7 @@ require(tidyr)
 require(pheatmap)
 require(RColorBrewer)
 require(apputils)
+require(venneuler)
 if (!require(trewjb)) { devtools::install_github("Marlin-Na/trewjb") ; require(trewjb)}
 if (!require(GenomicRanges)) { source("https://bioconductor.org/biocLite.R") ; biocLite("GenomicRanges") ; require(GenomicRanges)}
 options("repos" = BiocInstaller::biocinstallRepos())
@@ -62,6 +63,7 @@ muscle.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues =
 intest.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Intest.']
 list.genes <- list(hypod.genes, neurons.genes, germline.genes, muscle.genes, intest.genes)
 names(list.genes) <- c("hypod.genes", "neurons.genes", "germline.genes", "muscle.genes", 'intest.genes')
+colors.decimals <- c(0.10395294, 0.3906374, 0.1192665, 0.14261010, 0.14226132, 0.13421772)
 
 # Function to generate an URL to visit jserizay.site/JBrowse
 getURL <- function (chr, start, end, release = "1.12.5", 
@@ -97,4 +99,31 @@ textareaInput <- function(inputId, label, value = "", placeholder = "", rows = 2
     div(strong(label), style="margin-top: 5px;"),
     tags$style(type="text/css", "textarea {width:100%; margin-top: 5px;}"),
     tags$textarea(id = inputId, placeholder = placeholder, rows = rows, value))
+}
+
+# Function to plot weighted 2-way venn diagrams
+plot2WayVenn <- function(vec1, vec2, name.vec1, name.vec2, col.vec1, col.vec2) 
+{
+    
+    df <- cbind(c(vec1, vec2), c(rep(1, times = length(vec1)), rep(2, times = length(vec2))))
+    venn <- venneuler(df)
+    venn$labels <- c("", "")
+    
+    # Calculate coordinates for x-positions of each label
+    L <- sum(venn$diameters/2)-max(venn$centers[,'x'])+min(venn$centers[,'x'])
+    r1 <- venn$diameters[which.min(venn$centers[,'x'])] / 2 
+    r2 <- venn$diameters[which.max(venn$centers[,'x'])] / 2 
+    G <- min(venn$centers[,'x']) - r1
+    
+    p1 <- (2 * r1 - L ) / 2 + G
+    p2 <- 2 * r1 + (2 * r2 - L ) / 2 + G
+    pmiddle <- (2 * r1) - (L / 2)+ G
+    
+    # Plot circles
+    plot(venn, col = c(col.vec1, col.vec2))
+    
+    # Add labels and counts
+    text(x = venn$centers[,'x'], y = (venn$centers[,'y'] + venn$diameters/2), c(paste0(name.vec1, "\n(n=", length(vec1) ,")"), paste0(name.vec2, "\n(n=", length(vec2) ,")")), pos = 3)
+    text(x = c(p1, pmiddle, p2), y = c(0.5, 0.5, 0.5), c(paste0("n=", length(vec2) - sum(vec1 %in% vec2)), paste0("n=", sum(vec1 %in% vec2)), paste0(paste0("n=", length(vec1) - sum(vec1 %in% vec2)))), pos = 3)
+    
 }
