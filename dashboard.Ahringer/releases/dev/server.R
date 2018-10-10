@@ -162,7 +162,7 @@ shinyServer <- function(input, output, session) {
     ) })
     coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
     #-->
-    url <- reactive ({ getURL(coords()[1], coords()[2], coords()[3], "1.12.5") })
+    url <- reactive ({ getURL(as.character(coords()[1]), as.numeric(coords()[2]), as.numeric(coords()[3]), "1.12.5") })
     output$jbrowser <- renderUI(
         tags$div(
             id="jbrowser", 
@@ -195,7 +195,18 @@ shinyServer <- function(input, output, session) {
         ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[5])
         
         h3("Quick gene view")
-        HTML(paste("", WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
+        HTML(paste(
+            h3("Quick gene view"), 
+            WBID,
+            LOCUS, 
+            COORDS,
+            BIOTYPE, 
+            ENRICHED, 
+            br(),
+            h3("Gene description from WormBase"), 
+            p(HTML(fetchWBinfos(infos.gene()$Gene.info[2]))),
+            sep = '<br/>'
+        ))
         
     })
     
@@ -334,7 +345,7 @@ shinyServer <- function(input, output, session) {
   # Get the list of multiple genes
   {
     
-    multipleGenes <- reactive ({ 
+    multipleGenes <- eventReactive( input$getList, { 
         
         # Get gene names from text box (allows for *)
         input.genes <- unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' ))
@@ -348,7 +359,7 @@ shinyServer <- function(input, output, session) {
         genes <- unique(c(text.list, checkbox.list, bsmodal.list))
         return(genes[genes %in% names(genes.gtf)])
         
-    })
+    } )
     
     observe( if (input$resetGenes > 0) {
           
@@ -410,10 +421,17 @@ shinyServer <- function(input, output, session) {
               selected = NULL
           )
           
-      } )
+    } )
     
     output$multipleGenesPromsGroupsLength <- reactive ({ paste(length(input$checkGroupGeneClasses_2), "group(s) selected.") })
-    output$multipleGenesLength <- reactive ({ paste(length(multipleGenes()), "valid gene(s) found.") })
+    output$multipleGenesLength <- reactive ({ 
+        l <- length(multipleGenes())
+        if (l < 2) {
+            'No genes found.\nEnter or select at least 2 genes and click on "Perform analysis" button.'
+        } else {
+        paste(l, "valid genes found.") 
+        }
+    })
     
     output$genesList <- renderUI({ HTML(paste(c("<h3>Genes query</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
 
@@ -462,14 +480,17 @@ shinyServer <- function(input, output, session) {
     colorScale_LCAPdev <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAPdev,1], input$colorScale_LCAPdev))(100) })
     colorScale2_LCAPdev <- reactive ({ if( input$colorScale_doRev_LCAPdev ) { rev(colorScale_LCAPdev()) } else { colorScale_LCAPdev() } })
     titleLab_LCAPdev <- reactive ({ if( input$LCAPdev_TPMZscore ) { "log2TPM" } else { "z-score" } })
-
+    clusterFUN_LCAPdev <- reactive ({ if( input$clusterFUN_LCAPdev ) { "hclust" } else { "kmeans" } })
+     
     colorScale_LCAP <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAP,1], input$colorScale_LCAP))(100) })
     colorScale2_LCAP <- reactive ({ if( input$colorScale_doRev_LCAP ) { rev(colorScale_LCAP()) } else { colorScale_LCAP() } })
     titleLab_LCAP <- reactive ({ if( input$LCAP_TPMZscore ) { "log2TPM" } else { "z-score" } })
+    clusterFUN_LCAP <- reactive ({ if( input$clusterFUN_LCAP ) { "hclust" } else { "kmeans" } })
 
     colorScale_ATAC <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_ATAC,1], input$colorScale_ATAC))(100) })
     colorScale2_ATAC <- reactive ({ if( input$colorScale_doRev_ATAC ) { rev(colorScale_ATAC()) } else { colorScale_ATAC() } })
     titleLab_ATAC <- reactive ({ if( input$ATAC_TPMZscore ) { "log2TPM" } else { "z-score" } })
+    clusterFUN_ATAC <- reactive ({ if( input$clusterFUN_ATAC ) { "hclust" } else { "kmeans" } })
 
     # Plot LCAPdev
     output$HMs.plot_LCAPdev <- renderPlot({
@@ -483,12 +504,19 @@ shinyServer <- function(input, output, session) {
             breaks <- seq(-2, 2, length.out = 101)
         }
         row.names(mat.LCAP) <- WB2name(row.names(mat.LCAP))
+        if (clusterFUN_LCAPdev() == 'kmeans') {
+            doHCLUST <- F
+            NCLUST_LCAPdev <- input$NCLUST_LCAPdev
+            set.seed(32) ; mat.LCAP <- mat.LCAP[names(sort(kmeans(mat.LCAP, NCLUST_LCAPdev)$cluster, decreasing = F)),]
+        } else {
+            doHCLUST <- T
+        }
         pheatmap(
             mat.LCAP,
             color = colorScale2_LCAPdev(),
             scale = "none", 
             breaks = breaks, 
-            cluster_rows = T, 
+            cluster_rows = doHCLUST, 
             cluster_cols = F, 
             treeheight_row = 20,
             show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
@@ -508,12 +536,19 @@ shinyServer <- function(input, output, session) {
             breaks <- seq(-2, 2, length.out = 101)
         }
         row.names(mat.LCAP) <- WB2name(row.names(mat.LCAP))
+        if (clusterFUN_LCAP() == 'kmeans') {
+            doHCLUST <- F
+            NCLUST_LCAP <- input$NCLUST_LCAP
+            set.seed(32) ; mat.LCAP <- mat.LCAP[names(sort(kmeans(mat.LCAP, NCLUST_LCAP)$cluster, decreasing = F)),]
+        } else {
+            doHCLUST <- T
+        }
         pheatmap(
             mat.LCAP,
             color = colorScale2_LCAP(),
             scale = "none", 
             breaks = breaks, 
-            cluster_rows = T, 
+            cluster_rows = doHCLUST, 
             cluster_cols = F, 
             treeheight_row = 20,
             show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
@@ -532,12 +567,19 @@ shinyServer <- function(input, output, session) {
             colnames(mat.ATAC) <- order.tissues[1:5]
             breaks <- seq(-2, 2, length.out = 101)
         }
+        if (clusterFUN_ATAC() == 'kmeans') {
+            doHCLUST <- F
+            NCLUST_ATAC <- input$NCLUST_ATAC
+            set.seed(32) ; mat.LCAP <- mat.LCAP[names(sort(kmeans(mat.LCAP, NCLUST_ATAC)$cluster, decreasing = F)),]
+        } else {
+            doHCLUST <- T
+        }
         pheatmap(
             mat.ATAC,
             color = colorScale2_ATAC(),
             scale = "none", 
             breaks = breaks, 
-            cluster_rows = T, 
+            cluster_rows = doHCLUST, 
             cluster_cols = F, 
             treeheight_row = 20, 
             show_rownames = F,

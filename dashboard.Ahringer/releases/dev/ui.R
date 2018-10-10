@@ -93,6 +93,7 @@ TAB1 <- tabItem(
 TAB2 <- tabItem(
     tabName = 'geneslookup',
     fluidPage(
+        
         ## Row 1: Multiple genes entry
         fluidRow(
             column(width = 2, {
@@ -171,11 +172,21 @@ TAB2 <- tabItem(
             )
         ),
         fluidRow(
-            column(width = 1, { textOutput("multipleGenesLength") %>% withSpinner(type = 6, color = "#421500", size = 0.5) }),
-            column(width = 2, { actionBttn("resetGenes", label = "Reset genes query", size = "xs", style = "fill") })
+            fluidRow(
+                column(width = 3, ""),
+                column(width = 6, { actionBttn("getList", label = "Perform analysis", icon = icon("search", lib = "font-awesome"), style = 'bordered', color = "primary", block = T) }),
+                column(width = 3, "")
+            ),
+            fluidRow(
+                column(width = 3, ""),
+                column(width = 3, { textOutput("multipleGenesLength") }),
+                column(width = 3, { actionBttn("resetGenes", label = "Reset genes query", size = "xs", style = "fill", ) }),
+                column(width = 3, "")
+            ),
+            br()
         ),
         br(),
-        h6("Plots in this tab may take a while to load..."),
+        br(),
         br(), 
         downloadBttn("downloadGenesListGFF", label = "Download detailed report of input genes and associated REs (GFF file, IGV friendly)", size = "sm", style = "fill", color = "primary", block = F),
         br(),
@@ -196,12 +207,25 @@ TAB2 <- tabItem(
         br(),
 
         ## Row 2b: OUTPUT HMs.plot
-        fluidRow( 
+        fluidRow(
             column(width = 2, { selectizeInput("colorScale_LCAPdev", "Choose a color scale (dev. RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
             column(width = 2, { dropdownButton(
                 circle = TRUE, status = "warning", icon = icon("gear"),
                 tooltip = tooltipOptions(title = "Options for developmental RNA-seq heatmap"),
                 tags$h4("Options for developmental RNA-seq heatmap"),
+                switchInput(
+                    "clusterFUN_LCAPdev", 
+                    label = "Type of clustering", 
+                    value = F, 
+                    onLabel = "Hierarchical", 
+                    offLabel = "K-means", 
+                    onStatus = 'success', 
+                    offStatus = 'primary', 
+                    labelWidth = 100, 
+                    size = 'small', 
+                    inline = T
+                ),
+                numericInput("NCLUST_LCAPdev", label = "Number of k-means clusters", value = 5),
                 switchInput(
                     "colorScale_doRev_LCAPdev", 
                     label = "Reverse color scale?", 
@@ -209,22 +233,20 @@ TAB2 <- tabItem(
                     onLabel = "Yes", 
                     offLabel = "No", 
                     onStatus = 'success', 
-                    offStatus = 'error', 
+                    offStatus = 'primary', 
                     labelWidth = 100, 
-                    handleWidth = 0, 
                     size = 'small', 
                     inline = T
                 ),
                 switchInput(
                     "LCAPdev_TPMZscore", 
                     label = "Which values to plot (dev. RNA-seq)?", 
-                    value = T, 
+                    value = F, 
                     onLabel = "TPM", 
                     offLabel = "Z-score", 
                     onStatus = 'primary', 
                     offStatus = 'warning',
                     labelWidth = 200, 
-                    handleWidth = 0, 
                     width = "400px", 
                     size = 'small', 
                     inline = T
@@ -236,15 +258,27 @@ TAB2 <- tabItem(
                 tooltip = tooltipOptions(title = "Options for tissue RNA-seq heatmap"),
                 tags$h4("Options for tissue RNA-seq heatmap"),
                 switchInput(
+                    "clusterFUN_LCAP", 
+                    label = "Type of clustering", 
+                    value = T, 
+                    onLabel = "Hierarchical", 
+                    offLabel = "K-means", 
+                    onStatus = 'success', 
+                    offStatus = 'primary', 
+                    labelWidth = 100, 
+                    size = 'small', 
+                    inline = T
+                ),
+                numericInput("NCLUST_LCAP", label = "Number of k-means clusters", value = 5),
+                switchInput(
                     "colorScale_doRev_LCAP", 
                     label = "Reverse color scale?", 
                     value = T, 
                     onLabel = "Yes", 
                     offLabel = "No", 
                     onStatus = 'success', 
-                    offStatus = 'error', 
+                    offStatus = 'primary', 
                     labelWidth = 100, 
-                    handleWidth = 0, 
                     size = 'small', 
                     inline = T
                 ),
@@ -257,7 +291,6 @@ TAB2 <- tabItem(
                     onStatus = 'primary', 
                     offStatus = 'warning',
                     labelWidth = 200, 
-                    handleWidth = 0, 
                     width = "400px", 
                     size = 'small', 
                     inline = T
@@ -269,15 +302,27 @@ TAB2 <- tabItem(
                 tooltip = tooltipOptions(title = "Options for tissue ATAC-seq heatmap"),
                 tags$h4("Options for tissue ATAC-seq heatmap"),
                 switchInput(
+                    "clusterFUN_ATAC", 
+                    label = "Type of clustering", 
+                    value = T, 
+                    onLabel = "Hierarchical", 
+                    offLabel = "K-means", 
+                    onStatus = 'success', 
+                    offStatus = 'primary', 
+                    labelWidth = 100, 
+                    size = 'small', 
+                    inline = T
+                ),
+                numericInput("NCLUST_ATAC", label = "Number of k-means clusters", value = 5),
+                switchInput(
                     "colorScale_doRev_ATAC", 
                     label = "Reverse color scale?", 
                     value = F, 
                     onLabel = "Yes", 
                     offLabel = "No", 
                     onStatus = 'success', 
-                    offStatus = 'error', 
+                    offStatus = 'primary', 
                     labelWidth = 100, 
-                    handleWidth = 0, 
                     size = 'small', 
                     inline = T
                 ),
@@ -290,7 +335,6 @@ TAB2 <- tabItem(
                     onStatus = 'primary', 
                     offStatus = 'warning',
                     labelWidth = 200, 
-                    handleWidth = 0, 
                     width = "400px", 
                     size = 'small', 
                     inline = T
@@ -305,10 +349,12 @@ TAB2 <- tabItem(
         br(),
         hr(),
         br(),
+        
+        ## Row 3: OUTPUT GO.plot
         fluidRow(
             column(width = 2, {
                 fluidRow(
-                    actionBttn("runGO", label = "Perform GO analysis", icon = icon("search", lib = "font-awesome"), style = 'minimal'), 
+                    actionBttn("runGO", label = "Perform GO analysis", icon = icon("search", lib = "font-awesome"), style = 'bordered', color = "primary"), 
                     br(),
                     br(),
                     dropdownButton(
@@ -317,6 +363,7 @@ TAB2 <- tabItem(
                             choices = list("MF (Molecular Function)" = "MF", "BP (Biological Process)" = "BP", "CC (Cellular Component)" = "CC", "kegg (KEGG pathway)" = "keg"),
                             selected = c("MF", "BP", "CC", "keg")
                         ),
+                        br(),
                         tags$h4("Apply filtering?"),
                         selectInput(
                             inputId = 'hierarchyFiltering', 
@@ -348,8 +395,8 @@ TAB3 <- tabItem(
     tabName = 'browser',
     fluidPage( 
         fluidRow(
-            column(width = 5, downloadBttn("downloadBWLCAP", label = "Download all the tissue-specific RNA-seq tracks (bigwig format)", size = "sm", style = "fill", color = "primary", block = T) ),
-            column(width = 5, downloadBttn("downloadBWATAC", label = "Download all the tissue-specific ATAC-seq tracks (bigwig format)", size = "sm", style = "fill", color = "primary", block = T) )
+            column(width = 6, downloadBttn("downloadBWLCAP", label = "Download all the tissue-specific RNA-seq tracks (bigwig format)", size = "sm", style = "fill", color = "primary", block = F) ),
+            column(width = 6, downloadBttn("downloadBWATAC", label = "Download all the tissue-specific ATAC-seq tracks (bigwig format)", size = "sm", style = "fill", color = "primary", block = F) )
         ),
         br(),
         fluidRow( { 
@@ -434,7 +481,7 @@ SIDEBAR <- sidebarMenu(
 	menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
     sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
     tags$footer(
-        img(src = "sidebar-img_150x150.png", alt = "", style = "
+        img(src = "http://tispelegans.site/www_JABrowse/sidebar-img_150x150.png", alt = "", style = "
             color: #b8c7ce;
             padding: 0px 40px 30px 40px;
             z-index: 1000;
@@ -460,6 +507,8 @@ shinyUI <- dashboardPage(
     dashboardHeader(title = "Ahringer lab C. elegans tissue-specific database", titleWidth = 450),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
+        tags$script(inactivity),
+        tags$head(tags$link(rel = "shortcut icon", href = "http://tispelegans.site/www_JABrowse/favicon.ico")),
         tags$head(tags$style(HTML('.left-side, .main-sidebar {position: fixed;} .navbar {position: fixed; right: 0px; left: 0px;} .main-header .logo {position: fixed} .content {padding: 65px 15px 15px 15px;}'))),        
         tags$head(tags$style(HTML('.logo .sidebar-toogle .navbar-navbar-static-top {position: fixed;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .logo {background-color: #333;} .skin-blue .main-header .logo:hover {background-color: #333;}'))),
@@ -470,8 +519,9 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML('.main-header .sidebar-toggle:before {size:100px; content: "\\f0d9"}'))),
         tags$head(tags$style(HTML('.main-header .sidebar-toggle:after {size:100px; content: "\\f0da"}'))),
         tags$head(tags$style(HTML("hr {border-top: 1px dashed #b7b7b7;}"))),
-        tags$head(tags$style(HTML(".btn {border-radius: 30px;} .btn:hover {transform: scale(1.05); background-color: #bebebe}"))),
+        tags$head(tags$style(HTML(".btn {border-radius: 30px;} .btn:hover {transform: scale(1.05);}"))),
         tags$head(tags$style(HTML(".bttn-fill.bttn-primary {background: #ddd;color: #333;}.bttn-fill.bttn-sm {padding: 4px 10px;font-size: 16px;font-family: inherit;}.bttn {border-radius: 0px;border-color: #555;}"))),
+        tags$head(tags$style(HTML(".bttn-bordered.bttn-primary {background: #fff;color: #600;border-radius: 5px; border-color: #600} .bttn-bordered.bttn-primary:hover, .bttn-bordered.bttn-primary:focus {background: #600;color: #fff;}"))),
         tags$head(tags$style(HTML(".bttn-minimal.bttn-default {background: #fff;color: #333;border-color: #fff;}"))),
         tags$head(tags$style(HTML("a {color: #333} a:hover, a:focus, a:active, a:visited {color: #1d89ff;}"))),
         tags$head(tags$style(HTML(".multicol2 {-webkit-column-count: 1; /* Chrome, Safari, Opera */ -moz-column-count: 1; /* Firefox */ column-count: 1;}"))),

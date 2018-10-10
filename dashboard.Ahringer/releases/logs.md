@@ -1,7 +1,9 @@
 # Changelog
 
 ## To do list
+* Add loading screen 
 * Make better contact cards
+* Add bookmark options
 
 ------------ 
 
@@ -16,15 +18,18 @@
 - Patterns for multiple genes entries
 - Foot copyright and logo in the sidebar
 - Settings for heatmaps now in a dropdown button
+- Button in multi-genes to run all analysis AFTER selection of genes of interest
+- WB description in quickView
+- Button to switch between k-means and hclustering
 
-<<<<<<< HEAD
-=======
-
->>>>>>> bb50f6e2c652cb78c4896b1def4907af56b94474
 ##### Changed
 - Improved string split for multiple genes entries
 - Resized elements for better displays in lower resolutions
 - Fixed navbar and sidebar to the screen
+- Fixed browser height, now fit to any screen size
+
+##### Deleted
+- Libraries that were not needed (mostly trewjb)
 
 ## [0.2.3] - 2018-10-08
 ##### Added
