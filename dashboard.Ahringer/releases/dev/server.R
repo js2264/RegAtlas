@@ -162,9 +162,23 @@ shinyServer <- function(input, output, session) {
     ) })
     coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
     #-->
-    url <- renderText({ getURL(coords()[1], coords()[2], coords()[3], "1.12.5") })
-    output$url <- reactive ({ getURL(coords()[1], coords()[2], coords()[3], "1.12.5") })
-    output$jbrowser <- renderJbrowse({ iframeJbrowse.2(url()) })
+    url <- reactive ({ getURL(coords()[1], coords()[2], coords()[3], "1.12.5") })
+    output$jbrowser <- renderUI(
+        tags$div(
+            id="jbrowser", 
+            style="width: 100%; height: 100%; visibility: inherit;",
+            class="trewjb html-widget html-widget-output shiny-bound-output",
+            div(
+                style = "width: 100%; height: calc(100vh - 150px);", 
+                tags$iframe(
+                    style = "border: 1px solid black",
+                    width = "100%",
+                    height = "100%",
+                    src = url()
+                )
+            )
+        )
+    )
   }
   
   # Generate the quickView bsModal 
@@ -322,8 +336,13 @@ shinyServer <- function(input, output, session) {
     
     multipleGenes <- reactive ({ 
         
-        text.list <- unique(unlist(strsplit(x = input$searchMulitpleGenePaste, split = '[\r\n]' )) %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
+        # Get gene names from text box (allows for *)
+        input.genes <- unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' ))
+        if(any(grepl('\\*', input.genes))) { input.genes <- c(genes.gtf$gene_name[grep(paste(input.genes[grepl('\\*', input.genes)], collapse = '|'), genes.gtf$gene_name)], input.genes[!grepl('\\*', input.genes)]) }
+        text.list <- unique(input.genes %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
+        # Get gene names from classes of genes
         checkbox.list <- unlist(list.genes[input$checkGroupGeneClasses])
+        # Get gene names from the bsModal of genes associated with tissue-specific promoters
         bsmodal.list <- row.names(mat.proms.gene)[which(apply(mat.proms.gene, 1, function(x) {all(names(x)[x == T] %in% input$checkGroupGeneClasses_2) & all(input$checkGroupGeneClasses_2 %in% names(x)[x == T])}))]
         
         genes <- unique(c(text.list, checkbox.list, bsmodal.list))
@@ -473,7 +492,7 @@ shinyServer <- function(input, output, session) {
             cluster_cols = F, 
             treeheight_row = 20,
             show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
-            main = paste0("Mixed-tissue gene expression (", titleLab_LCAPdev(), ") at each developmental stage")
+            main = paste0("Mixed-tissue gene expression (", titleLab_LCAPdev(), ")\nat each developmental stage")
         )
     })
 
@@ -498,7 +517,7 @@ shinyServer <- function(input, output, session) {
             cluster_cols = F, 
             treeheight_row = 20,
             show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
-            main = paste0("Gene expression (", titleLab_LCAP(), "), in each tissue")
+            main = paste0("Gene expression (", titleLab_LCAP(), ")\nin each tissue")
         )
     })
     
@@ -522,7 +541,7 @@ shinyServer <- function(input, output, session) {
             cluster_cols = F, 
             treeheight_row = 20, 
             show_rownames = F,
-            main = paste0("Associated REs accessibility (", titleLab_ATAC(), "), in each tissue")
+            main = paste0("Associated REs accessibility (", titleLab_ATAC(), ")\nin each tissue")
         )
     })
 
@@ -531,11 +550,11 @@ shinyServer <- function(input, output, session) {
   # Get venn Diagrams
   {
       
-      output$Venn.Hypod <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich. genes", "Genes query", color.tissues[1], 'grey50') })
-      output$Venn.Neurons <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich. genes", "Genes query", color.tissues[2], 'grey50') })
-      output$Venn.Germline <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich. genes", "Genes query", color.tissues[3], 'grey50') })
-      output$Venn.Muscle <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich. genes", "Genes query", color.tissues[4], 'grey50') })
-      output$Venn.Intest <- renderPlot({ par(mar = c(1,1,1,1)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich. genes", "Genes query", color.tissues[5], 'grey50') })
+      output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich.\ngenes", "Genes query", color.tissues[1], 'grey50') })
+      output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich.\ngenes", "Genes query", color.tissues[2], 'grey50') })
+      output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich.\ngenes", "Genes query", color.tissues[3], 'grey50') })
+      output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich.\ngenes", "Genes query", color.tissues[4], 'grey50') })
+      output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich.\ngenes", "Genes query", color.tissues[5], 'grey50') })
       
   }
   
@@ -628,7 +647,6 @@ shinyServer <- function(input, output, session) {
               )
           )
       })
-
   }
 
 } #EOF
