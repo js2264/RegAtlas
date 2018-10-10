@@ -29,7 +29,7 @@ TAB1 <- tabItem(
             } )
         ),
         fluidRow(
-          column(width = 2, { 
+          column(width = 4, { 
               fluidRow(
                   htmlOutput("geneInfos", height = '200px') %>% withSpinner(type = 6, color = "#421500", size = 0.5),
                   br(),
@@ -39,7 +39,6 @@ TAB1 <- tabItem(
           } ),
           column(width = 2, { 
             fluidRow(
-              br(),
               br(),
               downloadBttn("downloadINFOS", label = "Download full gene report (.txt file)", size = "sm", style = "fill", color = "primary"),
               br(),
@@ -101,11 +100,11 @@ TAB2 <- tabItem(
                     inputId = "searchMulitpleGenePaste",
                     label = h4("Paste gene names:"),
                     value = "",
-                    placeholder = 'Paste here (one gene per line)',
+                    placeholder = 'Paste here (one gene per line)\n\n* can be used to find patterns (e.g. nhr-*)',
                     rows = 8
                 )
             }), 
-            column(width = 1, h4("... And / Or ...")),
+            column(width = 2, h4("And / Or")),
             column(width = 2, { 
                 tags$div(class = "multicol2", checkboxGroupInput("checkGroupGeneClasses", label = h4("Select a class of genes to query:"), selected = "neurons.genes", choices = list(
                     "Hypodermis-enriched genes" = "hypod.genes", 
@@ -115,7 +114,7 @@ TAB2 <- tabItem(
                     "Intestine-enriched genes" = "intest.genes"
                 )))
             }),
-            column(width = 1, h4("... And / Or ...")),
+            column(width = 2, h4("And / Or")),
             column(width = 4, {
                 fluidRow(
                     actionBttn("MoreChoicesGenesList", label = "Choose genes based on their promoters", icon = icon("filter", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
@@ -199,30 +198,113 @@ TAB2 <- tabItem(
         ## Row 2b: OUTPUT HMs.plot
         fluidRow( 
             column(width = 2, { selectizeInput("colorScale_LCAPdev", "Choose a color scale (dev. RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
-            column(width = 2, { switchInput("colorScale_doRev_LCAPdev", label = "Reverse color scale?", value = T, onLabel = "Yes", offLabel = "No", onStatus = 'success', offStatus = 'error', labelWidth = 100, handleWidth = 0, size = 'small', inline = T) } ),
+            column(width = 2, { dropdownButton(
+                circle = TRUE, status = "warning", icon = icon("gear"),
+                tooltip = tooltipOptions(title = "Options for developmental RNA-seq heatmap"),
+                tags$h4("Options for developmental RNA-seq heatmap"),
+                switchInput(
+                    "colorScale_doRev_LCAPdev", 
+                    label = "Reverse color scale?", 
+                    value = T, 
+                    onLabel = "Yes", 
+                    offLabel = "No", 
+                    onStatus = 'success', 
+                    offStatus = 'error', 
+                    labelWidth = 100, 
+                    handleWidth = 0, 
+                    size = 'small', 
+                    inline = T
+                ),
+                switchInput(
+                    "LCAPdev_TPMZscore", 
+                    label = "Which values to plot (dev. RNA-seq)?", 
+                    value = T, 
+                    onLabel = "TPM", 
+                    offLabel = "Z-score", 
+                    onStatus = 'primary', 
+                    offStatus = 'warning',
+                    labelWidth = 200, 
+                    handleWidth = 0, 
+                    width = "400px", 
+                    size = 'small', 
+                    inline = T
+                )
+            ) } ),
             column(width = 2, { selectizeInput("colorScale_LCAP", "Choose a color scale (RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
-            column(width = 2, { switchInput("colorScale_doRev_LCAP", label = "Reverse color scale?", value = T, onLabel = "Yes", offLabel = "No", onStatus = 'success', offStatus = 'error', labelWidth = 100, handleWidth = 0, size = 'small', inline = T) } ),
+            column(width = 2, { dropdownButton(
+                circle = TRUE, status = "warning", icon = icon("gear"),
+                tooltip = tooltipOptions(title = "Options for tissue RNA-seq heatmap"),
+                tags$h4("Options for tissue RNA-seq heatmap"),
+                switchInput(
+                    "colorScale_doRev_LCAP", 
+                    label = "Reverse color scale?", 
+                    value = T, 
+                    onLabel = "Yes", 
+                    offLabel = "No", 
+                    onStatus = 'success', 
+                    offStatus = 'error', 
+                    labelWidth = 100, 
+                    handleWidth = 0, 
+                    size = 'small', 
+                    inline = T
+                ),
+                switchInput(
+                    "LCAP_TPMZscore", 
+                    label = "Which values to plot (RNA-seq)?", 
+                    value = F, 
+                    onLabel = "TPM", 
+                    offLabel = "Z-score", 
+                    onStatus = 'primary', 
+                    offStatus = 'warning',
+                    labelWidth = 200, 
+                    handleWidth = 0, 
+                    width = "400px", 
+                    size = 'small', 
+                    inline = T
+                )
+            ) } ),
             column(width = 2, { selectizeInput("colorScale_ATAC", "Choose a color scale (ATAC-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "YlOrBr", multiple = FALSE) } ),
-            column(width = 2, { switchInput("colorScale_doRev_ATAC", label = "Reverse color scale?", value = F, onLabel = "Yes", offLabel = "No", onStatus = 'success', offStatus = 'error', labelWidth = 100, handleWidth = 0, size = 'small', inline = T) } )
+            column(width = 2, { dropdownButton(
+                circle = TRUE, status = "warning", icon = icon("gear"), right = T,
+                tooltip = tooltipOptions(title = "Options for tissue ATAC-seq heatmap"),
+                tags$h4("Options for tissue ATAC-seq heatmap"),
+                switchInput(
+                    "colorScale_doRev_ATAC", 
+                    label = "Reverse color scale?", 
+                    value = F, 
+                    onLabel = "Yes", 
+                    offLabel = "No", 
+                    onStatus = 'success', 
+                    offStatus = 'error', 
+                    labelWidth = 100, 
+                    handleWidth = 0, 
+                    size = 'small', 
+                    inline = T
+                ),
+                switchInput(
+                    "ATAC_TPMZscore", 
+                    label = "Which values to plot (ATAC-seq)?", 
+                    value = T, 
+                    onLabel = "TPM", 
+                    offLabel = "Z-score", 
+                    onStatus = 'primary', 
+                    offStatus = 'warning',
+                    labelWidth = 200, 
+                    handleWidth = 0, 
+                    width = "400px", 
+                    size = 'small', 
+                    inline = T
+                )
+            ) } )
         ),
-        
-        fluidRow(
-            column(width = 4, { switchInput("LCAPdev_TPMZscore", label = "Which values to plot (RNA-seq)?", value = T, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } ),
-            column(width = 4, { switchInput("LCAP_TPMZscore", label = "Which values to plot (RNA-seq)?", value = F, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } ),
-            column(width = 4, { switchInput("ATAC_TPMZscore", label = "Which values to plot (ATAC-seq)?", value = T, onLabel = "TPM", offLabel = "Z-score", onStatus = 'primary', offStatus = 'warning', labelWidth = 200, handleWidth = 0, width = "400px", size = 'small', inline = T) } )
-        ),
-
         fluidRow(
             column(width = 4, { plotOutput("HMs.plot_LCAPdev")  }),
             column(width = 4, { plotOutput("HMs.plot_LCAP")  }),
             column(width = 4, { plotOutput("HMs.plot_ATAC")  })
         ),
-
         br(),
         hr(),
         br(),
-        
-        ## Row 3: OUTPUT GO.plot
         fluidRow(
             column(width = 2, {
                 fluidRow(
@@ -271,8 +353,10 @@ TAB3 <- tabItem(
         ),
         br(),
         fluidRow( { 
-            JbrowseOutput("jbrowser", height = "100%") 
-        } ) )
+            #JbrowseOutput("jbrowser", height = "100%") ### THIS ONE IS GOOD!!! (IT DOESN'T MATTER)
+            htmlOutput("jbrowser")
+        } )
+    )
 )
 
 # Download data
@@ -348,36 +432,36 @@ SIDEBAR <- sidebarMenu(
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
     menuItem("Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
 	menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
-    sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search...")
-)
-
-BODY <- tabItems(TAB1, TAB2, TAB3, TAB4, TAB5)
-
-FOOTER <- {
+    sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
     tags$footer(
+        img(src = "sidebar-img_150x150.png", alt = "", style = "
+            color: #b8c7ce;
+            padding: 0px 40px 30px 40px;
+            z-index: 1000;
+        "),
+        br(),
         HTML(paste("Ahringer lab -", icon("copyright", lib = "font-awesome"), "2018")), 
         align = "left",
         style = "
             position: fixed;
             bottom: 0;
-            height: 30px;
+            text-align: center;
             color: #b8c7ce;
-            padding: 5px 230px;
-            background-color: #333;
-            margin: 0px;
+            padding: 0px 0px 10px 0px;
             left: 0px;
-            right: 0px;
+            z-index: 1000;
         "
     )
-}
+)
 
+BODY <- tabItems(TAB1, TAB2, TAB3, TAB4, TAB5)
 
 shinyUI <- dashboardPage(
     dashboardHeader(title = "Ahringer lab C. elegans tissue-specific database", titleWidth = 450),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
+        tags$head(tags$style(HTML('.left-side, .main-sidebar {position: fixed;} .navbar {position: fixed; right: 0px; left: 0px;} .main-header .logo {position: fixed} .content {padding: 65px 15px 15px 15px;}'))),        
         tags$head(tags$style(HTML('.logo .sidebar-toogle .navbar-navbar-static-top {position: fixed;}'))),
-        tags$head(tags$style(HTML('.left-side, .main-sidebar {background-image: "http://tispelegans.site/img/sidebar-img_230x700.jpg"; background-size: 230px;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .logo {background-color: #333;} .skin-blue .main-header .logo:hover {background-color: #333;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .navbar {background-color: #333;} .skin-blue .main-header .navbar {background-color: #333;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .navbar .sidebar-toggle {background-color: #333;} .skin-blue .main-header .navbar .sidebar-toggle:hover {background-color: #444;}'))),
@@ -399,8 +483,7 @@ shinyUI <- dashboardPage(
             trigger = '', 
             size = "large", 
             htmlOutput("quickResults")
-        ), 
-        FOOTER
+        )
     )
 )
 

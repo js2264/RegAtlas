@@ -64,6 +64,7 @@ intest.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues =
 list.genes <- list(hypod.genes, neurons.genes, germline.genes, muscle.genes, intest.genes)
 names(list.genes) <- c("hypod.genes", "neurons.genes", "germline.genes", "muscle.genes", 'intest.genes')
 colors.decimals <- c(0.10395294, 0.3906374, 0.1192665, 0.14261010, 0.14226132, 0.13421772)
+link <- "http://tispelegans.site/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&loc=chrIII&tracks=genes%2Cregulatory_elements%2Chypod.atac%2Cneurons.atac%2Cgonad.atac%2Cmuscle.atac%2Cintest.atac%2Chypod.lcap.fwd%2Cneurons.lcap.fwd%2Cgonad.lcap.fwd%2Cmuscle.lcap.fwd%2Cintest.lcap.fwd%2Chypod.lcap.rev%2Cneurons.lcap.rev%2Cgonad.lcap.rev%2Cmuscle.lcap.rev%2Cintest.lcap.rev%2Ctranscripts&highlight=&menu=1&nav=1&tracklist=1&overview=1"
 
 # Function to generate an URL to visit jserizay.site/JBrowse
 getURL <- function (chr, start, end, release = "1.12.5", 
@@ -81,15 +82,6 @@ getURL <- function (chr, start, end, release = "1.12.5",
   url <- param_set(url, key = "loc", value = paste0(chr, range))
   url <- param_set(url, key = "tracks", value = tracks)
   return(paste0(url, "&highlight=", navigation, tracklist, overview))
-}
-
-# Re-WRITE iframeJBrowse to get functional height setting
-iframeJbrowse.2 <- function (link, width = NULL, height = "900px", elementId = NULL)
-{
-    div_style = paste0("width: 100%; height: ", height, ";")
-    iframe_html <- htmltools::tags$iframe(src = link, style = "border: 1px solid black", width = "100%", height = "100%", "Sorry, your browser does not support iframe.")
-    div_html <- htmltools::tags$div(iframe_html, style = div_style)
-    htmlwidgets::createWidget(name = "trewjb", list(html = as.character(div_html)), package = "trewjb", elementId = elementId)
 }
 
 # Function to input several genes separated by newlines
@@ -123,7 +115,7 @@ plot2WayVenn <- function(vec1, vec2, name.vec1, name.vec2, col.vec1, col.vec2)
     plot(venn, col = c(col.vec1, col.vec2))
     
     # Add labels and counts
-    text(x = venn$centers[,'x'], y = (venn$centers[,'y'] + venn$diameters/2), c(paste0(name.vec1, "\n(n=", length(vec1) ,")"), paste0(name.vec2, "\n(n=", length(vec2) ,")")), pos = 3)
-    text(x = c(p1, pmiddle, p2), y = c(0.5, 0.5, 0.5), c(paste0("n=", length(vec2) - sum(vec1 %in% vec2)), paste0("n=", sum(vec1 %in% vec2)), paste0(paste0("n=", length(vec1) - sum(vec1 %in% vec2)))), pos = 3)
+    text(x = venn$centers[,'x'], y = (venn$centers[,'y'] + venn$diameters/2), c(paste0(name.vec1, "\n(n=", length(vec1) ,")"), paste0(name.vec2, "\n(n=", length(vec2) ,")")), pos = 3, cex = 0.8)
+    text(x = c(p1, pmiddle, p2), y = c(0.5, 0.2, 0.5), c(paste0("n=", length(vec2) - sum(vec1 %in% vec2)), paste0("n=", sum(vec1 %in% vec2)), paste0(paste0("n=", length(vec1) - sum(vec1 %in% vec2)))), pos = 3, cex = 0.8)
     
 }
