@@ -17,6 +17,10 @@
 - Foot copyright and logo in the sidebar
 - Settings for heatmaps now in a dropdown button
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> bb50f6e2c652cb78c4896b1def4907af56b94474
 ##### Changed
 - Improved string split for multiple genes entries
 - Resized elements for better displays in lower resolutions
