@@ -24,8 +24,8 @@ getWB <- function(GENE) {
 #1. To get a heatmap of tissue expression, for a vector of genes
 
 getHeatmapOfCaoExpr <- function(vec, name.main = "", which.column = NULL) {
-    require(RColorBrewer)
-    require(gplots)
+    # require(RColorBrewer)
+    # require(gplots)
     #if (sum(ls() == "cao03") == 0) {load(".test-plotting.RData")}
     cao03b <- cao03[,order.tissues[1:5]]
     if (all(grepl("WB", vec))) {WBID <- vec} else {WBID <- name2WB(vec)}
@@ -56,8 +56,8 @@ getHeatmapOfCaoExpr <- function(vec, name.main = "", which.column = NULL) {
 }
 
 getVioplotxOfCaoExpr <- function(vec, name.main = "") {
-    require(RColorBrewer)
-    require(vioplotx)
+    # require(RColorBrewer)
+    # require(vioplotx)
     #if (sum(ls() == "cao03") == 0) {load(".test-plotting.RData")}
     cao03b <- cao03[,order.tissues[1:5]]
     if (all(grepl("WB", vec))) {WBID <- vec} else {WBID <- name2WB(vec)}
@@ -125,7 +125,7 @@ plotMedSE <- function(x, functionToUse = 'mean', colorCI = rgb(0.8, 0.8, 0.8, al
 #4. Plot enriched GO from a vector of genes names
 plotGOs <- function(x) {
 
-    require(gProfileR)
+    # require(gProfileR)
     reduced_c <- gprofiler(x, organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering='none')
     reduced_c <- reduced_c[order(reduced_c$p.value),]
     d <- reduced_c[reduced_c$domain %in% c("MF", "BP", "CC", "keg"),]

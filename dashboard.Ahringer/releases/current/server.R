@@ -12,6 +12,18 @@
 ## Define server function ----------------------------------------------------------------------------------------------------
 
 shinyServer <- function(input, output, session) {
+    
+    require(devtools)
+    require(DT)
+    require(urltools)
+    require(htmltools)
+    require(httr)
+    require(gProfileR)
+    require(pheatmap)
+    require(d3heatmap)
+    require(RColorBrewer)
+    require(apputils)
+    #require(venneuler)
 
   # Read gene name and get gene infos
   {
@@ -162,7 +174,7 @@ shinyServer <- function(input, output, session) {
     ) })
     coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
     #-->
-    url <- reactive ({ getURL(as.numeric(coords()[1]), as.numeric(coords()[2]), as.numeric(coords()[3]), "1.12.5") })
+    url <- reactive ({ getURL(as.character(coords()[1]), as.numeric(coords()[2]), as.numeric(coords()[3]), "1.12.5") })
     output$jbrowser <- renderUI(
         tags$div(
             id="jbrowser", 
@@ -481,46 +493,56 @@ shinyServer <- function(input, output, session) {
     colorScale2_LCAPdev <- reactive ({ if( input$colorScale_doRev_LCAPdev ) { rev(colorScale_LCAPdev()) } else { colorScale_LCAPdev() } })
     titleLab_LCAPdev <- reactive ({ if( input$LCAPdev_TPMZscore ) { "log2TPM" } else { "z-score" } })
     clusterFUN_LCAPdev <- reactive ({ if( input$clusterFUN_LCAPdev ) { "hclust" } else { "kmeans" } })
-     
+    titleTAB_LCAPdev <- reactive ({ paste0("heatmap_dev-RNA-seq_", titleLab_LCAPdev(),"_", ifelse(clusterFUN_LCAPdev() == 'hclust', 'hclust', paste0(input$NCLUST_LCAPdev, "-clusters")),"_genesets.txt") })
+    
     colorScale_LCAP <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAP,1], input$colorScale_LCAP))(100) })
     colorScale2_LCAP <- reactive ({ if( input$colorScale_doRev_LCAP ) { rev(colorScale_LCAP()) } else { colorScale_LCAP() } })
     titleLab_LCAP <- reactive ({ if( input$LCAP_TPMZscore ) { "log2TPM" } else { "z-score" } })
     clusterFUN_LCAP <- reactive ({ if( input$clusterFUN_LCAP ) { "hclust" } else { "kmeans" } })
+    titleTAB_LCAP <- reactive ({ paste0("heatmap_tissues-RNA-seq_", titleLab_LCAP(),"_", ifelse(clusterFUN_LCAP() == 'hclust', 'hclust', paste0(input$NCLUST_LCAP, "-clusters")),"_genesets.txt") })
 
     colorScale_ATAC <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_ATAC,1], input$colorScale_ATAC))(100) })
     colorScale2_ATAC <- reactive ({ if( input$colorScale_doRev_ATAC ) { rev(colorScale_ATAC()) } else { colorScale_ATAC() } })
     titleLab_ATAC <- reactive ({ if( input$ATAC_TPMZscore ) { "log2TPM" } else { "z-score" } })
     clusterFUN_ATAC <- reactive ({ if( input$clusterFUN_ATAC ) { "hclust" } else { "kmeans" } })
+    titleTAB_ATAC <- reactive ({ paste0("heatmap_tissues-ATAC-seq_", titleLab_ATAC(),"_", ifelse(clusterFUN_ATAC() == 'hclust', 'hclust', paste0(input$NCLUST_ATAC, "-clusters")),"_genesets.txt") })
 
     # Plot LCAPdev
     output$HMs.plot_LCAPdev <- renderPlot({
         par(mar = c(6,1,4,1))
-        if(titleLab_LCAPdev() == "log2TPM") {
-            mat.LCAP <- log2(LCAPdev[multipleGenes(),]+1)
+        if (titleLab_LCAPdev() == "log2TPM") {
+            mat <- log2(LCAPdev[multipleGenes(),]+1)
             breaks <- NA
         } else {
-            mat.LCAP <- t(apply(LCAPdev[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
-            colnames(mat.LCAP) <- colnames(LCAPdev)
+            mat <- t(apply(LCAPdev[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
+            colnames(mat) <- colnames(LCAPdev)
             breaks <- seq(-2, 2, length.out = 101)
         }
-        row.names(mat.LCAP) <- WB2name(row.names(mat.LCAP))
-        if (clusterFUN_LCAPdev() == 'kmeans') {
+        row.names(mat) <- WB2name(row.names(mat))
+        if (clusterFUN_LCAPdev() == 'hclust') {
+            doHCLUST <- T
+            ANNOTS_DF <- NULL
+            ANNOTS_COL <- NULL
+        } else {
             doHCLUST <- F
             NCLUST_LCAPdev <- input$NCLUST_LCAPdev
-            set.seed(32) ; mat.LCAP <- mat.LCAP[names(sort(kmeans(mat.LCAP, NCLUST_LCAPdev)$cluster, decreasing = F)),]
-        } else {
-            doHCLUST <- T
+            set.seed(32) ; ANNOTS <- sort(kmeans(mat, NCLUST_LCAPdev)$cluster, decreasing = F)
+            mat <- mat[names(ANNOTS),]
+            ANNOTS_DF <- data.frame(Cluster = ANNOTS)
+            ANNOTS_COL <- list(Cluster = rep(brewer.pal('Set1', n = 11), 2)[1:NCLUST_LCAPdev])
         }
         pheatmap(
-            mat.LCAP,
+            mat,
             color = colorScale2_LCAPdev(),
             scale = "none", 
             breaks = breaks, 
             cluster_rows = doHCLUST, 
             cluster_cols = F, 
             treeheight_row = 20,
-            show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
-            main = paste0("Mixed-tissue gene expression (", titleLab_LCAPdev(), ")\nat each developmental stage")
+            show_rownames = ifelse(nrow(mat) > 20, F, T), 
+            main = paste0("Mixed-tissue gene expression (", titleLab_LCAPdev(), ")\nat each developmental stage"),
+            annotation_row = ANNOTS_DF,
+            annotation_colors = ANNOTS_COL
         )
     })
 
@@ -528,31 +550,38 @@ shinyServer <- function(input, output, session) {
     output$HMs.plot_LCAP <- renderPlot({
         par(mar = c(6,1,4,1))
         if(titleLab_LCAP() == "log2TPM") {
-            mat.LCAP <- log2(LCAP[multipleGenes(),]+1)
+            mat <- log2(LCAP[multipleGenes(),]+1)
             breaks <- NA
         } else {
-            mat.LCAP <- t(apply(LCAP[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
-            colnames(mat.LCAP) <- order.tissues[1:5]
+            mat <- t(apply(LCAP[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
+            colnames(mat) <- order.tissues[1:5]
             breaks <- seq(-2, 2, length.out = 101)
         }
-        row.names(mat.LCAP) <- WB2name(row.names(mat.LCAP))
-        if (clusterFUN_LCAP() == 'kmeans') {
+        row.names(mat) <- WB2name(row.names(mat))
+        if (clusterFUN_LCAP() == 'hclust') {
+            doHCLUST <- T
+            ANNOTS_DF <- NULL
+            ANNOTS_COL <- NULL
+        } else {
             doHCLUST <- F
             NCLUST_LCAP <- input$NCLUST_LCAP
-            set.seed(32) ; mat.LCAP <- mat.LCAP[names(sort(kmeans(mat.LCAP, NCLUST_LCAP)$cluster, decreasing = F)),]
-        } else {
-            doHCLUST <- T
+            set.seed(32) ; ANNOTS <- sort(kmeans(mat, NCLUST_LCAP)$cluster, decreasing = F)
+            mat <- mat[names(ANNOTS),]
+            ANNOTS_DF <- data.frame(Cluster = ANNOTS)
+            ANNOTS_COL <- list(Cluster = rep(brewer.pal('Set1', n = 11), 2)[1:NCLUST_LCAP])
         }
         pheatmap(
-            mat.LCAP,
+            mat,
             color = colorScale2_LCAP(),
             scale = "none", 
             breaks = breaks, 
             cluster_rows = doHCLUST, 
             cluster_cols = F, 
             treeheight_row = 20,
-            show_rownames = ifelse(nrow(mat.LCAP) > 20, F, T), 
-            main = paste0("Gene expression (", titleLab_LCAP(), ")\nin each tissue")
+            show_rownames = ifelse(nrow(mat) > 20, F, T), 
+            main = paste0("Gene expression (", titleLab_LCAP(), ")\nin each tissue"),
+            annotation_row = ANNOTS_DF,
+            annotation_colors = ANNOTS_COL
         )
     })
     
@@ -560,22 +589,27 @@ shinyServer <- function(input, output, session) {
     output$HMs.plot_ATAC <- renderPlot({
         par(mar = c(6,1,4,1))
         if(titleLab_ATAC() == "log2TPM") {
-            mat.ATAC <- log2(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19] + 1)
+            mat <- log2(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19] + 1)
             breaks <- NA
         } else {
-            mat.ATAC <- t(apply(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19], 1, scale)) %>% na.replace(., 0)
-            colnames(mat.ATAC) <- order.tissues[1:5]
+            mat <- t(apply(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19], 1, scale)) %>% na.replace(., 0)
+            colnames(mat) <- order.tissues[1:5]
             breaks <- seq(-2, 2, length.out = 101)
         }
-        if (clusterFUN_ATAC() == 'kmeans') {
+        if (clusterFUN_ATAC() == 'hclust') {
+            doHCLUST <- T
+            ANNOTS_DF <- NULL
+            ANNOTS_COL <- NULL
+        } else {
             doHCLUST <- F
             NCLUST_ATAC <- input$NCLUST_ATAC
-            set.seed(32) ; mat.LCAP <- mat.LCAP[names(sort(kmeans(mat.LCAP, NCLUST_ATAC)$cluster, decreasing = F)),]
-        } else {
-            doHCLUST <- T
+            set.seed(32) ; ANNOTS <- sort(kmeans(mat, NCLUST_ATAC)$cluster, decreasing = F)
+            mat <- mat[names(ANNOTS),]
+            ANNOTS_DF <- data.frame(Cluster = ANNOTS)
+            ANNOTS_COL <- list(Cluster = rep(brewer.pal('Set1', n = 11), 2)[1:NCLUST_ATAC])
         }
         pheatmap(
-            mat.ATAC,
+            mat,
             color = colorScale2_ATAC(),
             scale = "none", 
             breaks = breaks, 
@@ -583,20 +617,76 @@ shinyServer <- function(input, output, session) {
             cluster_cols = F, 
             treeheight_row = 20, 
             show_rownames = F,
-            main = paste0("Associated REs accessibility (", titleLab_ATAC(), ")\nin each tissue")
+            main = paste0("Associated REs accessibility (", titleLab_ATAC(), ")\nin each tissue"),
+            annotation_row = ANNOTS_DF,
+            annotation_colors = ANNOTS_COL
         )
     })
+    
+    ## Generate HM tables to download
+    output$downloadHM_LCAPdev <- downloadHandler( 
+        titleTAB_LCAPdev, 
+        content = function(file) {
+            if(titleLab_LCAPdev() == "log2TPM") {
+                mat <- log2(LCAPdev[multipleGenes(),]+1)
+            } else {
+                mat <- t(apply(LCAPdev[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
+                colnames(mat) <- colnames(LCAPdev)
+            }
+            row.names(mat) <- WB2name(row.names(mat))
+            if (clusterFUN_LCAPdev() == 'kmeans') {
+                set.seed(32) ; VEC <- sort(kmeans(mat, input$NCLUST_LCAPdev)$cluster, decreasing = F)
+                mat <- cbind(mat[names(VEC),], clusterNB = VEC)
+            }
+            write.table(round(mat, 3), file, quote = F, row = T, col = T, sep = '\t')
+        }
+    )
+    output$downloadHM_LCAP <- downloadHandler( 
+        titleTAB_LCAP, 
+        content = function(file) {
+            if(titleLab_LCAP() == "log2TPM") {
+                mat <- log2(LCAP[multipleGenes(),]+1)
+            } else {
+                mat <- t(apply(LCAP[multipleGenes(),], 1, scale)) %>% na.replace(., 0)
+                colnames(mat) <- colnames(LCAP)
+            }
+            row.names(mat) <- WB2name(row.names(mat))
+            if (clusterFUN_LCAP() == 'kmeans') {
+                set.seed(32) ; VEC <- sort(kmeans(mat, input$NCLUST_LCAP)$cluster, decreasing = F)
+                mat <- cbind(mat[names(VEC),], clusterNB = VEC)
+            }
+            write.table(round(mat, 3), file, quote = F, row = T, col = T, sep = '\t')
+        }
+    )
+    output$downloadHM_ATAC <- downloadHandler( 
+        titleTAB_ATAC, 
+        content = function(file) {
+            VEC0 <- all.deconv$uniqueWormBaseID %in% multipleGenes()
+            if(titleLab_ATAC() == "log2TPM") {
+                mat <- log2(all.deconv[VEC0, 15:19] + 1)
+            } else {
+                mat <- t(apply(all.deconv[VEC0, 15:19], 1, scale)) %>% na.replace(., 0)
+                colnames(mat) <- order.tissues[1:5]
+            }
+            row.names(mat) <- make.unique(all.deconv[VEC0,]$locus)
+            if (clusterFUN_ATAC() == 'kmeans') {
+                set.seed(32) ; VEC <- sort(kmeans(mat, input$NCLUST_ATAC)$cluster, decreasing = F)
+                mat <- cbind(mat[names(VEC),], clusterNB = VEC)
+            }
+            write.table(round(mat, 3), file, quote = F, row = T, col = T, sep = '\t')
+        }
+    )
 
   }
   
   # Get venn Diagrams
   {
       
-      output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich.\ngenes", "Genes query", color.tissues[1], 'grey50') })
-      output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich.\ngenes", "Genes query", color.tissues[2], 'grey50') })
-      output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich.\ngenes", "Genes query", color.tissues[3], 'grey50') })
-      output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich.\ngenes", "Genes query", color.tissues[4], 'grey50') })
-      output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich.\ngenes", "Genes query", color.tissues[5], 'grey50') })
+      #output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich.\ngenes", "Genes query", color.tissues[1], 'grey50') })
+      #output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich.\ngenes", "Genes query", color.tissues[2], 'grey50') })
+      #output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich.\ngenes", "Genes query", color.tissues[3], 'grey50') })
+      #output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich.\ngenes", "Genes query", color.tissues[4], 'grey50') })
+      #output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich.\ngenes", "Genes query", color.tissues[5], 'grey50') })
       
   }
   

@@ -27,28 +27,28 @@ git push -u origin master
 #### Edits on 2018-10-08: updated the procedure to upload the app to a server:
 
 To deploy dashboard.Ahringer, run:  
-```
+```sh
 cd ~/Documents/PhD/__Bioinfo/_shinyapps/dashboard.Ahringer/releases/dev/  
 bash ~/Documents/PhD/__Bioinfo/_shinyapps/bin/get.minimaldataset.R  
 ```
 
 Then test the app locally:  
-```
+```R
 shiny::runApp("~/Documents/PhD/__Bioinfo/_shinyapps/dashboard.Ahringer/releases/dev/")  
 ```
 
 Then release a new version from dev/  
-```
+```sh
 bash ~/Documents/PhD/__Bioinfo/_shinyapps/bin/makeNewRelease.sh -v VERSION_NB  
 ```
 
 -------------------
 
-# Edits 2018/09/28:
+#### Edits 2018/09/28:
 I subscribed to a DigitalOcean droplet (IP address: **167.99.196.115**). I followed the following steps to set up the server (mostly from https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean/):
 1. Register to DO and create a droplet. Save droplet name and IP/passowrd (sent by email).  
 **CURRENT IP ADDRESS: 167.99.196.115**
-2. SSH to your droplet (```ssh 123.456.1.2```), then enter your password (the one sent by email) then change it to a more convenient password. 
+2. SSH to your droplet (```ssh root@167.99.196.115```), then enter your password (the one sent by email) then change it to a more convenient password. 
 3. Create a new user and give yourself sudo rights: 
 ```
 adduser jserizay ; gpasswd -a jserizay sudo
@@ -93,9 +93,3 @@ sudo gdebi shiny-server-1.5.6.875-amd64.deb
 10. Install all the required packages directly from the server after launching R using ```sudo -i R```!  
 <br>
 **IMPORTANT: There is no more need to source global.R and to execute rsconnect::deployApp(). The app works by itself when ui.R and server.R are located in /srv/shiny-server/, as long as all the dependencies (required packages!!!) are installed.**
-
-# TO DO: 
-
-- UPDATE GENOME BROWSER INTEGRATION
-- LINK DOMAIN
-- UPDATE DATASET

@@ -4,11 +4,12 @@
 * Add loading screen 
 * Make better contact cards
 * Add bookmark options
+* Fix cluster Nbs in downloaded heatmap txt file
 
 ------------ 
 
 ## [Unreleased]
-
+##### Added
 
 ------------ 
 
@@ -21,6 +22,9 @@
 - Button in multi-genes to run all analysis AFTER selection of genes of interest
 - WB description in quickView
 - Button to switch between k-means and hclustering
+- Spin while plotting multiple genes heatmaps
+- Added version # in the title
+- Button to download heatmaps results
 
 ##### Changed
 - Improved string split for multiple genes entries

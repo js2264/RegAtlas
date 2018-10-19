@@ -173,15 +173,15 @@ TAB2 <- tabItem(
         ),
         fluidRow(
             fluidRow(
-                column(width = 3, ""),
-                column(width = 6, { actionBttn("getList", label = "Perform analysis", icon = icon("search", lib = "font-awesome"), style = 'bordered', color = "primary", block = T) }),
-                column(width = 3, "")
+                column(width = 4, ""),
+                column(width = 4, { actionBttn("getList", label = "Perform analysis", icon = icon("search", lib = "font-awesome"), style = 'bordered', color = "primary", block = T) } ),
+                column(width = 4, "")
             ),
             fluidRow(
-                column(width = 3, ""),
-                column(width = 3, { textOutput("multipleGenesLength") }),
-                column(width = 3, { actionBttn("resetGenes", label = "Reset genes query", size = "xs", style = "fill", ) }),
-                column(width = 3, "")
+                column(width = 4, ""),
+                column(width = 2, { textOutput("multipleGenesLength") %>% withSpinner(type = 6, color = "#421500", size = 0.5) }),
+                column(width = 2, { actionBttn("resetGenes", label = "Reset genes query", size = "xs", style = "fill") }),
+                column(width = 4, "")
             ),
             br()
         ),
@@ -194,14 +194,14 @@ TAB2 <- tabItem(
         br(),
 
         ## Row 2a: OUTPUT Venn diagrms
-        fluidRow(
-            h4("Intersection of genes query with tissue-enriched genes"),
-            column(width = 2, { plotOutput("Venn.Hypod")  }),
-            column(width = 2, { plotOutput("Venn.Neurons")  }),
-            column(width = 2, { plotOutput("Venn.Germline")  }),
-            column(width = 2, { plotOutput("Venn.Muscle")  }),
-            column(width = 2, { plotOutput("Venn.Intest")  })
-        ),
+        #fluidRow(
+        #    h4("Intersection of genes query with tissue-enriched genes"),
+        #    column(width = 2, { plotOutput("Venn.Hypod")  }),
+        #    column(width = 2, { plotOutput("Venn.Neurons")  }),
+        #    column(width = 2, { plotOutput("Venn.Germline")  }),
+        #    column(width = 2, { plotOutput("Venn.Muscle")  }),
+        #    column(width = 2, { plotOutput("Venn.Intest")  })
+        #),
         br(),
         hr(),
         br(),
@@ -225,7 +225,7 @@ TAB2 <- tabItem(
                     size = 'small', 
                     inline = T
                 ),
-                numericInput("NCLUST_LCAPdev", label = "Number of k-means clusters", value = 5),
+                numericInput("NCLUST_LCAPdev", label = "Number of k-means clusters", value = 4),
                 switchInput(
                     "colorScale_doRev_LCAPdev", 
                     label = "Reverse color scale?", 
@@ -234,7 +234,8 @@ TAB2 <- tabItem(
                     offLabel = "No", 
                     onStatus = 'success', 
                     offStatus = 'primary', 
-                    labelWidth = 100, 
+                    labelWidth = 150, 
+                    width = "400px", 
                     size = 'small', 
                     inline = T
                 ),
@@ -278,7 +279,8 @@ TAB2 <- tabItem(
                     offLabel = "No", 
                     onStatus = 'success', 
                     offStatus = 'primary', 
-                    labelWidth = 100, 
+                    labelWidth = 150, 
+                    width = "400px", 
                     size = 'small', 
                     inline = T
                 ),
@@ -322,7 +324,8 @@ TAB2 <- tabItem(
                     offLabel = "No", 
                     onStatus = 'success', 
                     offStatus = 'primary', 
-                    labelWidth = 100, 
+                    labelWidth = 150, 
+                    width = "400px", 
                     size = 'small', 
                     inline = T
                 ),
@@ -345,6 +348,12 @@ TAB2 <- tabItem(
             column(width = 4, { plotOutput("HMs.plot_LCAPdev")  }),
             column(width = 4, { plotOutput("HMs.plot_LCAP")  }),
             column(width = 4, { plotOutput("HMs.plot_ATAC")  })
+        ),
+        br(),
+        fluidRow(
+            column(width = 4, { downloadBttn("downloadHM_LCAPdev", label = "Download heatmap", size = "sm", style = "fill", color = "primary", block = F) }),
+            column(width = 4, { downloadBttn("downloadHM_LCAP", label = "Download heatmap", size = "sm", style = "fill", color = "primary", block = F) }),
+            column(width = 4, { downloadBttn("downloadHM_ATAC", label = "Download heatmap", size = "sm", style = "fill", color = "primary", block = F) })
         ),
         br(),
         hr(),
@@ -385,6 +394,8 @@ TAB2 <- tabItem(
         br(),
         hr(),
         br(),
+        
+        ## Row 4: DISPLAY GENES LIST
         column( width = 2, { htmlOutput("genesList") } ),
         br()
     )
@@ -504,7 +515,7 @@ SIDEBAR <- sidebarMenu(
 BODY <- tabItems(TAB1, TAB2, TAB3, TAB4, TAB5)
 
 shinyUI <- dashboardPage(
-    dashboardHeader(title = "Ahringer lab C. elegans tissue-specific database", titleWidth = 450),
+    dashboardHeader(title = paste0("Ahringer lab C. elegans tissue-specific database ", version), titleWidth = 600),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
         tags$script(inactivity),

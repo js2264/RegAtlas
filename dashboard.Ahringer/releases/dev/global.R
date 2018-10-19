@@ -13,25 +13,15 @@
 
 ## Load data and libraries ----------------------------------------------------------------------------------------------------
 
+load('data/tSNE.minimal.RData')
+source('bin/useful_R_functions.R')
 require(shiny)
 require(shinydashboard)
 require(shinyWidgets)
-require(shinyBS)
 require(shinycssloaders)
-require(devtools)
-require(DT)
-require(urltools)
-require(htmltools)
-require(httr)
+require(shinyBS)
 require(magrittr)
-require(gProfileR)
-require(pheatmap)
-require(RColorBrewer)
-require(apputils)
-require(venneuler)
 require(GenomicRanges)
-load('data/tSNE.minimal.RData')
-source('bin/useful_R_functions.R')
 
 # Define variables
 colorGO=c("#52c23164","#20109564","#ef690664", "white")
@@ -62,6 +52,7 @@ link <- "http://tispelegans.site/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce
 NCLUST_LCAPdev <- 5
 NCLUST_LCAP <- 5
 NCLUST_ATAC <- 5
+version <- gsub("../dashboard.Ahringer_", "", list.dirs('..', recursive = F)[length(list.dirs('..', recursive = F)) - 1])
 
 # Function to generate an URL to visit jserizay.site/JBrowse
 getURL <- function (chr, start, end, release = "1.12.5", 
