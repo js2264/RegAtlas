@@ -194,14 +194,14 @@ TAB2 <- tabItem(
         br(),
 
         ## Row 2a: OUTPUT Venn diagrms
-        #fluidRow(
-        #    h4("Intersection of genes query with tissue-enriched genes"),
-        #    column(width = 2, { plotOutput("Venn.Hypod")  }),
-        #    column(width = 2, { plotOutput("Venn.Neurons")  }),
-        #    column(width = 2, { plotOutput("Venn.Germline")  }),
-        #    column(width = 2, { plotOutput("Venn.Muscle")  }),
-        #    column(width = 2, { plotOutput("Venn.Intest")  })
-        #),
+        fluidRow(
+            h4("Intersection of genes query with tissue-enriched genes"),
+            column(width = 2, { plotOutput("Venn.Hypod")  }),
+            column(width = 2, { plotOutput("Venn.Neurons")  }),
+            column(width = 2, { plotOutput("Venn.Germline")  }),
+            column(width = 2, { plotOutput("Venn.Muscle")  }),
+            column(width = 2, { plotOutput("Venn.Intest")  })
+        ),
         br(),
         hr(),
         br(),
@@ -455,26 +455,60 @@ TAB4 <- tabItem(
 TAB5 <- tabItem(
     tabName = 'contact',
     fluidPage(
-    	h2("Contact us"),
         fluidRow(
-            column(width = 4, {
+            column(width = 6, {
                 HTML(
-                    paste(
-                        h3("Lab:\n\n"),'<br/>',
-                        h5("Ahringer lab\n\n"),'<br/>',
-                        h5("Gurdon Institute\n\n"),'<br/>',
-                        h5("University of Cambridge, UK")
-                    )
+                    '
+                    <div class="card">
+                      <img src="http://tispelegans.site/www_JABrowse/ahringer-group-2017.jpg" alt="Lab" style="width:100%">
+                      <h1>Ahringer Lab</h1>
+                      <br/>
+                      <p class="cardtitle"> </p>
+                      <p>Gurdon Institute, UK</p>
+                      <p>Cambridge University, UK</p>
+                      </br>
+                      <br/>
+                      <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="http://www.ahringer.group.gurdon.cam.ac.uk/" target="_blank">Visit us</a></button></p>
+                    </div>
+                    '
                 )
             }),
-            column(width = 4, {
+            column(width = 6, {
                 HTML(
-                    paste(
-                        h3("Developer/Maintenance:\n\n"),'<br/>',
-                        h5("Jacques Serizay\n\n"),'<br/>',
-                        h5("jserizay.site\n\n"),'<br/>',
-                        h5("js2264 -at- cam.ac.uk")
-                    )
+                    '
+                    <div class="card">
+                      <img src="http://tispelegans.site/www_JABrowse/JS.jpg" alt="JS" style="width:100%">
+                      <h1>Jacques Serizay</h1>
+                      <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
+                          <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                              <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                          </span>
+                      </a>
+                      <a itemprop="sameAs" href="https://www.linkedin.com/in/jacques-serizay-55103460/" target="_blank">
+                          <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                              <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                          </span>
+                      </a>
+                      <a itemprop="sameAs" href="https://scholar.google.co.uk/citations?user=e5QTBIAAAAAJ" target="_blank">
+                          <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                              <i class="fa fa-google fa-stack-1x fa-inverse"></i>
+                          </span>
+                      </a>
+                      <br/>
+                      <br/>
+                      <p class="cardtitle">PhD candidate</p>
+                      <p class="cardtitle">Developer/Maintenance of JABrowse</p>
+                      <br/>
+                      <p>Gurdon Institute, UK</p>
+                      <p>Cambridge University, UK</p>
+                      <br/>
+                      <br/>
+                      <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="mailto:js2264@cam.ac.uk" target="_blank">Contact</a></button></p>
+                    </div>
+                    '
                 )
             })
         )
@@ -519,6 +553,7 @@ shinyUI <- dashboardPage(
     dashboardSidebar(SIDEBAR),
     dashboardBody(
         tags$script(inactivity),
+        tags$head(includeCSS("assets/custom.css")),
         tags$head(tags$link(rel = "shortcut icon", href = "http://tispelegans.site/www_JABrowse/favicon.ico")),
         tags$head(tags$style(HTML('.left-side, .main-sidebar {position: fixed;} .navbar {position: fixed; right: 0px; left: 0px;} .main-header .logo {position: fixed} .content {padding: 65px 15px 15px 15px;}'))),        
         tags$head(tags$style(HTML('.logo .sidebar-toogle .navbar-navbar-static-top {position: fixed;}'))),

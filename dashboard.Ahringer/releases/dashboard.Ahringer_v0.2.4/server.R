@@ -13,18 +13,6 @@
 
 shinyServer <- function(input, output, session) {
     
-    require(devtools)
-    require(DT)
-    require(urltools)
-    require(htmltools)
-    require(httr)
-    require(gProfileR)
-    require(pheatmap)
-    require(d3heatmap)
-    require(RColorBrewer)
-    require(apputils)
-    #require(venneuler)
-
   # Read gene name and get gene infos
   {
     
@@ -682,11 +670,11 @@ shinyServer <- function(input, output, session) {
   # Get venn Diagrams
   {
       
-      #output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich.\ngenes", "Genes query", color.tissues[1], 'grey50') })
-      #output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich.\ngenes", "Genes query", color.tissues[2], 'grey50') })
-      #output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich.\ngenes", "Genes query", color.tissues[3], 'grey50') })
-      #output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich.\ngenes", "Genes query", color.tissues[4], 'grey50') })
-      #output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich.\ngenes", "Genes query", color.tissues[5], 'grey50') })
+      output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich.\ngenes", "Genes query", color.tissues[1], 'grey50') })
+      output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich.\ngenes", "Genes query", color.tissues[2], 'grey50') })
+      output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich.\ngenes", "Genes query", color.tissues[3], 'grey50') })
+      output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich.\ngenes", "Genes query", color.tissues[4], 'grey50') })
+      output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich.\ngenes", "Genes query", color.tissues[5], 'grey50') })
       
   }
   

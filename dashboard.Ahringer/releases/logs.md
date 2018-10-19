@@ -2,14 +2,14 @@
 
 ## To do list
 * Add loading screen 
-* Make better contact cards
 * Add bookmark options
-* Fix cluster Nbs in downloaded heatmap txt file
+
 
 ------------ 
 
 ## [Unreleased]
 ##### Added
+
 
 ------------ 
 
@@ -25,6 +25,7 @@
 - Spin while plotting multiple genes heatmaps
 - Added version # in the title
 - Button to download heatmaps results
+- Contact cards
 
 ##### Changed
 - Improved string split for multiple genes entries
