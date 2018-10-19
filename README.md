@@ -1,5 +1,5 @@
 # Steps to set up a Dashboard Shiny app:
-
+ 
 __PURPOSE:__ This markdown contains instructions to create and upload a Shiny app to present results obtained during my PhD.  
 __Dependencies:__ `app_wrapper.sh` is a wrapper of 3 functions (located in `bin/`) which aim to upload an existing Shiny App folder. It will first attempt to fetch foreign data from GI server. The rest of the project is self-contained.  
 
