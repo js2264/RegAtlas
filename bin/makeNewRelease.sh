@@ -20,7 +20,6 @@ function checkVersionNumber() {
         exit 0
     fi
 }
-
 function usage() {
 
     echo -e "\nThis script is used to create a new release of dashboard.Ahringer"
@@ -28,7 +27,6 @@ function usage() {
     echo -e "USAGE:\tmakeNewRelease.sh -v release#"
     echo -e ""
 }
-
 
 ## Check that there are arguemnts
 if [[ $# -eq 0 ]] ; then
@@ -41,9 +39,14 @@ POSITIONAL=()
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
-        -v | --version)
-            VERSION="$2"
-            checkVersionNumber ${VERSION}
+        -f | --folder)
+            APP_FOLDER="$2"
+            checkfolder ${APP_FOLDER}
+            shift # past argument
+            shift # past value
+            ;;
+        -id | --release-version)
+            APP_RELEASE="$2"
             shift # past argument
             shift # past value
             ;;
@@ -60,7 +63,6 @@ while [[ $# -gt 0 ]]; do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-
 ## Copy new release in a new numbered folder and in releases/current/
 FOLDER=$(echo "../dashboard.Ahringer_v"${VERSION})
 rm -rf ${FOLDER}
@@ -69,6 +71,5 @@ cp -rf * ${FOLDER}
 
 FOLDER="../current/"
 rm -rf ${FOLDER}
-mkdir ${FOLDER}
-cp -rf * ${FOLDER}
+ln -s $(echo "../dashboard.Ahringer_v"${VERSION}) ${FOLDER}
 

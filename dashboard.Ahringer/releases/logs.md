@@ -10,9 +10,18 @@
 ## [Unreleased]
 ##### Added
 
+##### Changed
+- Background color of the body switched to real white (#FFF)
+- Changed photo for my contact card
+- Increased size of photos in contact cards
 
 ------------ 
 
+## [0.3.0] - 2019-03-28
+##### Changed
+- Background color of the body switched to real white (#FFF)
+- Changed photo for my contact card
+- Increased size of photos in contact cards
 
 ## [0.2.4] - 2018-10-10
 ##### Added

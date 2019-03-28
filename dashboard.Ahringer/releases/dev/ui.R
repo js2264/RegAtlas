@@ -477,7 +477,7 @@ TAB5 <- tabItem(
                 HTML(
                     '
                     <div class="card">
-                      <img src="http://tispelegans.site/www_JABrowse/JS.jpg" alt="JS" style="width:100%">
+                      <img src="http://tispelegans.site/www_JABrowse/JS.jpg" alt="JS" style="width:70%">
                       <h1>Jacques Serizay</h1>
                       <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
                           <span class="fa-stack fa-lg">
@@ -572,6 +572,9 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML("a {color: #333} a:hover, a:focus, a:active, a:visited {color: #1d89ff;}"))),
         tags$head(tags$style(HTML(".multicol2 {-webkit-column-count: 1; /* Chrome, Safari, Opera */ -moz-column-count: 1; /* Firefox */ column-count: 1;}"))),
         tags$head(tags$style(HTML(".multicol5 {-webkit-column-count: 5; /* Chrome, Safari, Opera */ -moz-column-count: 5; /* Firefox */ column-count: 5;}"))),
+        tags$head(tags$style(HTML(".content-wrapper, .right-side { background-color: #FFF;}"))),
+        tags$head(tags$style(HTML(".card { width: 80%;}"))),
+        tags$head(tags$style(HTML(".img-round { width: 80%;}"))),
         BODY, 
         bsModal(
             id = "quickGENE", 
