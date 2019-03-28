@@ -3,7 +3,7 @@
 ## To do list
 * Add loading screen 
 * Add bookmark options
-
+* 
 
 ------------ 
 
@@ -11,9 +11,6 @@
 ##### Added
 
 ##### Changed
-- Background color of the body switched to real white (#FFF)
-- Changed photo for my contact card
-- Increased size of photos in contact cards
 
 ------------ 
 

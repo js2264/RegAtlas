@@ -74,17 +74,17 @@ TAB1 <- tabItem(
         br(),
 
         ## Row 4: OUTPUT tSNE plots (ATAC / LCAP)
-        h4('t-SNE plots of promoters (left) and genes (right)'),
-        br(),
-        h5("Black dots represent the gene and its associated promoters."),
-        br(),
-        fluidRow(
-            column(width = 5, { plotOutput("tSNE.plots_genes")  }),
-            column(width = 2, { plotOutput("tSNE.plots_legend")  }),
-            column(width = 5, { plotOutput("tSNE.plots_proms")  })
-        ),
-        br(),
-        hr(),
+        #h4('t-SNE plots of promoters (left) and genes (right)'),
+        #br(),
+        #h5("Black dots represent the gene and its associated promoters."),
+        #br(),
+        #fluidRow(
+        #    column(width = 5, { plotOutput("tSNE.plots_genes")  }),
+        #    column(width = 2, { plotOutput("tSNE.plots_legend")  }),
+        #    column(width = 5, { plotOutput("tSNE.plots_proms")  })
+        #),
+        #br(),
+        #hr(),
         br()
     )
 )
@@ -196,10 +196,10 @@ TAB2 <- tabItem(
         ## Row 2a: OUTPUT Venn diagrms
         fluidRow(
             h4("Intersection of genes query with tissue-enriched genes"),
-            column(width = 2, { plotOutput("Venn.Hypod")  }),
-            column(width = 2, { plotOutput("Venn.Neurons")  }),
             column(width = 2, { plotOutput("Venn.Germline")  }),
+            column(width = 2, { plotOutput("Venn.Neurons")  }),
             column(width = 2, { plotOutput("Venn.Muscle")  }),
+            column(width = 2, { plotOutput("Venn.Hypod")  }),
             column(width = 2, { plotOutput("Venn.Intest")  })
         ),
         br(),
@@ -477,7 +477,7 @@ TAB5 <- tabItem(
                 HTML(
                     '
                     <div class="card">
-                      <img src="http://tispelegans.site/www_JABrowse/JS.jpg" alt="JS" style="width:70%">
+                      <img src="http://tispelegans.site/www_JABrowse/JS.jpg" alt="JS" style="width:50%">
                       <h1>Jacques Serizay</h1>
                       <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
                           <span class="fa-stack fa-lg">
@@ -522,7 +522,7 @@ SIDEBAR <- sidebarMenu(
     menuItem("Look-up gene", tabName = "genelookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Look-up multiple genes", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
-    menuItem("Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
+    menuItem("Explore/Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
 	menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
     sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
     tags$footer(

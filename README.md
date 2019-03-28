@@ -89,6 +89,13 @@ wget https://download3.rstudio.org/ubuntu-12.04/x86_64/shiny-server-1.5.6.875-am
 sudo gdebi shiny-server-1.5.6.875-amd64.deb
 ```
 9. Upload Shiny app to /srv/shiny-server/ (ideally using the app_release_wrapper.sh script provided in ./bin/)
-10. Install all the required packages directly from the server after launching R using ```sudo -i R```!  
+10. Install all the required packages directly from the server after launching R using ```sudo -i R```!
+11. **IMPORTANT** Don't forget to add a redirect link to the `/etc/nginx/sites-enabled/default` as follows: 
+```
+location /Browser/ {
+        proxy_pass http://167.99.196.115:3838/dashboard.Ahringer/releases/current/;
+        rewrite ^(/Browser/[^/]+)$ $1/ permanent;
+}
+```
+Then restart nging with `systemctl restart nginx`.
 <br>
-**IMPORTANT: There is no more need to source global.R and to execute rsconnect::deployApp(). The app works by itself when ui.R and server.R are located in /srv/shiny-server/, as long as all the dependencies (required packages!!!) are installed.**

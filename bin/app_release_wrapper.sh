@@ -22,7 +22,7 @@ function checkcurrentfolder() {
 function usage() {
     echo -e "\nThis script is a wrapper to develop a Shiny app located in the directory ./APP_PATH/"
     echo -e ""
-    echo -e "USAGE:\tapp_wrapper.sh -f APP_PATH"
+    echo -e "USAGE:\tapp_wrapper.sh --folder APP_FOLDER --release-version X.X.X"
     echo -e ""
 }
 
@@ -82,16 +82,19 @@ checkcurrentfolder
 #3. Deploy App
 {
     echo -e "\n\n-- Deploying app --\n\n"
-    ## Copy dev folder to new release folder and make a symlink for "current release"
     DEV_FOLDER="${APP_FOLDER}/releases/dev"
     RELEASE_FOLDER="${APP_FOLDER}/releases/${APP_FOLDER}_v${APP_RELEASE}"
     CURRENT_FOLDER="${APP_FOLDER}/releases/current"
+    ## Copy require files (functions, minimal datasets) to dev folder
+    rsync ./shared/data/minimal-data.RData ${DEV_FOLDER}/data/
+    rsync ./shared/bin/R/custom_R_functions.R ${DEV_FOLDER}/bin/
+    ## Copy dev folder to new release folder and make a symlink for "current release"
     rm -rf ${RELEASE_FOLDER}
     mkdir ${RELEASE_FOLDER}
     cp -rf ${DEV_FOLDER}/* ${RELEASE_FOLDER}/
     rm ${CURRENT_FOLDER}
     ln -s `basename ${RELEASE_FOLDER}`/ ${CURRENT_FOLDER}
-    # Sync with Digital Ocean server
+    ## Sync with Digital Ocean server
     rsync \
         --recursive \
         --links \
@@ -101,4 +104,3 @@ checkcurrentfolder
         ${APP_FOLDER}/ \
         "root@167.99.196.115:/srv/shiny-server/${APP_FOLDER}/"
 }
-

@@ -74,14 +74,13 @@ shinyServer <- function(input, output, session) {
             infos <- paste0(
                 "ID=", genes.gtf$gene_id,
                 ";Name=", genes.gtf$gene_name,
-                ";CV=", cv,
                 ';color=', color.tissues[c(1:5,33:35)][max.tissue.df.LCAP$which.tissues],
                 '; =: : : : : : : : : : : : : : : : : : : : : : : : : ',
                 ';Ranked-tissues=', apply(max.tissue.df.LCAP[,2:6], 1, function(x) paste0(x, collapse = ' / ')),
                 ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[,7:12], 1, function(x) paste0(round(x, 3), collapse = ' / ')),
                 ';Hypod-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Hypod..v.others'],
-                ';Neurons-FCvs-mean=', max.tissue.df.LCAP[,'ratio.Neurons.v.others'],
-                ';Gonad-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Gonad.v.others'],
+                ';Neurons-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Neurons.v.others'],
+                ';Germline-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Germline.v.others'],
                 ';Muscle-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Muscle.v.others'],
                 ';Intest-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Intest..v.others'],
                 ";Enriched-in=", max.tissue.df.LCAP$which.tissues
@@ -104,16 +103,15 @@ shinyServer <- function(input, output, session) {
                 "ID=", make.unique(paste(all.deconv$gene_name, all.deconv$regulatory_class, sep = '--'), sep = '_'), 
                 ";Associated-gene-Name=", all.deconv$gene_name, 
                 ";Associated-gene-WB=", all.deconv$WormBaseID, 
-                ";CV=", round(all.deconv$cv, 3), 
                 ";domain=", all.deconv$domain
             )
             
             values <- paste0(
                 ';color=', color.tissues[all.deconv$which.tissues], 
                 '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', 
-                ';Ranked-tissues=', apply(all.deconv[,20:24], 1, function(x) paste0(x, collapse = ' / ')), 
-                ';Ranked-tissue-ATACseq-TPM=', apply(all.deconv[,25:29], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
-                ';Consecutive-ratios=', apply(all.deconv[,30:33], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                ';Ranked-tissues=', apply(all.deconv[, grep('max.tissue$', colnames(all.deconv))], 1, function(x) paste0(x, collapse = ' / ')), 
+                ';Ranked-tissue-ATACseq-TPM=', apply(all.deconv[, grep('max.tissue.cov$', colnames(all.deconv))], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                ';Consecutive-ratios=', apply(all.deconv[, grep('ratio', colnames(all.deconv))], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
                 ";Enriched-tissue.s.=", gsub('\\.', '', all.deconv$which.tissues)
             )
             
@@ -219,11 +217,12 @@ shinyServer <- function(input, output, session) {
   # Generate the REs subset table
   {
     #-->
+    
     output$REs.table <- renderDataTable({
         if (all(infos.gene()$Associated.REs == 0)) { datatable(matrix(0)) } else {
             datatable(
                 setNames(cbind(infos.gene()$Associated.REs[c(1:4, 6)], round(infos.gene()$Associated.REs.dev, 1), round(infos.gene()$Associated.REs.tissue, 1)),
-                c("Chr", "Start", "Stop", "Regulatory Class", "Enriched in tissue(s)", "Coverage Emb. (mixed)", "Coverage L1 (mixed)", "Coverage L2 (mixed)", "Coverage L3 (mixed)", "Coverage L4 (mixed)", "Coverage YA (mixed)", "Coverage Hypod. (YA)", "Coverage Neurons (YA)", "Coverage Gonad (YA)", "Coverage Muscle (YA)", "Coverage Intest. (YA)")),
+                c("Chr", "Start", "Stop", "Regulatory Class", "Enriched in tissue(s)", "Coverage Emb. (mixed)", "Coverage L1 (mixed)", "Coverage L2 (mixed)", "Coverage L3 (mixed)", "Coverage L4 (mixed)", "Coverage YA (mixed)", "Coverage Hypod. (YA)", "Coverage Neurons (YA)", "Coverage Germline (YA)", "Coverage Muscle (YA)", "Coverage Intest. (YA)")),
                 autoHideNavigation = T,
                 rownames = F,
                 style = 'bootstrap',
@@ -271,76 +270,76 @@ shinyServer <- function(input, output, session) {
   }
 
   # Generate tSNE plots (proms and genes)
-  {
-
-    # Plot genes
-    output$tSNE.plots_genes <- renderPlot({
-        par(mar=c(2,4,2,2), oma = c(0,0,0,0))
-        plot(tSNE.df.LCAP,
-            col = CLASSES.genes,
-            pch = 20,
-            cex = 1.5,
-            xlab = '',
-            ylab = '',
-            axes = T,
-            xaxt='n',
-            yaxt='n',
-            bty = 'o',
-            main = 't-SNE projection of genes',
-            cex.main = 1.5
-        )
-        points(
-            tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V1'],
-            tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V2'],
-            col = 'black',
-            pch=20,
-            cex = 4
-        )
-        mtext(line = 1, side = 1, 'tSNE dim. 1')
-        mtext(line = 1, side = 2, 'tSNE dim. 2')
-    })
-    
-    # Plot promoters
-    output$tSNE.plots_proms <- renderPlot({
-        par(mar=c(2,4,2,2), oma = c(0,0,0,0))
-        plot(tSNE.df.proms,
-            col = CLASSES.proms,
-            pch = 20,
-            cex = 1.5,
-            xlab = '',
-            ylab = '',
-            axes = T,
-            xaxt='n',
-            yaxt='n',
-            bty = 'o',
-            main = 't-SNE projection of promoters',
-            cex.main = 1.5
-        )
-        if (!all(infos.gene()$Associated.REs == 0)) {
-            points(
-                tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V1'],
-                tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V2'],
-                col = 'black',
-                pch=20,
-                cex = 4
-            )
-        }
-        mtext(line = 1, side = 1, 'tSNE dim. 1')
-        mtext(line = 1, side = 2, 'tSNE dim. 2')
-    })
-    
-    # Plot legend
-    output$tSNE.plots_legend <- renderPlot({
-        plot.new()
-        par(mar=c(0,0,0,0), oma = c(0,0,0,0), xpd = NA)
-        legend("left",
-              legend = c(order.tissues[1:5], '2 tissues', '3 tissues', '4 tissues', order.tissues[32:34]),
-              fill = c(color.tissues[1:5], color.tissues[6], color.tissues[16], color.tissues[26], color.tissues[32:34]),
-              ncol = 1, cex = 2, bty = 'n'
-        )
-    })
-
-  }
+#  {
+#
+#    # Plot genes
+#    output$tSNE.plots_genes <- renderPlot({
+#        par(mar=c(2,4,2,2), oma = c(0,0,0,0))
+#        plot(tSNE.df.LCAP,
+#            col = CLASSES.genes,
+#            pch = 20,
+#            cex = 1.5,
+#            xlab = '',
+#            ylab = '',
+#            axes = T,
+#            xaxt='n',
+#            yaxt='n',
+#            bty = 'o',
+#            main = 't-SNE projection of genes',
+#            cex.main = 1.5
+#        )
+#        points(
+#            tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V1'],
+#            tSNE.df.LCAP[genes.gtf[genes.valid]$gene_id %in% infos.gene()$Gene.info[1],'V2'],
+#            col = 'black',
+#            pch=20,
+#            cex = 4
+#        )
+#        mtext(line = 1, side = 1, 'tSNE dim. 1')
+#        mtext(line = 1, side = 2, 'tSNE dim. 2')
+#    })
+#    
+#    # Plot promoters
+#    output$tSNE.plots_proms <- renderPlot({
+#        par(mar=c(2,4,2,2), oma = c(0,0,0,0))
+#        plot(tSNE.df.proms,
+#            col = CLASSES.proms,
+#            pch = 20,
+#            cex = 1.5,
+#            xlab = '',
+#            ylab = '',
+#            axes = T,
+#            xaxt='n',
+#            yaxt='n',
+#            bty = 'o',
+#            main = 't-SNE projection of promoters',
+#            cex.main = 1.5
+#        )
+#        if (!all(infos.gene()$Associated.REs == 0)) {
+#            points(
+#                tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V1'],
+#                tSNE.df.proms[all.proms.valid$chr %in% infos.gene()$Associated.REs[,1] & all.proms.valid$start %in% infos.gene()$Associated.REs[,2] & all.proms.valid$stop %in% infos.gene()$Associated.REs[,3],'V2'],
+#                col = 'black',
+#                pch=20,
+#                cex = 4
+#            )
+#        }
+#        mtext(line = 1, side = 1, 'tSNE dim. 1')
+#        mtext(line = 1, side = 2, 'tSNE dim. 2')
+#    })
+#    
+#    # Plot legend
+#    output$tSNE.plots_legend <- renderPlot({
+#        plot.new()
+#        par(mar=c(0,0,0,0), oma = c(0,0,0,0), xpd = NA)
+#        legend("left",
+#              legend = c(order.tissues[1:5], '2 tissues', '3 tissues', '4 tissues', order.tissues[32:34]),
+#              fill = c(color.tissues[1:5], color.tissues[6], color.tissues[16], color.tissues[26], color.tissues[32:34]),
+#              ncol = 1, cex = 2, bty = 'n'
+#        )
+#    })
+#
+#  }
 
   # Get the list of multiple genes
   {
@@ -409,11 +408,11 @@ shinyServer <- function(input, output, session) {
                   "Neurons & Germline & Muscle-specific promoter(s)",
                   "Neurons & Germline & Intestine-specific promoter(s)",
                   "Neurons & Muscle & Intestine-specific promoter(s)",
-                  "Gonad & Muscle & Intestine-specific promoter(s)",
-                  "Neurons & Gonad & Muscle & Intestine-specific promoter(s)",
-                  "Hypodermis & Gonad & Muscle & Intestine-specific promoter(s)",
-                  "Hypodermis & Neurons & Gonad & Intestine-specific promoter(s)",
-                  "Hypodermis & Neurons & Gonad & Muscle-specific promoter(s)",
+                  "Germline & Muscle & Intestine-specific promoter(s)",
+                  "Neurons & Germline & Muscle & Intestine-specific promoter(s)",
+                  "Hypodermis & Germline & Muscle & Intestine-specific promoter(s)",
+                  "Hypodermis & Neurons & Germline & Intestine-specific promoter(s)",
+                  "Hypodermis & Neurons & Germline & Muscle-specific promoter(s)",
                   "Soma-specific promoter(s)",
                   "Ubiquitous promoter(s)"
               ),
@@ -577,10 +576,10 @@ shinyServer <- function(input, output, session) {
     output$HMs.plot_ATAC <- renderPlot({
         par(mar = c(6,1,4,1))
         if(titleLab_ATAC() == "log2TPM") {
-            mat <- log2(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19] + 1)
+            mat <- log2(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), grep(paste(order.tissues, collapse = '|'), colnames(all.deconv))] + 1)
             breaks <- NA
         } else {
-            mat <- t(apply(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), 15:19], 1, scale)) %>% na.replace(., 0)
+            mat <- t(apply(all.deconv[all.deconv$uniqueWormBaseID %in% multipleGenes(), grep(paste(order.tissues, collapse = '|'), colnames(all.deconv))], 1, scale)) %>% na.replace(., 0)
             colnames(mat) <- order.tissues[1:5]
             breaks <- seq(-2, 2, length.out = 101)
         }
@@ -651,9 +650,9 @@ shinyServer <- function(input, output, session) {
         content = function(file) {
             VEC0 <- all.deconv$uniqueWormBaseID %in% multipleGenes()
             if(titleLab_ATAC() == "log2TPM") {
-                mat <- log2(all.deconv[VEC0, 15:19] + 1)
+                mat <- log2(all.deconv[VEC0, grep(paste(order.tissues, collapse = '|'), colnames(all.deconv))] + 1)
             } else {
-                mat <- t(apply(all.deconv[VEC0, 15:19], 1, scale)) %>% na.replace(., 0)
+                mat <- t(apply(all.deconv[VEC0, grep(paste(order.tissues, collapse = '|'), colnames(all.deconv))], 1, scale)) %>% na.replace(., 0)
                 colnames(mat) <- order.tissues[1:5]
             }
             row.names(mat) <- make.unique(all.deconv[VEC0,]$locus)
@@ -670,11 +669,11 @@ shinyServer <- function(input, output, session) {
   # Get venn Diagrams
   {
       
-      output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[1]], multipleGenes(), "Hypod.-enrich.\ngenes", "Genes query", color.tissues[1], 'grey50') })
-      output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[2]], multipleGenes(), "Neurons-enrich.\ngenes", "Genes query", color.tissues[2], 'grey50') })
-      output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[3]], multipleGenes(), "Germline-enrich.\ngenes", "Genes query", color.tissues[3], 'grey50') })
-      output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[4]], multipleGenes(), "Muscle-enrich.\ngenes", "Genes query", color.tissues[4], 'grey50') })
-      output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; plot2WayVenn(list.genes[[5]], multipleGenes(), "Intest.-enrich.\ngenes", "Genes query", color.tissues[5], 'grey50') })
+      output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[1]], multipleGenes(), names = c("Germline-enrich.\ngenes", "Genes query"), col = c(color.tissues[1], 'grey50')) })
+      output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[2]], multipleGenes(), names = c("Neurons-enrich.\ngenes", "Genes query"), col = c(color.tissues[2], 'grey50')) })
+      output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[3]], multipleGenes(), names = c("Muscle-enrich.\ngenes", "Genes query"), col = c(color.tissues[3], 'grey50')) })
+      output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[4]], multipleGenes(), names = c("Hypod.-enrich.\ngenes", "Genes query"), col = c(color.tissues[4], 'grey50')) })
+      output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[5]], multipleGenes(), names = c("Intest.-enrich.\ngenes", "Genes query"), col = c(color.tissues[5], 'grey50')) })
       
   }
   
@@ -682,7 +681,7 @@ shinyServer <- function(input, output, session) {
   {
       output$downloadATAC.txt <- downloadHandler( "tissue-specific.ATAC-seq.dataset.txt", content = function(file) {write.table(atac.dt, file, quote = F, row = F, col = T, sep = '\t')} )
       output$downloadATAC.gff <- downloadHandler( "tissue-specific.ATAC-seq.dataset.gff", content = function(file) {
-          infos=paste0("ID=", make.unique(paste(all$gene_name, all$regulatory_class, sep = '--'), sep = '_'), ";Associated-gene-Name=", all$gene_name, ";Associated-gene-WB=", all$WormBaseID, ";CV=", round(all$cv, 3), ";domain=", all$domain)
+          infos=paste0("ID=", make.unique(paste(all$gene_name, all$regulatory_class, sep = '--'), sep = '_'), ";Associated-gene-Name=", all$gene_name, ";Associated-gene-WB=", all$WormBaseID, ";domain=", all$domain)
           values <- paste0(';color=', color.tissues[max.tissue.df$which.tissues], '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', ';Ranked-tissues=', apply(max.tissue.df[,5:9], 1, function(x) paste0(x, collapse = ' / ')), ';Ranked-tissue-ATACseq-TPM=', apply(max.tissue.df[,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ';Consecutive-ratios=', apply(max.tissue.df[,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), ";Enriched-tissue.s.=", gsub('\\.', '', max.tissue.df$which.tissues))
           GFF=cbind(as.character(all$chr), rep('Ahringer-tissue-spe-REs', times = nrow(all)), as.character(all$regulatory_class), all$start, all$stop, rep(".", times=nrow(all)), ifelse(is.null(all$strand), ".", all$strand), rep(".", times=nrow(all)), paste0(infos, values))
           write.table(rbind(c("##gffTags=on\n##displayName=Name\n##gff-version 3", rep(" ", 8)), GFF), file, quote = F, row = F, col = F, sep = '\t')
@@ -691,19 +690,17 @@ shinyServer <- function(input, output, session) {
       output$downloadLCAP.gff <- downloadHandler( "tissue-specific.RNA-seq.dataset.gff", content = function(file) {
           
             names(genes.gtf) <- genes.gtf$gene_name
-            cv <- genes.gtf$cv
 
             infos=paste0(
                 "ID=", genes.gtf$gene_id,
                 ";Name=", genes.gtf$gene_name,
-                ";CV=", cv,
                 ';color=', color.tissues[c(1:5,33:35)][max.tissue.df.LCAP$which.tissues],
                 '; =: : : : : : : : : : : : : : : : : : : : : : : : : ',
                 ';Ranked-tissues=', apply(max.tissue.df.LCAP[,2:6], 1, function(x) paste0(x, collapse = ' / ')),
                 ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[,7:12], 1, function(x) paste0(round(x, 3), collapse = ' / ')),
                 ';Hypod-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Hypod..v.others'],
-                ';Neurons-FCvs-mean=', max.tissue.df.LCAP[,'ratio.Neurons.v.others'],
-                ';Gonad-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Gonad.v.others'],
+                ';Neurons-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Neurons.v.others'],
+                ';Germline-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Germline.v.others'],
                 ';Muscle-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Muscle.v.others'],
                 ';Intest-FC-vs-mean=', max.tissue.df.LCAP[,'ratio.Intest..v.others'],
                 ";Enriched-in=", max.tissue.df.LCAP$which.tissues

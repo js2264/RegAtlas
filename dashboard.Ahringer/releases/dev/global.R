@@ -13,8 +13,8 @@
 
 ## Load data and libraries ----------------------------------------------------------------------------------------------------
 
-load('data/tSNE.minimal.RData')
-source('bin/useful_R_functions.R')
+load('data/minimal-data.RData')
+source('bin/custom_R_functions.R')
 require(shiny)
 require(shinydashboard)
 require(shinyWidgets)
@@ -37,27 +37,26 @@ require(venneuler)
 # Define variables
 colorGO=c("#52c23164","#20109564","#ef690664", "white")
 names(colorGO)=c("MF", "BP", "CC", "kegg")
-all.deconv <- cbind(all, ATAC, max.tissue.df[,5:19]) %>% dplyr::mutate(uniqueWormBaseID = strsplit(as.character(WormBaseID),',')) %>% tidyr::unnest(uniqueWormBaseID)
-atac.dt <- cbind(all[,c(1:5,7,10)], which.tissues = max.tissue.df$which.tissues, round(ATAC, 3), max.tissue.df[,5:9])
+all.deconv <- cbind(all, ATAC, max.tissue.df[, grepl('max.tissue|ratio', colnames(max.tissue.df))]) %>% dplyr::mutate(uniqueWormBaseID = strsplit(as.character(WormBaseID),',')) %>% tidyr::unnest(uniqueWormBaseID)
+atac.dt <- cbind(all[, grepl('chr|start|stop|gene_name|regulatory_class|domain|which.tissues', colnames(all))], round(ATAC, 3), max.tissue.df[, grepl('max.tissue$', colnames(max.tissue.df))])
 row.names(atac.dt) <- all$coords
-colnames(atac.dt)[5] <- "geneID"
-colnames(atac.dt)[9:13] <- paste0(colnames(atac.dt)[9:13], '_TPM')
+colnames(atac.dt)[colnames(atac.dt) == 'gene_name'] <- "geneID"
+colnames(atac.dt)[grep(paste(order.tissues, collapse = '|'), colnames(atac.dt))] <- paste0(order.tissues[1:length(grep(paste(order.tissues, collapse = '|'), colnames(atac.dt)))], '_TPM')
 atac.dt$regulatory_class <- factor(atac.dt$regulatory_class)
 atac.dt$domain <- factor(atac.dt$domain)
-lcap.dt <- cbind(as.data.frame(genes.gtf)[,c(1:3,5,10,11,13,16,18,19)], which.tissues = genes.gtf$which.tissues, round(LCAP, 3), max.tissue.df.LCAP[,2:6])
-colnames(lcap.dt)[1:3] <- colnames(atac.dt)[1:3]
-colnames(lcap.dt)[5] <- "WormBaseID"
-colnames(lcap.dt)[6] <- "geneID"
+lcap.dt <- cbind(as.data.frame(genes.gtf)[,c(1:3,5,10,11,13,16,18)], round(LCAP, 3), max.tissue.df.LCAP[, grepl('max.tissue$', colnames(max.tissue.df.LCAP))])
+colnames(lcap.dt)[1:3] <- c('chr', 'start', 'stop')
+colnames(lcap.dt)[colnames(lcap.dt) == 'gene_id'] <- "WormBaseID"
+colnames(lcap.dt)[colnames(lcap.dt) == 'gene_name'] <- "geneID"
 lcap.dt$gene_biotype <- factor(lcap.dt$gene_biotype)
 lcap.dt$domain <- factor(lcap.dt$domain)
-cv <- genes.gtf$cv
 hypod.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Hypod.']
 neurons.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Neurons']
-germline.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Gonad']
+germline.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Germline']
 muscle.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Muscle']
 intest.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Intest.']
 list.genes <- list(hypod.genes, neurons.genes, germline.genes, muscle.genes, intest.genes)
-names(list.genes) <- c("hypod.genes", "neurons.genes", "germline.genes", "muscle.genes", 'intest.genes')
+names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes')
 colors.decimals <- c(0.10395294, 0.3906374, 0.1192665, 0.14261010, 0.14226132, 0.13421772)
 link <- "http://tispelegans.site/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&loc=chrIII&tracks=genes%2Cregulatory_elements%2Chypod.atac%2Cneurons.atac%2Cgonad.atac%2Cmuscle.atac%2Cintest.atac%2Chypod.lcap.fwd%2Cneurons.lcap.fwd%2Cgonad.lcap.fwd%2Cmuscle.lcap.fwd%2Cintest.lcap.fwd%2Chypod.lcap.rev%2Cneurons.lcap.rev%2Cgonad.lcap.rev%2Cmuscle.lcap.rev%2Cintest.lcap.rev%2Ctranscripts&highlight=&menu=1&nav=1&tracklist=1&overview=1"
 NCLUST_LCAPdev <- 5
@@ -90,33 +89,6 @@ textareaInput <- function(inputId, label, value = "", placeholder = "", rows = 2
     div(strong(label), style="margin-top: 5px;"),
     tags$style(type="text/css", "textarea {width:100%; margin-top: 5px;}"),
     tags$textarea(id = inputId, placeholder = placeholder, rows = rows, value))
-}
-
-# Function to plot weighted 2-way venn diagrams
-plot2WayVenn <- function(vec1, vec2, name.vec1, name.vec2, col.vec1, col.vec2) 
-{
-    
-    df <- cbind(c(vec1, vec2), c(rep(1, times = length(vec1)), rep(2, times = length(vec2))))
-    venn <- venneuler(df)
-    venn$labels <- c("", "")
-    
-    # Calculate coordinates for x-positions of each label
-    L <- sum(venn$diameters/2)-max(venn$centers[,'x'])+min(venn$centers[,'x'])
-    r1 <- venn$diameters[which.min(venn$centers[,'x'])] / 2 
-    r2 <- venn$diameters[which.max(venn$centers[,'x'])] / 2 
-    G <- min(venn$centers[,'x']) - r1
-    
-    p1 <- (2 * r1 - L ) / 2 + G
-    p2 <- 2 * r1 + (2 * r2 - L ) / 2 + G
-    pmiddle <- (2 * r1) - (L / 2)+ G
-    
-    # Plot circles
-    plot(venn, col = c(col.vec1, col.vec2))
-    
-    # Add labels and counts
-    text(x = venn$centers[,'x'], y = (venn$centers[,'y'] + venn$diameters/2), c(paste0(name.vec1, "\n(n=", length(vec1) ,")"), paste0(name.vec2, "\n(n=", length(vec2) ,")")), pos = 3, cex = 0.8)
-    text(x = c(p1, pmiddle, p2), y = c(0.5, 0.2, 0.5), c(paste0("n=", length(vec2) - sum(vec1 %in% vec2)), paste0("n=", sum(vec1 %in% vec2)), paste0(paste0("n=", length(vec1) - sum(vec1 %in% vec2)))), pos = 3, cex = 0.8)
-    
 }
 
 # Function to bypass idle time of Shiny Server
