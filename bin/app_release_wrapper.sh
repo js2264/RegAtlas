@@ -1,18 +1,5 @@
 #!/usr/bin/env bash
 
-#=============================================================================#
-#                                                                             #
-#     USAGE:                                                                  #
-#     bash app_wrapper.sh -f APP.NAME                                         #
-#                                                                             #
-#     AUTHOR: Jacques SERIZAY                                                 #
-#     CREATED: 2018/07/12                                                     #
-#     REVISION: 2018-08-04                                                    #
-#                                                                             #
-#     DO NOT USE; THIS IS OBSOLETE !!                                         #
-#                                                                             #
-#=============================================================================#
- 
 ## Define functions
 function checkfolder() {
     if [ ! -d ${1} ]; then

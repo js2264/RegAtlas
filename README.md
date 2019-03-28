@@ -1,3 +1,17 @@
+---
+title: "Shiny App upload procedure"
+date: "2019-03-28"
+author: Jacques SERIZAY
+output:
+    html_document:
+        theme: sandstone
+        highlight: tango
+        preserve_yaml: true
+        df_print: paged
+        dev: pdf
+---
+This code has been written by Jacques SERIZAY, for the purpose of analysing datasets generated in the Ahringer lab, at the Gurdon Institute, University of Cambridge.  
+
 # Steps to set up a Dashboard Shiny app:
  
 __PURPOSE:__ This markdown contains instructions to create and upload a Shiny app to present results obtained during my PhD on the project: *Tissue-specific characteristics of the chromatin in C. elegans*.  
