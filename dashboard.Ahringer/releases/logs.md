@@ -1,24 +1,59 @@
 # Changelog
 
 ## To do list
-* Add loading screen 
-* Add bookmark options
-* 
+- Switch to ggplot2 plots?
+- Browser: 
+	- [ ] Display color key
+	- [ ] Change the genes model tracks to see the gene names at the top
+	- [ ] Rename tracks without 'specific' and adding 'YA' to RNA-seq
+	- [ ] Possibility to save Genome browser Settings
+	- [ ] Add heteroK tracks
+	- [ ] bookmark options
+- Reference gProfileR
+- fix search (not case sensitive, can remove weird character)
+- Remove 2nd / 3rd column, replace by a dropdown list as "example". 
+- Add infodroplet
+- Tab1: print the gene infos on a third column
 
 ------------ 
 
 ## [Unreleased]
-##### Added
 
-##### Changed
 
 ------------ 
 
+## [0.4.0] - 2019-09-20
+##### UI changes
+- Removed the download buttons in explore/download data, put them in a dropdown
+- Also added the bigwig tracks download buttons to the same dropdown
+- Added Informations tab
+- Reduced my photo
+
+##### Fixed
+- Fix all download buttons
+
+##### Deleted
+- Fixed TAB 1 REs table issue: removed the developmental TPM values for REs
+
+## [0.3.1] - 2019-03-29
+##### Added
+- A landing page has been designed!!
+- Changed order of columns in REs table, and move tissue data before dev data
+- Renamed column names in the REs table
+- Right side headbar: added icon to go back to ahringerlab.com
+
+##### Changed
+- Because the ATACdev df only has the ATAC scores for 42245 peaks and not the new annotations, we can't recover dev. ATAC scores. One fix is to add the name of the REs (locus field) as the ATACdev row.names, so that the genes can be feched.  
+- Links to img changed to assets/img/
+- Updated copyright to 2019
+
 ## [0.3.0] - 2019-03-28
 ##### Changed
+- New domain name: ahringerlab.com. Acquired on March 28th 2019 for 5years (provider: Namecheap). 
 - Background color of the body switched to real white (#FFF)
 - Changed photo for my contact card
 - Increased size of photos in contact cards
+- ADDED LICENSE GNU v3
 
 ## [0.2.4] - 2018-10-10
 ##### Added

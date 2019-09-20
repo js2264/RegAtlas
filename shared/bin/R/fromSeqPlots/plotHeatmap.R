@@ -57,7 +57,7 @@
 #'   
 #' @keywords internal
 #'  
- 
+
 require(fields)
 
 imPlot2 <- function (

@@ -29,27 +29,28 @@ TAB1 <- tabItem(
             } )
         ),
         fluidRow(
-          column(width = 4, { 
-              fluidRow(
-                  htmlOutput("geneInfos", height = '200px') %>% withSpinner(type = 6, color = "#421500", size = 0.5),
-                  br(),
-                  actionBttn("WBdescr", label = "Get gene description", icon = icon("search", lib = "font-awesome"), size = "sm", style = "minimal"),
-                  bsModal("WBDESCR", "WormBase gene description", "WBdescr", size = "large", { htmlOutput("geneDescr") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } )
-              )
-          } ),
-          column(width = 2, { 
-            fluidRow(
-              br(),
-              downloadBttn("downloadINFOS", label = "Download full gene report (.txt file)", size = "sm", style = "fill", color = "primary"),
-              br(),
-              br(),
-              actionBttn("switchToGenome", label = "Go to Genome Browser", icon = icon("area-chart", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
-              br(),
-              br(),
-              actionBttn("WBlink", label = "View gene in WormBase", icon = icon("book", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
-              bsModal("openWB", "WormBase gene entry", "WBlink", size = "large", htmlOutput("Link"))
-            )
-          } )
+            column(width = 4, { 
+                fluidRow(
+                    htmlOutput("geneInfos", height = '200px') %>% withSpinner(type = 6, color = "#421500", size = 0.5),
+                    br(),
+                    actionBttn("WBdescr", label = "Get gene description", icon = icon("search", lib = "font-awesome"), size = "sm", style = "minimal"),
+                    bsModal("WBDESCR", "WormBase gene description", "WBdescr", size = "large", { htmlOutput("geneDescr") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } )
+                )
+            } ),
+            column(width = 2, { 
+                fluidRow(
+                    br(),
+                    downloadBttn("downloadINFOS", label = "Download full gene report (.txt file)", size = "sm", style = "fill", color = "primary"),
+                    br(),
+                    br(),
+                    actionBttn("switchToGenome", label = "Go to Genome Browser", icon = icon("area-chart", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
+                    br(),
+                    br(),
+                     uiOutput("Link")
+                    # actionBttn("WBlink", label = "View gene in WormBase", icon = icon("book", lib = "font-awesome"), size = "sm", style = "fill", color = "primary"),
+                    # bsModal("openWB", "WormBase gene entry", "WBlink", size = "large", htmlOutput("Link"))
+                )
+            } )
         ),
         br(),
         hr(),
@@ -72,7 +73,7 @@ TAB1 <- tabItem(
         br(),
         hr(),
         br(),
-
+        
         ## Row 4: OUTPUT tSNE plots (ATAC / LCAP)
         #h4('t-SNE plots of promoters (left) and genes (right)'),
         #br(),
@@ -192,7 +193,7 @@ TAB2 <- tabItem(
         br(),
         hr(),
         br(),
-
+        
         ## Row 2a: OUTPUT Venn diagrms
         fluidRow(
             h4("Intersection of genes query with tissue-enriched genes"),
@@ -205,7 +206,7 @@ TAB2 <- tabItem(
         br(),
         hr(),
         br(),
-
+        
         ## Row 2b: OUTPUT HMs.plot
         fluidRow(
             column(width = 2, { selectizeInput("colorScale_LCAPdev", "Choose a color scale (dev. RNA-seq): ", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Spectral", multiple = FALSE) } ),
@@ -369,47 +370,42 @@ TAB2 <- tabItem(
                     dropdownButton(
                         tags$h4("Select GO databses"),
                         checkboxGroupInput("checkGroupGOs", label = "", 
-                            choices = list("MF (Molecular Function)" = "MF", "BP (Biological Process)" = "BP", "CC (Cellular Component)" = "CC", "kegg (KEGG pathway)" = "keg"),
-                            selected = c("MF", "BP", "CC", "keg")
-                        ),
-                        br(),
-                        tags$h4("Apply filtering?"),
-                        selectInput(
-                            inputId = 'hierarchyFiltering', 
-                            label = '', 
-                            choices = c("none", "moderate", "strong"), 
-                            selected = "moderate"
-                        ),
-                        circle = TRUE, status = "warning", icon = icon("gear"),
-                        tooltip = tooltipOptions(title = "Set filtering")
-                    )
+                        choices = list("MF (Molecular Function)" = "MF", "BP (Biological Process)" = "BP", "CC (Cellular Component)" = "CC", "kegg (KEGG pathway)" = "keg"),
+                        selected = c("MF", "BP", "CC", "keg")
+                    ),
+                    br(),
+                    tags$h4("Apply filtering?"),
+                    selectInput(
+                        inputId = 'hierarchyFiltering', 
+                        label = '', 
+                        choices = c("none", "moderate", "strong"), 
+                        selected = "moderate"
+                    ),
+                    circle = TRUE, status = "warning", icon = icon("gear"),
+                    tooltip = tooltipOptions(title = "Set filtering")
                 )
-            } ),
-            column(width = 7, { plotOutput("GO.plot") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } ),
-            column(width = 2, { fluidRow(
-                br(),
-                downloadBttn("downloadGO", label = "Download full GO report (.txt file)", size = "sm", style = "fill", color = "primary", block = T)
-            ) } )
-        ),
-        br(),
-        hr(),
-        br(),
-        
-        ## Row 4: DISPLAY GENES LIST
-        column( width = 2, { htmlOutput("genesList") } ),
-        br()
-    )
+            )
+        } ),
+        column(width = 7, { plotOutput("GO.plot") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } ),
+        column(width = 2, { fluidRow(
+            br(),
+            downloadBttn("downloadGO", label = "Download full GO report (.txt file)", size = "sm", style = "fill", color = "primary", block = T)
+        ) } )
+    ),
+    br(),
+    hr(),
+    br(),
+    
+    ## Row 4: DISPLAY GENES LIST
+    column( width = 2, { htmlOutput("genesList") } ),
+    br()
+)
 )
 
 # Genome browser
 TAB3 <- tabItem(
     tabName = 'browser',
     fluidPage( 
-        fluidRow(
-            column(width = 6, downloadBttn("downloadBWLCAP", label = "Download all the tissue-specific RNA-seq tracks (bigwig format)", size = "sm", style = "fill", color = "primary", block = F) ),
-            column(width = 6, downloadBttn("downloadBWATAC", label = "Download all the tissue-specific ATAC-seq tracks (bigwig format)", size = "sm", style = "fill", color = "primary", block = F) )
-        ),
-        br(),
         fluidRow( { 
             #JbrowseOutput("jbrowser", height = "100%") ### THIS ONE IS GOOD!!! (IT DOESN'T MATTER)
             htmlOutput("jbrowser")
@@ -421,38 +417,65 @@ TAB3 <- tabItem(
 TAB4 <- tabItem(
     tabName = 'download',
     fluidPage(
-        # Download buttons
-        h2("Download our tissue-specific datasets"),
         fluidRow(
-            column(width = 5, { fluidRow(
-                downloadBttn("downloadATAC.txt", label = "Download the entire tissue-specific ATAC-seq dataset (txt format, Excel friendly)", size = "sm", style = "fill", color = "primary", block = T),
-                br(),
-                br(),
-                downloadBttn("downloadATAC.gff", label = "Download the entire tissue-specific ATAC-seq dataset (GFF format, IGV friendly)", size = "sm", style = "fill", color = "primary", block = T)
-            ) } ),
-            column(width = 1, p(" ")),
-            column(width = 5, { fluidRow(
-                downloadBttn("downloadLCAP.txt", label = "Download the entire tissue-specific RNA-seq dataset (txt format, Excel friendly)", size = "sm", style = "fill", color = "primary", block = T),
-                br(),
-                br(),
-                downloadBttn("downloadLCAP.gff", label = "Download the entire tissue-specific RNA-seq dataset (GFF format, IGV friendly)", size = "sm", style = "fill", color = "primary", block = T)
-            ) } )
+            column(5, h4("Download our tissue-specific datasets", style = 'display: inline-block')), 
+            column(7, style = "margin-top: 20px", dropdownButton(
+                    downloadBttn("downloadATAC.txt", label = "Download tissue-specific ATAC-seq dataset (txt format, Excel friendly)", size = "sm", style = "simple", color = "primary", block = TRUE), 
+                    downloadBttn("downloadATAC.gff", label = "Download tissue-specific ATAC-seq dataset (GFF format, IGV friendly)", size = "sm", style = "simple", color = "primary", block = TRUE), 
+                    downloadBttn("downloadBWATAC", label = "Download all zipped tissue-specific ATAC-seq tracks (bigWig format)", size = "sm", style = "simple", color = "primary", block = TRUE), 
+                    downloadBttn("downloadLCAP.txt", label = "Download tissue-specific RNA-seq dataset (txt format, Excel friendly)", size = "sm", style = "simple", color = "primary", block = TRUE), 
+                    downloadBttn("downloadLCAP.gff", label = "Download tissue-specific RNA-seq dataset (GFF format, IGV friendly)", size = "sm", style = "simple", color = "primary", block = TRUE),
+                    downloadBttn("downloadBWLCAP", label = "Download all zipped tissue-specific RNA-seq tracks (bigWig format)", size = "sm", style = "simple", color = "primary", block = TRUE),
+                    status = "warning", 
+                    icon = icon("download")
+                )
+            )
         ),
         hr(),
-
+        
         # Browse ATAC table
         h4("Navigate ATAC-seq data"),
         fluidRow( column(width = 12, { dataTableOutput("atac.table") } ) ),
         hr(),
-
+        
         # Browse LCAP table
         h4("Navigate RNA-seq data"),
         fluidRow( column(width = 12, { dataTableOutput("lcap.table") } ) )
     )
 )
 
-# Contact us
+# Informations about the data
 TAB5 <- tabItem(
+    tabName = 'infos',
+    fluidPage(
+        fluidRow(
+            column(width = 12, {
+                HTML(
+                    '
+                    <h4>Informations</h4>
+                    <p>The data made available here has been published by the Ahringer lab (see list 
+                    <a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>
+                    ).</br>
+                    All the gene annotations and regulatory elements annotations are performed using 
+                    ce11 genome.</br>
+                    For detailed Material and Methods, please refer to the corresponding publication(s)
+                    [<a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>].</br>
+                    To get access to all the scripts used in our studies, please refer to our GitHub 
+                    repositories 
+                    <a href = https://github.com/js2264>here</a>, 
+                    <a href = https://github.com/jurgjn>here</a> and 
+                    <a href = https://github.com/Przemol/>here</a>. 
+                    Feel free to contact us directly for any request!
+                    </p>
+                    '
+                )
+            })
+        )
+    )
+)
+
+# Contact us
+TAB6 <- tabItem(
     tabName = 'contact',
     fluidPage(
         fluidRow(
@@ -460,15 +483,15 @@ TAB5 <- tabItem(
                 HTML(
                     '
                     <div class="card">
-                      <img src="http://tispelegans.site/www_JABrowse/ahringer-group-2017.jpg" alt="Lab" style="width:100%">
-                      <h1>Ahringer Lab</h1>
-                      <br/>
-                      <p class="cardtitle"> </p>
-                      <p>Gurdon Institute, UK</p>
-                      <p>Cambridge University, UK</p>
-                      </br>
-                      <br/>
-                      <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="http://www.ahringer.group.gurdon.cam.ac.uk/" target="_blank">Visit us</a></button></p>
+                    <img src="http://ahringerlab.com/assets/img/ahringer-group-2017.jpg" alt="Lab" style="height: 284.16px">
+                    <h1>Ahringer Lab</h1>
+                    <br/>
+                    <p class="cardtitle"> </p>
+                    <p>Gurdon Institute, UK</p>
+                    <p>Cambridge University, UK</p>
+                    </br>
+                    <br/>
+                    <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="http://www.ahringer.group.gurdon.cam.ac.uk/" target="_blank">Visit us</a></button></p>
                     </div>
                     '
                 )
@@ -477,36 +500,36 @@ TAB5 <- tabItem(
                 HTML(
                     '
                     <div class="card">
-                      <img src="http://tispelegans.site/www_JABrowse/JS.jpg" alt="JS" style="width:50%">
-                      <h1>Jacques Serizay</h1>
-                      <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
-                          <span class="fa-stack fa-lg">
-                              <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
-                              <i class="fa fa-github fa-stack-1x fa-inverse"></i>
-                          </span>
-                      </a>
-                      <a itemprop="sameAs" href="https://www.linkedin.com/in/jacques-serizay-55103460/" target="_blank">
-                          <span class="fa-stack fa-lg">
-                              <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
-                              <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
-                          </span>
-                      </a>
-                      <a itemprop="sameAs" href="https://scholar.google.co.uk/citations?user=e5QTBIAAAAAJ" target="_blank">
-                          <span class="fa-stack fa-lg">
-                              <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
-                              <i class="fa fa-google fa-stack-1x fa-inverse"></i>
-                          </span>
-                      </a>
-                      <br/>
-                      <br/>
-                      <p class="cardtitle">PhD candidate</p>
-                      <p class="cardtitle">Developer/Maintenance of JABrowse</p>
-                      <br/>
-                      <p>Gurdon Institute, UK</p>
-                      <p>Cambridge University, UK</p>
-                      <br/>
-                      <br/>
-                      <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="mailto:js2264@cam.ac.uk" target="_blank">Contact</a></button></p>
+                    <img src="http://ahringerlab.com/assets/img/JS.jpg" alt="JS" style="height: 147px; margin-top: 20px">
+                    <h1>Jacques Serizay</h1>
+                    <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    <a itemprop="sameAs" href="https://www.linkedin.com/in/jacques-serizay-55103460/" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    <a itemprop="sameAs" href="https://scholar.google.co.uk/citations?user=e5QTBIAAAAAJ" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-google fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    <br/>
+                    <br/>
+                    <p class="cardtitle">PhD candidate</p>
+                    <p class="cardtitle">Developer/Maintenance of JABrowse</p>
+                    <br/>
+                    <p>Gurdon Institute, UK</p>
+                    <p>Cambridge University, UK</p>
+                    <br/>
+                    <br/>
+                    <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="mailto:js2264@cam.ac.uk" target="_blank">Contact</a></button></p>
                     </div>
                     '
                 )
@@ -518,44 +541,55 @@ TAB5 <- tabItem(
 ## Finalise UI ----------------------------------------------------------------------------------------------------
 
 SIDEBAR <- sidebarMenu(
-	id = "tabs", 
+    id = "tabs", 
     menuItem("Look-up gene", tabName = "genelookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Look-up multiple genes", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
     menuItem("Explore/Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
-	menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
+    menuItem("Informations", tabName = "infos", icon = icon("info", lib = "font-awesome")),
+    menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
     sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
     tags$footer(
-        img(src = "http://tispelegans.site/www_JABrowse/sidebar-img_150x150.png", alt = "", style = "
-            color: #b8c7ce;
-            padding: 0px 40px 30px 40px;
-            z-index: 1000;
+        img(src = "http://ahringerlab.com/assets/img/sidebar-img_150x150.png", alt = "", style = "
+        color: #b8c7ce;
+        padding: 0px 40px 30px 40px;
+        z-index: 1000;
         "),
         br(),
-        HTML(paste("Ahringer lab -", icon("copyright", lib = "font-awesome"), "2018")), 
+        HTML(paste("Ahringer lab -", icon("copyright", lib = "font-awesome"), "2019")), 
         align = "left",
         style = "
-            position: fixed;
-            bottom: 0;
-            text-align: center;
-            color: #b8c7ce;
-            padding: 0px 0px 10px 0px;
-            left: 0px;
-            z-index: 1000;
+        position: fixed;
+        bottom: 0;
+        text-align: center;
+        color: #b8c7ce;
+        padding: 0px 0px 10px 0px;
+        left: 0px;
+        z-index: 1000;
         "
     )
 )
 
-BODY <- tabItems(TAB1, TAB2, TAB3, TAB4, TAB5)
+BODY <- tabItems(TAB1, TAB2, TAB3, TAB4, TAB5, TAB6)
 
 shinyUI <- dashboardPage(
-    dashboardHeader(title = paste0("Ahringer lab C. elegans tissue-specific database ", version), titleWidth = 600),
+    dashboardHeader(
+        title = paste0("Ahringer lab C. elegans tissue-specific database ", version), titleWidth = 600,
+        tags$li(
+            a(
+                href = 'http://ahringerlab.com',
+                img(src = 'http://ahringerlab.com/assets/img/favicon.ico', title = "Go back to main page", height = "30px"),
+                style = "padding-top:10px; padding-bottom:10px;"
+            ),
+            class = "dropdown"
+        )
+    ),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
         tags$script(inactivity),
         tags$head(includeCSS("assets/custom.css")),
-        tags$head(tags$link(rel = "shortcut icon", href = "http://tispelegans.site/www_JABrowse/favicon.ico")),
-        tags$head(tags$style(HTML('.left-side, .main-sidebar {position: fixed;} .navbar {position: fixed; right: 0px; left: 0px;} .main-header .logo {position: fixed} .content {padding: 65px 15px 15px 15px;}'))),        
+        tags$head(tags$link(rel = "shortcut icon", href = "http://ahringerlab.com/assets/img/favicon.ico")),
+        tags$head(tags$style(HTML('.left-side, .main-sidebar {position: fixed;} .navbar {position: fixed; right: 0px; left: 0px;} .main-header .logo {position: fixed} .content {padding: 65px 15px 15px 15px;}'))),
         tags$head(tags$style(HTML('.logo .sidebar-toogle .navbar-navbar-static-top {position: fixed;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .logo {background-color: #333;} .skin-blue .main-header .logo:hover {background-color: #333;}'))),
         tags$head(tags$style(HTML('.skin-blue .main-header .navbar {background-color: #333;} .skin-blue .main-header .navbar {background-color: #333;}'))),
@@ -567,6 +601,7 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML("hr {border-top: 1px dashed #b7b7b7;}"))),
         tags$head(tags$style(HTML(".btn {border-radius: 30px;} .btn:hover {transform: scale(1.05);}"))),
         tags$head(tags$style(HTML(".bttn-fill.bttn-primary {background: #ddd;color: #333;}.bttn-fill.bttn-sm {padding: 4px 10px;font-size: 16px;font-family: inherit;}.bttn {border-radius: 0px;border-color: #555;}"))),
+        tags$head(tags$style(HTML(".bttn-simple.bttn-primary {background: #ddd;color: #333;}.bttn-bordered.bttn-primary:hover, .bttn-bordered.bttn-primary:focus {background: #eee;color: #333;}.bttn-simple.bttn-sm {padding: 4px 10px;font-size: 16px;font-family: inherit;}.bttn {border-radius: 0px;border-color: #555;}"))),
         tags$head(tags$style(HTML(".bttn-bordered.bttn-primary {background: #fff;color: #600;border-radius: 5px; border-color: #600} .bttn-bordered.bttn-primary:hover, .bttn-bordered.bttn-primary:focus {background: #600;color: #fff;}"))),
         tags$head(tags$style(HTML(".bttn-minimal.bttn-default {background: #fff;color: #333;border-color: #fff;}"))),
         tags$head(tags$style(HTML("a {color: #333} a:hover, a:focus, a:active, a:visited {color: #1d89ff;}"))),

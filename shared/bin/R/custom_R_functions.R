@@ -57,7 +57,7 @@ bak <- function(X) {
 .sourceDirs <- function(folders = c('~/shared/bin/R/', '~/Documents/PhD/__Bioinfo/shared/bin/R/')) {
     for (folder in folders) {
         if (any(grepl('*.R', list.files(folder)))) {
-            files <- paste0(folder, list.files(folder, pattern = '.R'))
+            files <- paste0(folder, '/', list.files(folder, pattern = '.R'))
             for (file in files) {
                 source(file)
             }
@@ -73,10 +73,32 @@ read.cb <- function(...) {
   if (!ismac) read.table(file="clipboard", ...)
   else read.table(pipe("pbpaste"), ...)
 }
+sort.per.clusters <- function(df, clusters) {
+    df2 <- df[0,]
+    for (cluster in unique(clusters)) {
+        tmp <- df[clusters == cluster, ]
+        which.max.col <- which.max(colSums(tmp))
+        tmp <- tmp[order(tmp[,which.max.col], decreasing = T),]
+        df2 <- rbind(df2, tmp)
+    }
+    colnames(df2) <- colnames(df)
+    return(df2)
+}
+# custom print.data.frame 
+print.data.frame <- function(x) {print(knitr::kable(x))}
 
 # ---------------------------------------------------------------------------- #
 # ---------------- DATA FORMATTING FUNCTIONS
 # ---------------------------------------------------------------------------- #
+# Transform a named list into a long-format data.frame
+fromListToLongDataframe <- function(list, names = c("name", "value")) {
+    require(tidyverse)
+    list %<>% 
+        enframe() %>%
+        unnest() %>% 
+        setColNames(names)
+    return(list)
+}
 # Function to remove NAs from a vector
 na.remove <- function(x) {
     which.na <- is.na(x)
@@ -122,6 +144,22 @@ pct <- function(vec) {
     t <- table(vec)
     return( round(t / sum(t) * 100, 3) )
 }
+pct.scale <- function(vec) {
+    return(vec / sum(vec) * 100)
+}
+pct.cols <- function(df) {
+    df2 <- apply(df, 2, function(COL) {COL/sum(COL)*100})
+    return(df2)
+}
+pct.rows <- function(df) {
+    df2 <- apply(df, 1, function(ROW) {ROW/sum(ROW)*100})
+    return(df2)
+}
+addPct <- function(vec) {
+    pct <- round(vec / sum(vec) * 100, 1)
+    char <- paste0(format(vec, big.mark = ",", scientific = FALSE), ' (', pct, '%)')
+    return(char)
+}
 ## Shortcut to lapply(LIST, FUN)
 heads <- function(x) {
     lapply(x, head)
@@ -166,11 +204,9 @@ dev10 <- function(width = 10, height = 10) {
 }
 # %in.which% function : for a vector of names, output in which element of a given list the name is
 `%inwhich%` <- function(names, list) {
-    
     t <- reshape2::melt(list)
     l <- t[match(names, t$value), ]$L1
     return(l)
-    
 }
 # Function to compare 2 lists (2-way venn without plotting)
 compare2lists <- function(vec1, vec2, name.vec1 = NULL, name.vec2 = NULL, do.plot = F, return.pct = T) {
@@ -196,6 +232,59 @@ vsplit <- function(v, n) {
         e = min(l, round(r*i))
         return(v[s:e])
     }))
+}
+# Function to clamp a data.frame
+clamp <- function(df, lims = c(-99999, 99999)) {
+    df2 <- as.data.frame(df)
+    df2[df2 < lims[1]] <- lims[1]
+    df2[df2 > lims[2]] <- lims[2]
+    return(df2)
+}
+# Check outliers
+is_outlier <- function(x) {
+    return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
+}
+# Set row and col names
+setRowNames <- function(df, names) {
+    row.names(df) <- names
+    return(df)
+}
+setColNames <- function(df, names) {
+    colnames(df) <- names
+    return(df)
+}
+# Switch from counts to cases formats (rectangular matrix of counts -> long df for ggplots2)
+countsToCases <- function(x, countcol = "value") {
+    x2 <- reshape2::melt(x)
+    x2$row <- factor(rep(row.names(x), ncol(x)), levels = row.names(x))
+    x2 <- x2[, c('variable', 'row', 'value')]
+    return(x2)
+}
+countsToLongFormat <- countsToCases
+dataframeToLongFormat <- function(df) {
+    df2 <- data.frame(col.value = character(), row.value = character(), value = numeric(), stringsAsFactors = FALSE)
+    i <- 0
+    for (COL in colnames(df)) {
+        for (ROW in row.names(df)) {
+            i <- i + 1
+            df2[i, 'col.value'] <- COL
+            df2[i, 'row.value'] <- ROW
+            df2[i, 'value'] <- df[ROW, COL]
+        }
+    }
+    df2 <- mutate_if(df2, is.character,as.factor)
+    return(df2)
+}
+namedListToLongFormat <- function(x) {
+    lapply(names(x), function(NAME) {
+        L <- x[[NAME]]
+        if (is.null(ncol(L))) {
+            data.frame(value = L, name = rep(NAME, length(L)))
+        } 
+        else {
+            data.frame(L, name = rep(NAME, nrow(L)))
+        }
+    }) %>% do.call(rbind, .)
 }
 
 # ---------------------------------------------------------------------------- #
@@ -242,7 +331,8 @@ mergeOverlappingPeaks <- function(granges1, granges2 = NULL) {
         if(is.character(granges1)) {
             granges1 <- read.table(granges1, stringsAsFactors = F)[,1:3]
             colnames(granges1) <- c('chrom', 'start', 'stop')
-            granges1 <- GRanges(granges1)
+            granges1$start <- granges1$start+1
+            granges1 <- makeGRangesFromDataFrame(granges1)
         }
         message('Only 1 file provided. Converting into GRanges..')
         return(granges1)
@@ -252,11 +342,23 @@ mergeOverlappingPeaks <- function(granges1, granges2 = NULL) {
         granges2 <- read.table(granges2, stringsAsFactors = F)[,1:3]
         colnames(granges1) <- c('chrom', 'start', 'stop')
         colnames(granges2) <- c('chrom', 'start', 'stop')
-        granges1 <- GRanges(granges1)
-        granges2 <- GRanges(granges2)
+        granges1$start <- granges1$start+1
+        granges2$start <- granges2$start+1
+        granges1 <- makeGRangesFromDataFrame(granges1)
+        granges2 <- makeGRangesFromDataFrame(granges2)
     }
     grange <- reduce(c(granges1[granges1 %over% granges2], granges2[granges2 %over% granges1]))
     return(grange)
+}
+# Get jaccard score from 2 sets of peaks
+get.jaccard.from.peaks <- function(peaks.A, peaks.B, granges) {
+    granges$has.A <- granges %over% peaks.A
+    granges$has.B <- granges %over% peaks.B
+    p <- sum(granges$has.A & granges$has.B)
+    q <- sum(granges$has.A & !granges$has.B)
+    r <- sum(!granges$has.A & granges$has.B)
+    jaccard <- (p / (p+q+r))
+    return(jaccard)
 }
 
 # ---------------------------------------------------------------------------- #
@@ -311,7 +413,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         biotype <- genes.gtf[WBID]$gene_biotype
         # Get gene expression infos from cao and tissue.spe LCAP
         CAO.GENE <- cao03[WBID,]
-        LCAP.GENE <- LCAP[WBID,]
+        LCAP.GENE <- LCAP_normalized[WBID,]
         if (nrow(CAO.GENE) == 0) {stop('Gene not found in Cao data. Aborting.')}
         if (nrow(LCAP.GENE) == 0) {stop('Gene not found in LCAP data. Aborting.')}
         l2mean.CAO.GENE <- log2((CAO.GENE+1)/rowMeans(CAO.GENE+1))
@@ -323,25 +425,28 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         max.tissue.df.LCAP.GENE <- max.tissue.df.LCAP[WBID,]
         tissue <- as.vector(max.tissue.df.LCAP.GENE[,'which.tissues'])
         tau <- round(unname(genes.gtf[WBID]$TauScore), 2)
-        FCs <- round(max.tissue.df.LCAP.GENE[12:16],2)
-        colnames(FCs) <- gsub('ratio.|.v.others', '', colnames(FCs))
+        FCs <- round(sapply(order.tissues[1:5], function(TISSUE) {LCAP.GENE[, TISSUE] / mean(unlist(LCAP.GENE[, colnames(LCAP.GENE) != TISSUE]))}), 3)
         # Get REs associated with gene (which ones, associated tissues and dev. dynamics)
-        REs <- all[grep(WBID, all$WormBaseID),]
-        if (nrow(REs) == 0) {message('!!! WARNING !!! No associated REs are found !!!') ; REs.coords <- NULL ; REs.tau <- 0 ; REs.tissues <- NULL ; REs.TFs <- NULL ; REs.TFs.nb <- NULL ; ATAC.GENE <- 0 ; ATACdev.GENE <- 0 ; l2mean.ATAC.GENE <- 0 ; l2mean.ATACdev.GENE <- 0 } else {
-            REs.coords <- REs[,c(1:3, 7)]
+        which <- grep(WBID, all$WormBaseID)
+        REs <- all[which,]
+        if (nrow(REs) == 0) {
+            message('!!! WARNING !!! No associated REs are found !!!')
+            REs.coords <- NULL ; REs.tau <- 0 ; REs.tissues <- NULL ; REs.TFs <- NULL ; REs.TFs.nb <- NULL ; ATAC.GENE <- 0 ; ATACdev.GENE <- 0 ; l2mean.ATAC.GENE <- 0 ; l2mean.ATACdev.GENE <- 0 
+        } else {
+            REs.coords <- REs[,c(1:3, 11)]
             row.names(REs.coords) <- paste0('RE_', seq(1:nrow(REs.coords)))
             REs.tau <- REs$TauScore
             REs.tissues <- order.tissues[REs$clustersATAC.tissues]
-            REs.TFs <- SUMM[grep(WBID, all$WormBaseID),]
+            REs.TFs <- SUMM[which,]
             REs.TFs.nb <- REs.TFs$TFnb
-            ATAC.GENE <- ATAC[grep(WBID, all$WormBaseID),]
-            ATACdev.GENE <- ATACdev[grep(WBID, all$WormBaseID),]
+            ATAC.GENE <- ATAC[which,]
+            #ATACdev.GENE <- ATACdev[row.names(ATACdev) %in% all$coords[which],]
             l2mean.ATAC.GENE <- round(log2((ATAC.GENE+1)/rowMeans(ATAC.GENE+1)),2)
             row.names(l2mean.ATAC.GENE) <- row.names(REs.coords)
             colnames(l2mean.ATAC.GENE) <- colnames(l2mean.LCAP.GENE)
-            l2mean.ATACdev.GENE <- round(log2((ATACdev.GENE+1)/rowMeans(ATACdev.GENE+1)),2)
-            row.names(l2mean.ATACdev.GENE) <- row.names(REs.coords)
-            colnames(l2mean.ATACdev.GENE) <- colnames(l2mean.LCAPdev.GENE)
+            #l2mean.ATACdev.GENE <- round(log2((ATACdev.GENE+1)/rowMeans(ATACdev.GENE+1)),2)
+            #row.names(l2mean.ATACdev.GENE) <- row.names(REs.coords)
+            #colnames(l2mean.ATACdev.GENE) <- colnames(l2mean.LCAPdev.GENE)
         }
 
         # Build results object
@@ -352,8 +457,8 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         res[['Gene.expr.dev.TPM']] <- round(rbind(LCAPdev = LCAPdev.GENE),2)
         res[['Gene.expr.dev.l2mean']] <- round(rbind(LCAPdev = l2mean.LCAPdev.GENE),2)
         res[['Associated.REs']] <- cbind(REs.coords, RE.Tau.score = round(REs.tau,2), REs.associated.tissues = REs.tissues)
-        res[['Associated.REs.dev']] <- round(ATACdev.GENE,2)
-        res[['Associated.REs.dev.l2mean']] <- l2mean.ATACdev.GENE
+        #res[['Associated.REs.dev']] <- round(ATACdev.GENE,2)
+        #res[['Associated.REs.dev.l2mean']] <- l2mean.ATACdev.GENE
         res[['Associated.REs.tissue']] <- round(ATAC.GENE,2)
         res[['Associated.REs.tissue.l2mean']] <- l2mean.ATAC.GENE
         res[['Associated.REs.TFs.infos']] <- cbind(REs.coords, RE.Tau.score = round(REs.tau,2), RE.associated.tissues = REs.tissues)
@@ -362,11 +467,11 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         if (verbose == T) {
             width.bak <- options()$width
             options("width" = 200)
-            cat('\n', rep('=', times = 31+nchar(locusID)), '\n>>>   ', WBID, ' --- ', locusID, '   <<<\n', rep('=', times = 31+nchar(locusID)), sep = "", fill = T)
+            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', rep('>', 14),'   ', WBID, ' --- ', locusID, '  ', rep('<', 14),'\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T)
 
-            cat('\nGene infos\n', rep('-', times = 15+nchar(locusID)), sep = "", fill = T)
+            cat('\nGene infos\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T)
                 cat(paste0(capture.output(res[['Gene.info']]), collapse = "\n"), sep = "", fill = T)
-            cat('\n\nGene expression\n', rep('-', times = 15+nchar(locusID)), sep = "", fill = T)
+            cat('\n\nGene expression\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T)
                 cat('\n>> Gene tissue-specific enrichments (FC vs. other tissues)', sep = "", fill = T)
                     cat(paste0(capture.output(FCs), collapse = "\n"), sep = "", fill = T)
                 cat('\n>> Gene TPM (tissue-specific)', sep = "", fill = T)
@@ -377,15 +482,15 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
                     cat(paste0(capture.output(res[['Gene.expr.dev.TPM']]), collapse = "\n"), sep = "", fill = T)
                 cat('\n>> Gene log2 mean-centered TPM (dev.)', sep = "", fill = T)
                     cat(paste0(capture.output(res[['Gene.expr.dev.l2mean']]), collapse = "\n"), sep = "", fill = T)
-            cat('\n\nAssociated regulatory elements\n', rep('-', times = 15+nchar(locusID)), sep = "", fill = T)
+            cat('\n\nAssociated regulatory elements\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T)
                 cat('\n>> REs coordinates', sep = "", fill = T)
                     cat(paste0(capture.output(res[['Associated.REs']]), collapse = "\n"), sep = "", fill = T)
                 cat('\n>> REs log2 mean-centered accessibility (tissue-specific)', sep = "", fill = T)
                     cat(paste0(capture.output(res[['Associated.REs.tissue']]), collapse = "\n"), sep = "", fill = T)
-                cat('\n>> REs log2 mean-centered accessibility (dev)', sep = "", fill = T)
-                    cat(paste0(capture.output(res[['Associated.REs.dev']]), collapse = "\n"), sep = "", fill = T)
+                #cat('\n>> REs log2 mean-centered accessibility (dev)', sep = "", fill = T)
+                #    cat(paste0(capture.output(res[['Associated.REs.dev']]), collapse = "\n"), sep = "", fill = T)
 
-            cat('\n', rep('=', times = 31+nchar(locusID)), '\n', sep = "", fill = T)
+            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', sep = "", fill = T)
             options("width" = width.bak)
         }
 
@@ -394,11 +499,11 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
             options("width" = 200)
 
             txt.file <- ifelse(is.logical(saveTXT), file(paste0(locusID, '-summary.txt'), open="wt"), as.character(saveTXT))
-            cat('\n', rep('=', times = 31+nchar(locusID)), '\n>>>   ', WBID, ' --- ', locusID, '   <<<\n', rep('=', times = 31+nchar(locusID)), sep = "", fill = T, file = txt.file)
+            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', rep('>', 14),'   ', WBID, ' --- ', locusID, '   ', rep('<', 14),'\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file)
 
-            cat('\nGene infos\n', rep('-', times = 15+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+            cat('\nGene infos\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat(paste0(capture.output(res[['Gene.info']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-            cat('\n\nGene expression\n', rep('-', times = 15+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+            cat('\n\nGene expression\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> Gene tissue-specific enrichments (FC vs. other tissues)', sep = "", fill = T, file = txt.file, append = T)
                     cat(paste0(capture.output(FCs), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> Gene TPM (tissue-specific)', sep = "", fill = T, file = txt.file, append = T)
@@ -409,15 +514,15 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
                     cat(paste0(capture.output(res[['Gene.expr.dev.TPM']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> Gene log2 mean-centered TPM (dev.)', sep = "", fill = T, file = txt.file, append = T)
                     cat(paste0(capture.output(res[['Gene.expr.dev.l2mean']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-            cat('\n\nAssociated regulatory elements\n', rep('-', times = 15+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+            cat('\n\nAssociated regulatory elements\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> REs coordinates', sep = "", fill = T, file = txt.file, append = T)
                     cat(paste0(capture.output(res[['Associated.REs']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> REs log2 mean-centered accessibility (tissue-specific)', sep = "", fill = T, file = txt.file, append = T)
                     cat(paste0(capture.output(res[['Associated.REs.tissue']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-                cat('\n>> REs log2 mean-centered accessibility (dev)', sep = "", fill = T, file = txt.file, append = T)
-                    cat(paste0(capture.output(res[['Associated.REs.dev']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
+                #cat('\n>> REs log2 mean-centered accessibility (dev)', sep = "", fill = T, file = txt.file, append = T)
+                #    cat(paste0(capture.output(res[['Associated.REs.dev']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
 
-            cat('\n', rep('=', times = 31+nchar(locusID)), '\n', sep = "", fill = T, file = txt.file, append = T)
+            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', sep = "", fill = T, file = txt.file, append = T)
 
             options("width" = width.bak)
 
@@ -477,153 +582,6 @@ getVioplotxOfCaoExpr <- function(vec, name.main = "") {
     CAO.mat[is.na(CAO.mat)] <- 0
     if (all(grepl("WB", vec))) {row.names(CAO.mat)=WB2name(WBID)} else {row.names(CAO.mat)=vec}
     vioplotx(CAO.mat[,1], CAO.mat[,2], CAO.mat[,3], CAO.mat[,4], CAO.mat[,5], col = color, main = name.main, ylab = "log2(TPM)")
-}
-# Plot enriched GO from a vector of genes names
-plotGOs <- function(x, hier.filtering='none', ...) { 
-
-    require(gProfileR)
-    reduced_c <- gprofiler(x, organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering=hier.filtering)
-    reduced_c <- reduced_c[order(reduced_c$p.value),]
-    d <- reduced_c[reduced_c$domain %in% c("MF", "BP", "CC", "keg"),]
-    d <- d[!duplicated(d[, c("p.value", "overlap.size")],),]
-    d <- d[1:min(25, dim(d)[1]),]
-    if (nrow(d) > 0) {
-        par(las = 0, mar = c(4,4,4,1))
-        plot <- barplot(height=-log10(d$p.value), col=colorGO[d$domain], horiz=T, xlim=c(0,25), ...)
-        legend("right", legend=names(colorGO), fill=colorGO, col="#00000000", pch=15, bty="n")
-        text(x=rep(0.2, times=length(plot)), y=plot, d$term.name, pos=4)
-        mtext(text="GO-terms",side=2,line=1,outer=FALSE)
-        mtext(text="-log10(adj-p.val)",side=1,line=3,outer=FALSE, cex=0.85)
-    } else { plot.new() }
-
-}
-plot.gos <- function(
-    GENES, 
-    max.p.val = 0.05, 
-    correction.method = "bonferroni", 
-    hier.filtering = "none", 
-    onts = c("MF", "BP", "CC", "keg"), 
-    max.depth = NULL, 
-    max.terms = 25,
-    plot = T, 
-    size.by = 'p.val',
-    symbol.by = 'ont', 
-    color.by = 'ont' ) {
-    require(gProfileR)
-    
-    if (is.vector(GENES) & !is.list(GENES)) {
-
-        genes <- GENES
-        gos <- gprofiler(genes, organism = "celegans", max_p_value = max.p.val, correction_method = correction.method, hier_filtering = hier.filtering)
-        gos <- gos[order(gos$p.value),]
-        gos.filtered <- gos[gos$domain %in% onts,]
-        gos.filtered <- gos.filtered[!duplicated(gos.filtered[, c("p.value", "overlap.size")],),]
-        if (!is.null(max.depth)) {gos.filtered <- gos.filtered[gos.filtered$relative.depth <= max.depth,]}
-        gos.filtered <- gos.filtered[1:min(max.terms, dim(gos.filtered)[1]),]
-        
-        if (nrow(gos.filtered) > 0 & plot == T) {
-            gos.filtered$genes.ratios <- gos.filtered$overlap.size / gos.filtered$query.size
-            gos.filtered$logpval <- -log10(gos.filtered$p.value)
-            gos.filtered$counts <- gos.filtered$overlap.size
-            gos.filtered$symbol <- as.numeric(c('15', '16', '17', '18')[factor(gos.filtered$domain, levels = c('MF', 'BP', 'CC', 'keg'))])
-            gos.filtered$color <- colorRampPalette(c('blue', 'red'))(10)[cut(gos.filtered$counts, breaks = seq(floor(min(gos.filtered$counts)), ceiling(max(gos.filtered$counts)), length.out = 11), include.lowest = T)]
-            gos.filtered$size <- as.numeric(cut(gos.filtered$genes.ratios, breaks = seq(floor(min(gos.filtered$genes.ratios/0.1)), ceiling(max(gos.filtered$genes.ratios/0.1)), 1) / 10, include.lowest = T)) / 10 * 3 + 1
-            gos.filtered$plotted.val <- gos.filtered$logpval
-            gos.filtered.reordered <- gos.filtered[order(gos.filtered$plotted.val, decreasing = F),]
-            
-            layout(matrix(1:2, ncol = 2), widths = c(6, 2))
-            par(mar = c(5, 1, 1, 1))
-            dotchart(
-                gos.filtered.reordered$plotted.val, 
-                labels = gos.filtered.reordered$term.name,
-                pt.cex = gos.filtered.reordered$size, 
-                pch = gos.filtered.reordered$symbol, 
-                color = gos.filtered.reordered$color, 
-                lcolor = NA,
-                xlab = '-log10(adj. p-val.)', 
-                ylab = ''
-            )
-            plot.new()
-            par(oma = c(0,0,0,0), mar = c(0,0,0,0))
-            # Symbols (GO domain)
-            legend('topleft', title = "GO db", legend = c('MF', 'BP', 'CC', 'keg'), pch = c(15, 16, 17, 18), bty = 'n')
-            # Size (% of GO term)
-            legend(x = 0, y = 0.8, title = "% of GO term", legend = as.character(seq(floor(min(gos.filtered$genes.ratios/0.1)), ceiling(max(gos.filtered$genes.ratios/0.1)), 1) / 10), pch = 19, pt.cex = (seq(floor(min(gos.filtered$genes.ratios/0.1)), ceiling(max(gos.filtered$genes.ratios/0.1)), 1) / 10 * 3 + 1), bty = 'n')
-            # Color (nb of genes)
-            legend(x = 0, y = 0.5, title = "# of genes", legend = as.character(round(seq(floor(min(gos.filtered$counts)), ceiling(max(gos.filtered$counts)), length.out = 10))), col = colorRampPalette(c('blue', 'red'))(10), pch = 15, bty = 'n')
-        }
-        
-        return(gos.filtered)
-    
-    }
-    
-    if (is.list(GENES)) {
-        list.gos <- list()
-        
-        for (K in 1:length(GENES)) {
-            genes <- GENES[[K]]
-            gos <- gprofiler(genes, organism="celegans", max_p_value = max.p.val, correction_method = correction.method, hier_filtering= hier.filtering)
-            gos <- gos[order(gos$p.value),]
-            gos.filtered <- gos[gos$domain %in% onts,]
-            gos.filtered <- gos.filtered[!duplicated(gos.filtered[, c("p.value", "overlap.size")],),]
-            if (!is.null(max.depth)) {gos.filtered <- gos.filtered[gos.filtered$relative.depth <= max.depth,]}
-            gos.filtered <- gos.filtered[1:min(max.terms, dim(gos.filtered)[1]),]
-            list.gos[[K]] <- gos.filtered[, c("term.id", "domain", "term.size", "query.size", "overlap.size", "p.value", "recall", "precision", "term.name")]
-        }
-        
-        return(list.gos)
-    }
-    
-}
-homemadeGOplot <- function(GENES_LIST, DICT = 'anatomy', pdf = NULL) {
-    DICT_FILE <- if (DICT == 'anatomy') {
-        "~/Downloads/anatomy_dict.csv"
-    }
-
-    DICT <- read.csv(DICT_FILE, header = T, stringsAsFactors = F, row.names = 1)
-
-    #GENES_LIST <- readLines('germline.genes.list')
-    DICT_SUB <- DICT[row.names(DICT) %in% GENES_LIST,]
-    DICT_SUB <- DICT_SUB[,colSums(DICT_SUB) > 10]
-    GO_LIST_SUB <- colnames(DICT_SUB)
-
-    P_VALS <- c()
-    ODD_VALS <- c()
-    PCT_VALS <- c()
-    for (GO in GO_LIST_SUB) {
-        TEST <- fisher.test(rbind( c( sum(DICT_SUB[,GO]), sum(DICT[,GO]) - sum(DICT_SUB[,GO]) ), c( (sum(DICT_SUB) - sum(DICT_SUB[,GO])), (sum(DICT) - sum(DICT_SUB) - sum(DICT[,GO]) + sum(DICT_SUB[,GO])) )))
-        P_VALS[GO] <- TEST$p.val
-        ODD_VALS[GO] <- TEST$estimate
-        PCT_VALS[GO] <- round(sum(DICT_SUB[,GO]) / (sum(DICT[,GO]) - sum(DICT_SUB[,GO])) * 100, 2)
-    }
-    
-    # Filter significant GO terms
-    FILTER <- which(p.adjust(P_VALS, method = "bonf") < 0.001 & ODD_VALS > 1 & PCT_VALS > 5)
-    # Get the order of p-values
-    P_VALS_ORDER <- rev(order(p.adjust(P_VALS, method = "bonf")[FILTER], decreasing = F))
-    # Order the rest of the values and adjust p-values
-    GOs_SORTED <- gsub("\\.", " ", gsub(".WBbt.*", "", names(P_VALS[FILTER][P_VALS_ORDER])))
-    P_VALS_SORTED <- p.adjust(P_VALS, method = "bonf")[FILTER][P_VALS_ORDER]
-    ODD_VALS_SORTED <- ODD_VALS[FILTER][P_VALS_ORDER]
-    PCT_VALS_SORTED <- PCT_VALS[FILTER][P_VALS_ORDER]
-
-    # Proceed to plotting results
-    if (length(P_VALS_SORTED) > 0) {
-        if(!is.null(pdf)) {
-            pdf(pdf)
-        }
-        par(las = 0, mar = c(4,10,4,1))
-        plot <- barplot(height = -log10(P_VALS_SORTED), horiz = T, names = "")
-        grid(col = "black", ny = 1, lwd = 0.2, lty = 1)
-        plot <- barplot(height = -log10(P_VALS_SORTED), horiz = T, names = "", add = T)
-        par(xpd = T)
-        text(x=rep(-0.2, times = length(P_VALS_SORTED)), y = plot, GOs_SORTED, pos = 2, las = 0)
-        par(xpd = F)
-        mtext(text = "-log10(adj-p.val)", side = 1, line = 2, outer = FALSE, cex = 0.85)
-        if(!is.null(pdf)) {
-            dev.off()
-        }
-    } else {  }
 }
 
 # ---------------------------------------------------------------------------- #
@@ -810,11 +768,16 @@ plotMedSE <- function(x, functionToUse = 'mean', colorCI = rgb(0.8, 0.8, 0.8, al
 
 }
 ## Plot overlay of densities for a list of vectors
-plotCumFreqs <- function(list, colors = RColorBrewer::brewer.pal(name = 'Set2', n = 8), xlim = NULL, ylim = NULL, sort = T, pdf = NULL, ...) {
+plotCumFreqs <- function(list, colors = RColorBrewer::brewer.pal(name = 'Set2', n = 8), xlim = NULL, ylim = NULL, sort = T, pdf = NULL, add0 = T, translate = F, ...) {
         
     ylim <- if(is.null(ylim)) {c(0, 1)} else {ylim}
     xlim <- if(is.null(xlim)) {c(0, max(unlist(lapply(list, max))))} else {xlim}
-    
+    if (translate) {
+        bak(ylim)
+        bak(xlim)
+        xlim <- ylim.bak
+        ylim <- xlim.bak
+    }
     if(!is.null(pdf)) pdf(pdf)
     
     plot(
@@ -830,10 +793,18 @@ plotCumFreqs <- function(list, colors = RColorBrewer::brewer.pal(name = 'Set2', 
     abline(h = c(0, 1), lty = 2, col = 'grey90')
     if (sort) {
         lapply(1:length(list), function(K) {
+            x <- if (add0) {c(0, list[[K]])} else {list[[K]]}
+            y <- if (add0) {c(0, ecdf(list[[K]])(list[[K]]))} else {ecdf(list[[K]])(list[[K]])}
+            if (translate) {
+                bak(x)
+                bak(y)
+                x <- y.bak
+                y <- x.bak
+            }
             par(new = T)
             plot(
-                x = c(0, list[[K]]), 
-                y = c(0, ecdf(list[[K]])(list[[K]])), 
+                x = x, 
+                y = y, 
                 ylim = ylim,
                 xlim = xlim,
                 ylab = "", 
@@ -850,9 +821,17 @@ plotCumFreqs <- function(list, colors = RColorBrewer::brewer.pal(name = 'Set2', 
     } else {
         lapply(1:length(list), function(K) {
             par(new = T)
+            x <- if (add0) {c(0, 1:length(list[[K]]))} else {1:length(list[[K]])}
+            y <- if (add0) {c(0, cumsum(list[[K]]))} else {cumsum(list[[K]])}
+            if (translate) {
+                bak(x)
+                bak(y)
+                x <- y.bak
+                y <- x.bak
+            }
             points(
-                x = c(0, 1:length(list[[K]])), 
-                y = c(0, cumsum(list[[K]])), 
+                x = x, 
+                y = y, 
                 ylim = ylim,
                 xlim = xlim,
                 ylab = "", 
@@ -1016,18 +995,22 @@ plot.2way.Venn <- function(vec1, vec2, names = c('a', 'b'), col = c('grey20', 'g
         plot(venn, col = col, ...)
         
         # Add labels and counts
+        par(xpd =T)
         text(x = venn$centers[,'x'], y = (venn$centers[,'y'] + venn$diameters/2), c(paste0(names[1], "\n(n=", length(vec1) ,")"), paste0(names[2], "\n(n=", length(vec2) ,")")), pos = 3, cex = 0.8)
         if (plot.values) {
             text(x = c(p1, pmiddle, p2), y = c(0.5, 0.2, 0.5), c(paste0("n=", length(vec2) - sum(vec1 %in% vec2)), paste0("n=", sum(vec1 %in% vec2)), paste0(paste0("n=", length(vec1) - sum(vec1 %in% vec2)))), pos = 3, cex = 0.8)
         }
+        par(xpd = F)
     }
     
-    m <- reshape2::recast(elements ~ sets, data = m)
-    
+    shared <- as.character(m$elements[duplicated(m$elements)])
+    in_a <- as.character(m$elements[(m$elements %notin% shared) & (m$sets == names[1])])
+    in_b <- as.character(m$elements[(m$elements %notin% shared) & (m$sets == names[2])])
+
     invisible(list(
-        'only.in.vec1' = as.character(m$elements[!is.na(m[,2]) & is.na(m[,3])]), 
-        'only.in.vec2' = as.character(m$elements[is.na(m[,2]) & !is.na(m[,3])]), 
-        'shared' = as.character(m$elements[!is.na(m[,2]) & !is.na(m[,3])])
+        'shared' = shared,
+        'only.in.1' = in_a, 
+        'only.in.2' = in_b
     ))
     
 }
@@ -1262,6 +1245,23 @@ compute.Vmat <- function(reads.granges, target.granges, XAXIS.CUTOFF, YAXIS.CUTO
     
     return(tab)
 }
+# Plot distance tree of a matrix 
+plotDistTree <- function(matrix, rows = NULL) {
+    if (!is.null(rows))
+        matrix <- matrix[rows,]
+    cors <- as.data.frame(matrix(0, ncol = ncol(matrix), nrow = ncol(matrix)))    
+    for (ROW in 1:ncol(matrix)) {
+        for (COLUMN in 1:ncol(matrix)) {
+            row <- matrix[, ROW]
+            col <- matrix[, COLUMN]
+            cors[ROW, COLUMN] <- cor.test(row, col)$estimate
+        }
+    }
+    row.names(cors) <- colnames(matrix)
+    colnames(cors) <- colnames(matrix)
+    plot(as.dendrogram(hclust(dist(cors, method = 'euc'))), horiz= T, xlab = 'Euclid. distance', main = 'Comparison with Cao')
+    text(x = max(hclust(dist(cors, method = 'euc'))[[2]]) * c(1, 0.85, 0.7, 0.55, 0.4), y = 0.5, sapply(apply(rbind(paste0(order.tissues[1:5]), paste0('CAO_', order.tissues[1:5])), 2, function(VECS) VECS) %>% as.data.frame(stringsAsFactors = F) %>% as.list, function(COORDS) {cors[COORDS[[1]], COORDS[[2]]]}) %>% round(3))
+}
 
 # ---------------------------------------------------------------------------- #
 # ---------------- GRANGES-RELATED FUNCTIONS
@@ -1327,7 +1327,7 @@ simplifyGRanges <- function(granges) {
 
 }
 # Plot venn diagram of a list of genes against all classes from Cao data
-checkAgainstCao <- function(genes, against = 'cao', pdf = NULL, new.dev = T, main = "", ...) {
+checkAgainstCao <- function(genes, against = 'cao', pdf = NULL, label = NULL, color = NULL, new.dev = T, main = "", par.mfrow = c(2, 3), ...) {
     if (!exists("cao06.2")) {
         cao06=read.table("~/_data/Cao2016_TableS6.txt", header=T)
         cao06$max.tissue=as.character(cao06$max.tissue)
@@ -1344,30 +1344,73 @@ checkAgainstCao <- function(genes, against = 'cao', pdf = NULL, new.dev = T, mai
     intest.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Intest.']
     pharynx.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Pharynx']
     glia.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Glia']
-    non.enriched.cao <- names(genes.gtf)[genes.gtf$is.prot.cod & names(genes.gtf) %notin% cao06.2$gene_id & names(genes.gtf) %in% cao06$gene_id]
-    non.detected.cao <- names(genes.gtf)[genes.gtf$is.prot.cod & names(genes.gtf) %notin% cao06$gene_id]
-    cao_genes <- reshape2::melt(list("Hypod." = hypod.genes.cao, "Neurons" = neurons.genes.cao, "Germline" = germline.genes.cao, "Muscle" = muscle.genes.cao, "Intest." = intest.genes.cao, "Pharynx" = pharynx.genes.cao, "Glia" = glia.genes.cao, "Non-enriched" = non.enriched.cao, "Low" = non.detected.cao))
+    ubiq.genes.cao <- apply(cao03, 1, function(ROW) {all(ROW >= 5)}) %>% which() %>% names() %>% '['(. %notin% c(hypod.genes.cao, germline.genes.cao, neurons.genes.cao, muscle.genes.cao, intest.genes.cao, pharynx.genes.cao, glia.genes.cao))
+    others <- names(genes.gtf)[genes.gtf$is.prot.cod & names(genes.gtf) %notin% cao06.2$gene_id & names(genes.gtf) %in% cao06$gene_id]
+    cao_genes <- reshape2::melt(list(
+        "Germline" = germline.genes.cao, 
+        "Neurons" = neurons.genes.cao, 
+        "Muscle" = muscle.genes.cao, 
+        "Hypod." = hypod.genes.cao, 
+        "Intest." = intest.genes.cao, 
+        "Pharynx" = pharynx.genes.cao, 
+        "Glia" = glia.genes.cao, 
+        "Ubiq." = ubiq.genes.cao, 
+        "Others?" = others)
+    )
     
     if(!is.null(pdf)) {
         pdf(pdf, width = 10, height = 10)
     } else if (new.dev) {
         dev.new(width = 20, height = 14)
     }
+    par(mfrow = par.mfrow)
     if (against == 'cao') {
-        par(mfrow = c(2, 4), oma = c(0, 0, 3, 0))
+        cao06 <- read.table("~/_data/Cao2016_TableS6.txt", header=T)
+        cao06$max.tissue <- as.character(cao06$max.tissue)
+        cao06[cao06$max.tissue == "Gonad", "max.tissue"]="Germline"
+        cao06[cao06$max.tissue == "Intestine", "max.tissue"]="Intest."
+        cao06[cao06$max.tissue == "Hypodermis", "max.tissue"]="Hypod."
+        cao06[cao06$max.tissue == "Body_wall_muscle", "max.tissue"]="Muscle"
+        cao06.2 <- cao06[cao06$ratio >= 3 & cao06$qval <= 0.05,]
+        hypod.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Hypod.']
+        neurons.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Neurons']
+        germline.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Germline']
+        muscle.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Muscle']
+        intest.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Intest.']
+        pharynx.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Pharynx']
+        glia.genes.cao <- cao06.2$gene_id[cao06.2$max.tissue == 'Glia']
+        ubiq.genes.cao <- apply(cao03, 1, function(ROW) {all(ROW >= 5)}) %>% which() %>% names() %>% '['(. %notin% c(hypod.genes.cao, germline.genes.cao, neurons.genes.cao, muscle.genes.cao, intest.genes.cao, pharynx.genes.cao, glia.genes.cao))
+        others <- names(genes.gtf)[genes.gtf$is.prot.cod & names(genes.gtf) %notin% cao06.2$gene_id & names(genes.gtf) %in% cao06$gene_id]
+        cao_genes <- reshape2::melt(list(
+            "Germline" = germline.genes.cao, 
+            "Neurons" = neurons.genes.cao, 
+            "Muscle" = muscle.genes.cao, 
+            "Hypod." = hypod.genes.cao, 
+            "Intest." = intest.genes.cao, 
+            "Pharynx" = pharynx.genes.cao, 
+            "Glia" = glia.genes.cao, 
+            "Ubiq." = ubiq.genes.cao, 
+            "Others?" = others)
+        )
+        
+        if(!is.null(label)) {LABEL = label} else {LABEL = 'input list'}
+        if(!is.null(color)) {COLOR = color} else {COLOR = 'grey'}
+        
         lapply(
-            c( "Germline", "Neurons", "Muscle", "Hypod.", "Intest.", "Pharynx", "Glia", "Non-enriched", "Low"), 
+            c("Germline", "Neurons", "Muscle", "Hypod.", "Intest.", "Ubiq."), 
             function(TISSUE) {
                 plot.2way.Venn(
                     genes, 
                     cao_genes[cao_genes$L1 == TISSUE,]$value,
-                    names = c('input list', paste0(TISSUE, '-enriched (Cao)')),
-                    col = c('#5e5e5e64', colortransp[c(1:5, 16, 26, 33, 35)][which(c( "Germline", "Neurons", "Muscle", "Hypod.", "Intest.", "Pharynx", "Glia", "Non-enriched", "Low") %in% TISSUE)]),
-                    ...
+                    names = c(LABEL, paste0(TISSUE, '-enriched (Cao)')),
+                    col = c(
+                        COLOR, 
+                        colortransp[c(1:5, 33)][which(c("Germline", "Neurons", "Muscle", "Hypod.", "Intest.", "Ubiq.") %in% TISSUE)]
+                    )
                 )
             }
         )
-        mtext(side = 3, line = 1, outer = T, text = main)
+        mtext(side = 3, line = 1, outer = T, text = 'Comparison with Cao data')
     } else if (against == 'lcap') {
         NULL
     }
@@ -1452,6 +1495,10 @@ deconvolve.bidirectional.proms <- function(granges) {
     strand(bid.rev) <- '-'
     granges_shifted <- sort(c(unid, bid.fwd, bid.rev), ignore.strand = T)
     
+    # Get single WormBase names
+    #mcols(granges)[,c('locus', 'WormBaseID')] %>% as_tibble() %>% dplyr::mutate('strand' = as.vector(strand(granges))) %>% dplyr::mutate(uniqueWormBaseID = strsplit(as.character(WormBaseID),',')) %>% unnest(uniqueWormBaseID) -> t
+    #granges_shifted$singleWormBaseID <- t[(grepl(',', t$WormBaseID) & t$strand == '*') | (t$strand != '*' & !duplicated(t[,1:2])), 'uniqueWormBaseID'] %>% unlist()
+    
     return(granges_shifted)
 }
 # Get rectangular matrix of coverage over a set of granges, from a bw file
@@ -1461,7 +1508,7 @@ get.cov.matrix <- function(granges, bw.file, norm = 'none', center = F, flank = 
     if (verbose) message('.. Importing bw.file...')
     if (class(bw.file)[[1]] == "character") {
         scores <- import(bw.file, as = 'Rle')
-    } else if (class(bw.file)[[1]] == "SimpleRleList" | class(bw.file)[[1]] == "CompressedRleList") {
+    } else if (class(bw.file) == "UCSCData" | class(bw.file)[[1]] == "SimpleRleList" | class(bw.file)[[1]] == "CompressedRleList") {
         scores <- bw.file
     }
     
@@ -1548,14 +1595,23 @@ get.cov.matrix <- function(granges, bw.file, norm = 'none', center = F, flank = 
     
 }
 # Import list of bigwig files
-import.list.bw <- function(folder = '_bw-files/', suffix = '_YA_ATAC_combined.bw') {
+import.list.bw <- function(folder = '_bw-files/', suffix = '_YA_ATAC_combined.bw', as = 'Rle') {
     bw.files <- list.files(folder, pattern = suffix, full.names = T)
     list <- mclapply(bw.files, function(bw.file) {
         message('Importing ', bw.file, '...')
-        import(bw.file, as = 'Rle')
+        import(bw.file, as = as)
     }, mc.cores = min(10, length(bw.files)))
     names(list) <- gsub('Gonad', 'Germline', gsub('.*/', '', gsub(suffix, '', bw.files)))
     return(list)
+}
+scale.list.bw <- function(list.bw) {
+    l <- mclapply(list.bw, function(bw.file) {
+        message('Get Z-score...')
+        RleList(mclapply(bw.file, function(chr) {
+            chr %>% scale %>% Rle
+        }, mc.cores = length(bw.file)))
+    }, mc.cores = length(list.bw))
+    return(l)
 }
 # Wrapper to plot seqplot lines
 wrapper.plot.cov.lines <- function(
@@ -1578,9 +1634,10 @@ wrapper.plot.cov.lines <- function(
     verbose = T,
     by.granges = T,
     plot.central = T,
+    plot.legend = F,
     ...) {
         
-    if (class(list.granges) == "GRanges" & (class(list.bw.files) == 'character' | class(list.bw.files) == "SimpleRleList")) { # Case where there is only 1 bigWig file 1 set of granges
+    if (class(list.granges) == "GRanges" & (class(list.bw.files) == 'character' | class(list.bw.files) == "SimpleRleList")) { # Case where there is only 1 bigWig file and 1 set of granges
         
         # Define starting parameters
         XLAB <- if (is.null(XLAB)) {'Segments coordinates'} else {XLAB}
@@ -1791,7 +1848,7 @@ wrapper.plot.cov.lines <- function(
             bty = 'l',
             xlim = XLIM,
             ylim = YLIM,
-            xlab = ifelse(length(XLAB) == 1, XLAB, XLAB[k.b]), 
+            xlab = ifelse(length(XLAB) > 1, 'Center of REs', XLAB), 
             ylab = YLAB, 
             axes = F, 
             ...
@@ -1801,7 +1858,7 @@ wrapper.plot.cov.lines <- function(
         axis(1, at = seq(XLIM[1], XLIM[2], length.out = 3), labels = c(-unique(width(list.granges[[1]]) / 2), '0', unique(width(list.granges[[1]]) / 2)))
         # Add central line
         if (plot.central) abline(v = seq(XLIM[1], XLIM[2], length.out = 3)[2], lty = 3)
-        # Loop throu    gh bw.files
+        # Loop through granges
         for (k.g in 1:length(list.granges)) {
             # Message
             granges <- list.granges[[k.g]]
@@ -1812,6 +1869,11 @@ wrapper.plot.cov.lines <- function(
             par(new = T)
             plot.cov.line(mat, use.mean, BIN, plotEE, YLIM, xlim = c(1,(ncol(mat) - BIN)), axes = F, XLAB = '', YLAB = '', COL = list.COL[k.g])
             # End
+        }
+        # Plot legend
+        if (plot.legend == T) {
+            par(new = T)
+            legend('topleft', legend = names(list.granges), fill = list.COL, bty = 'n')
         }
     
     } else if (length(list.granges) > 1 & length(list.bw.files) == 1 & class(list.granges[[1]]) == "CompressedGRangesList") { # Case where there is 1 bigWig file and several sets of several granges 
@@ -1884,9 +1946,10 @@ wrapper.plot.cov.lines <- function(
 # Add a seq column to granges 
 with.seq <- function(granges, GENOME_FASTA = Rsamtools::FaFile("~/shared/sequences/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa"), revcomp = F) {
     if (revcomp == T) {
-        granges$seq <- reverseComplement(getSeq(GENOME_FASTA, granges))
-    } else {
-        granges$seq <- getSeq(GENOME_FASTA, granges)
+        granges$seq <- Biostrings::reverseComplement(Biostrings::getSeq(GENOME_FASTA, granges))
+    } 
+    else {
+        granges$seq <- Biostrings::getSeq(GENOME_FASTA, granges)
     }
     return(granges)
 } 
@@ -1903,7 +1966,7 @@ extend.both.sides <- function(granges, width.bef, width.aft) {
 # ---------------------------------------------------------------------------- #
 # ---------------- NUCLEOTIDE PERIODICITY FUNCTIONS
 # ---------------------------------------------------------------------------- #
-get.periodicity_ <- function(granges, DINUC = 'TT', doAlign = T, width.before = 0, width.after = 0, RANGE.FOR.SPECTRUM = 0:200, FREQ = 0.10, doPlots = T, pdf = 'tmp.pdf') {
+get.periodicity_ <- function(granges, DINUC = 'TT', doAlign = T, width.before = 0, width.after = 0, RANGE.FOR.SPECTRUM = 0:200, FREQ = 0.10, intervals = seq(2, 20, 1), doPlots = T, pdf = 'tmp.pdf') {
     
     #message('---- By default, this function automatically aligns the given promoters at their TSS (-50+250) and returns the distances between TTs and the associated FFT spectrum ----')
     if (doAlign) {
@@ -1915,7 +1978,7 @@ get.periodicity_ <- function(granges, DINUC = 'TT', doAlign = T, width.before = 
     spectra <- get.spectra_(dists, RANGE.FOR.SPECTRUM, FREQ, return.entire.vec = T, plot = doPlots)
     mtm <- spectra$spec[unlist(lapply(c(1/(2:20)), function (FREQ) {idx <- which.min(abs(FREQ - spectra$freq)) }))]
     names(mtm) <- as.character((2:20))
-    ratios <- get.ratios_(spectra, FREQ)
+    ratios <- get.ratios_(spectra, FREQ, intervals)
     if (doPlots) {
         pdf(pdf)
         plot.dists(list("Set of Proms" = dists), type = 'l', ylab = 'Counts', xlab = paste0('Distance between ', DINUC))
@@ -1945,7 +2008,7 @@ get.pairwise.dists_ <- function(granges, MOTIF, cores = 4, N_MISMATCH = 0, MERGE
         }
     }, mc.cores = cores))
     return(dists)
-    
+
 }
 get.spectra_ <- function(dists, RANGE.FOR.SPECTRUM = 1:100, FREQ = 0.10, plot = F, return.entire.vec = T) {
     require(multitaper)
@@ -1961,17 +2024,23 @@ get.spectra_ <- function(dists, RANGE.FOR.SPECTRUM = 1:100, FREQ = 0.10, plot = 
     if (return.entire.vec) {
         return(spectra)
     } else {
-        return(spectra$spec[which.min(abs(s$freq - FREQ))])
+        return(spectra$spec[which.min(abs(spectra$freq - FREQ))])
     }
 }
-get.ratios_ <- function(spectra, FREQ = FREQ) {
-    
-    mtm <- spectra$spec[unlist(lapply(c(1/(2:20)), function (FREQ) {idx <- which.min(abs(FREQ - spectra$freq)) }))]
-    ratios <- sapply(1:length(mtm), function(x) {mtm[x]/mean(mtm[-x])})
-    names(ratios) <- as.character(2:20)
-    
+get.ratios_ <- function(spectra, FREQ = FREQ, intervals = seq(2, 20, 1), log2 = F) {
+    mtm <- spectra$spec[unlist(lapply(c(1/(intervals)), function (FREQ) {idx <- which.min(abs(FREQ - spectra$freq)) }))]
+    if (log2) {
+        ratios <- data.frame(
+            freq = intervals, 
+            strength = sapply(1:length(mtm), function(x) {log2(mtm[x]/mean(mtm[-x]))})
+        )
+    } else {
+        ratios <- data.frame(
+            freq = intervals, 
+            strength = sapply(1:length(mtm), function(x) {mtm[x]/mean(mtm[-x])})
+        )
+    }
     return(ratios)
-    
 }
 
 message(' >>>>>  Custom functions successfuly loaded. <<<<<<')

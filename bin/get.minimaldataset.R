@@ -6,7 +6,6 @@ load('./shared/data/classification_tissue-spe-genes-REs.RData')
 library(GenomicRanges)
 # Load custom functions
 source("./shared/bin/R/custom_R_functions.R")
-
 # Add extra variables for tSNE plots
 valid.groups = c(1:33)
 CLASSES.proms <- colortransp[factor(order.tissues[all[which(all$is.prom & all$clustersATAC.tissues %in% valid.groups),]$clustersATAC.tissues], levels = order.tissues)]
@@ -14,7 +13,7 @@ all.proms.valid <- all[all$is.prom & all$clustersATAC.tissues %in% valid.groups,
 valid.groups = order.tissues[c(1:5, 33)]
 CLASSES.genes = colortransp[c(1:5, 33)][factor(order.tissues[c(1:5, 33)][max.tissue.df.LCAP[genes.gtf$is.prot.cod & max.tissue.df.LCAP$which.tissues %in% valid.groups,]$which.tissues], levels = order.tissues[c(1:5, 33)])]
 genes.valid <- max.tissue.df.LCAP$which.tissues %in% order.tissues[1:33]
-
+# Save data
 save(file = "./shared/data/minimal-data.RData", list = c(
     # color/names vars
     'colortransp',
@@ -27,6 +26,7 @@ save(file = "./shared/data/minimal-data.RData", list = c(
     'all',
     'max.tissue.df',
     'LCAP',
+    'LCAP_normalized',
     'max.tissue.df.LCAP',
     'genes.gtf',
     'SUMM',
@@ -47,5 +47,5 @@ save(file = "./shared/data/minimal-data.RData", list = c(
     'fetchWBinfos'
     )
 )
-
+# Quit
 q('no')

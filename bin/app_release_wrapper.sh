@@ -69,6 +69,13 @@ checkcurrentfolder
         --stats \
         --itemize-changes \
         --human-readable \
+        --exclude 'sequences/' \
+        --exclude 'bwa_idx/' \
+        --exclude 'genomes/' \
+        --exclude 'ce11/' \
+        --exclude 'annots/' \
+        --exclude 'meme_db/' \
+        --exclude 'bin/R/packages/' \
         'js2264@cb-head3.gurdon.private.cam.ac.uk:~/shared/' \
         './shared/'
 }
@@ -87,7 +94,7 @@ checkcurrentfolder
     CURRENT_FOLDER="${APP_FOLDER}/releases/current"
     ## Copy require files (functions, minimal datasets) to dev folder
     rsync ./shared/data/minimal-data.RData ${DEV_FOLDER}/data/
-    rsync ./shared/bin/R/custom_R_functions.R ${DEV_FOLDER}/bin/
+    #rsync ./shared/bin/R/custom_R_functions.R ${DEV_FOLDER}/R/
     ## Copy dev folder to new release folder and make a symlink for "current release"
     rm -rf ${RELEASE_FOLDER}
     mkdir ${RELEASE_FOLDER}

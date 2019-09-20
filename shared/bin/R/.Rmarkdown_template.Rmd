@@ -1,70 +1,70 @@
 ---
-title: "TITLE_PROJECT"
-date: "DATE_PROJECT"
+title: "%TITLE"
+date: "%DATE"
 author: Jacques SERIZAY
 output:
     html_document:
-        theme: sandstone
+        theme: flatly
         highlight: tango
         preserve_yaml: true
-        df_print: paged
-        dev: pdf
+        code_folding: show
+        df_print: tibble
+        toc: true
+        toc_float: true
 ---
-AIM:  
-This code has been written by Jacques SERIZAY, for the purpose of analysing datasets generated in the Ahringer lab, at the Gurdon Institute, University of Cambridge.  
+
+# %TITLE
+
+IMPORTANT: This code has been written by Jacques SERIZAY, for the purpose of analysing datasets generated in the Ahringer lab, at the Gurdon Institute, University of Cambridge.  
 
 ---  
 
-## SET UP CHUNKS OPTIONS ## ----------------------------------------------------
-```{r "chunk-options"}
-{
-    knitr::opts_chunk$set(fig.height=7, fig.width=7, echo=TRUE, fig.path='_figures-files/')
-}
+## Set up chunks options 
+```{r "chunk-options_%SUFFIX"}
+knitr::opts_chunk$set(echo = TRUE, fig.path = '_figures-files/', warning = FALSE, message = FALSE, tidy = 'styler', fig.align = 'center', cache = TRUE, cache.path = '.cache/')
 ```
 
 ---  
 
-## SET UP ENV. ## --------------------------------------------------------------
-```{r "env-setup", collapse=T}
-{
-    setwd('~/FOLDER_PROJECT')
+## Set up environment
+```{r "env-setup_%SUFFIX", collapse=T}
+    if (!isTRUE(getOption('knitr.in.progress'))) {PROJECT_PATH <- '~/%FOLDER/'} else {PROJECT_PATH <- '~/tissueSpeWormBook/'}
+    setwd(PROJECT_PATH)
     require(tidyverse)
     require(magrittr)
     require(rtracklayer)
     dir.create('_figures-files/', showWarnings = F)
-}
 ```
 
 ---  
 
-## LOAD VARIABLES ## -----------------------------------------------------------
-```{r "var-setup"}
-{
+## Load variables 
+```{r "var-setup_%SUFFIX"}
+    load('~/shared/data/classification_tissue-spe-genes-REs.RData')
+    # -----------
     
-}
 ```
 
 ---  
 
-## DEFINE FUNCTIONS ## ---------------------------------------------------------
-```{r "fun-setup"}
-{
+## Define functions 
+```{r "fun-setup_%SUFFIX"}
+    
+    # -----------
     .sourceDirs()
-}
 ```
 
 ---  
 
-## PERFORM ANALYSIS ## ---------------------------------------------------------
-```{r "run-code"}
-{
+## Perform analysis
+### Part 1
+```{r "chunk-1_%SUFFIX"}
     
-}
 ```
 
 ---  
 
-## SessionInfo ## --------------------------------------------------------------
-```{r echo=FALSE}
-sessionInfo()
+## SessionInfo 
+```{r "sessionInfo_%SUFFIX", echo=FALSE}
+    sessionInfo()
 ```

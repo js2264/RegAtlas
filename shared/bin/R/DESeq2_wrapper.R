@@ -32,7 +32,7 @@ FDR = 0.01
 #                                                       #
 #########################################################
 
-bam2DE <- function(sampleTable.path, which.save.path, which.results.path, which.model, which.design, is.stranded, is.paired, filter, value.to.compute) {
+bam2DE <- function(sampleTable.path, which.save.path, which.results.path, which.model, which.design, is.stranded, is.paired, filter, value.to.compute, mode = NULL, design.formula = NULL) {
 
     message('\nLoading sample metadata...')
         sampleTable <- read.csv(sampleTable.path)
@@ -42,9 +42,9 @@ bam2DE <- function(sampleTable.path, which.save.path, which.results.path, which.
             sampleTable <- sampleTable[sampleTable[filter[1]] == filter[2],]
             sampleTable['which.design'] <- sampleTable[which.design]
             message(paste0('\tApplying filters ', filter[2], ' on column ', filter[1], ': sample table filtered down to ', nrow(sampleTable), ' bam files'))
-            which.contrasts = getContrasts(sampleTable, which.design)
-            message(paste0('\t', length(which.contrasts),' contrasts found using design: ', which.design))
         }
+        which.contrasts = getContrasts(sampleTable, which.design)
+        message(paste0('\t', length(which.contrasts),' contrasts found using design: ', which.design))
 
     message('\nChecking files...')
         if (checkBamFiles(sampleTable) == T) {
@@ -57,20 +57,21 @@ bam2DE <- function(sampleTable.path, which.save.path, which.results.path, which.
         model <- chooseModel(which.model)
 
     message('\nCounting reads...')
-        e <- summarizeBAMs(b.files, model, which.model, sampleTable, sampleTable.path)
+        e <- summarizeBAMs(b.files, model, which.model, sampleTable, sampleTable.path, is.stranded, is.paired)
 
     message(paste0('\nGetting design informations from chosen variable: ', which.design, '...'))
         colData(e) <- DataFrame(sampleTable)
         colData(e)$chosen.design <- as.factor(unlist(as.data.frame(colData(e)[which.design])))
         colnames(e) <- gsub("\\.map.*", "", names(b.files))
-        featureLength <- if (grepl('LCAP', which.results.path)) { read.table('_results-files/LCAP.featureCounts/LCAP.featureCounts.tsv', header = T, comment.char = '#', row.names = "Geneid")$Length } else if (grepl('ATAC', which.results.path)) { rep(150, times = nrow(e)) }
-        mode <- ifelse(grepl('LCAP', sampleTable.path), 'one_vs_others', 'one_vs_one')
+        featureLength <- if (grepl('LCAP', which.results.path)) { read.table('_results-files/LCAP.featureCounts/LCAP.featureCounts.tsv', header = T, comment.char = '#', row.names = "Geneid")$Length } else { width(model) }
+        if (is.null(mode)) 
+            mode <- ifelse(grepl('LCAP', sampleTable.path), 'one_vs_others', 'one_vs_one')
 
     message('\nRunning DEseq2...')
-        results <- doDiffExpr(e, contrasts = which.contrasts, model = model, results.path = which.results.path, featureLength, mode, value.to.compute)
+        results <- doDiffExpr(e, contrasts = which.contrasts, model = model, results.path = which.results.path, featureLength, mode, value.to.compute, design.formula)
 
     message('\nSaving results...')
-        save.image(which.save.path)
+        save(results, file = which.save.path)
         message(paste0('\tDESeq2 analysis saved in ', which.save.path))
         if (file.exists('.tmp.DESeq2.RData')) {file.remove('.tmp.DESeq2.RData')}
 
@@ -141,7 +142,7 @@ chooseModel <- function(model = NULL) {
 }
 
 # Count reads from bam files, either in single- or paired-end mode
-summarizeBAMs <- function(files, model, which.model, sampleTable, sampleTable.path) {
+summarizeBAMs <- function(files, model, which.model, sampleTable, sampleTable.path, is.stranded, is.paired) {
     if (grepl('LCAP', sampleTable.path)) {
         require(GenomicFeatures)
         message('Lcap data is detected. Proceeding to counts using featureCounts.\n')
@@ -154,9 +155,9 @@ summarizeBAMs <- function(files, model, which.model, sampleTable, sampleTable.pa
         genes.jj <- import('~/shared/data/ce11.genes.gtf')
         mcols(counts.summary) <- genes.jj[match(row.names(counts.summary), genes.jj$gene_id),]
         #rowRanges(counts.summary) <- exonsBy(makeTxDbFromGFF(which.model), by = 'gene')
-    } else if (grepl('ATAC', sampleTable.path)) {
-        message('ATAC data is detected. Proceeding to counts using summarizeOverlaps [summarizeOverlaps(model, BamFileList(files), ignore.strand = T, singleEnd = T, fragments = F)]\n')
-        counts.summary <- summarizeOverlaps(model, BamFileList(files), ignore.strand = T, singleEnd = T, fragments = F)
+    } else {
+        message(sprintf('Get counts over the model using summarizeOverlaps:\n\tsummarizeOverlaps(model, BamFileList(files), ignore.strand = %s, singleEnd = %s, fragments = %s)\n', !is.stranded, !is.paired, is.paired))
+        counts.summary <- summarizeOverlaps(model, BamFileList(files), ignore.strand = !is.stranded, singleEnd = !is.paired, fragments = is.paired)
     }
     return(counts.summary)
 }
@@ -197,7 +198,7 @@ counts_to_tpm <- function(counts, featureLength) {
   effLen <- effLen[idx,]
   featureLength <- featureLength[idx]
 
-  # Compute TPM (process one column at a time) [this function switches to log then exp for cpmputation ease]
+  # Compute TPM (process one column at a time) [this function switches to log then exp for computation ease]
   tpm <- do.call(cbind, lapply(1:ncol(counts), function(COL) {
     rate = log(counts[,COL]) - log(effLen[,COL])
     denom = log(sum(exp(rate)))
@@ -211,7 +212,7 @@ counts_to_tpm <- function(counts, featureLength) {
 }
 
 # Get DE and TPM using DESeq2, then publish summary
-doDiffExpr <- function(e, contrasts, model, results.path, featureLength, mode, value.to.compute) {
+doDiffExpr <- function(e, contrasts, model, results.path, featureLength, mode, value.to.compute, design.formula) {
 
     if (mode == 'one_vs_others') {
 
@@ -234,13 +235,17 @@ doDiffExpr <- function(e, contrasts, model, results.path, featureLength, mode, v
         # Reprocess all the data with usual design values ('one_vs_one') to get appropriate gene expression estimates
         colData(e)$chosen.design <- as.factor(unlist(as.data.frame(colData(e)$which.design)))
         dds <- DESeqDataSet(e, design = ~ chosen.design)
-        dds <- DESeq(dds)
+        dds <- DESeq(dds, betaPrior = FALSE)
         
     } else if (mode == 'one_vs_one') {
     
         # Perform DE analysis
         message('\tGenerating dds object')
-        dds <- DESeqDataSet(e, design = ~ chosen.design)
+        if (is.null(design.formula)) {
+            dds <- DESeqDataSet(e, design = ~ chosen.design) 
+        } else {
+            dds <- DESeqDataSet(e, design = as.formula(design.formula)) 
+        }
         dds <- DESeq(dds)
         
         # Get all results
@@ -248,19 +253,27 @@ doDiffExpr <- function(e, contrasts, model, results.path, featureLength, mode, v
         contrasts.names <- unlist(lapply(contrasts, function(x) paste0(x[2], '_vs_', x[3])))
         out.l2fc <- data.frame(matrix(nrow=nrow(dds), ncol=length(contrasts.names))) ; colnames(out.l2fc) <- paste0(contrasts.names, '.l2FC')
         out.padj <- data.frame(matrix(nrow=nrow(dds), ncol=length(contrasts.names))) ; colnames(out.padj) <- paste0(contrasts.names, '.padj')
-        for (i in 1:length(contrasts)) {
-            res <- results(dds, contrast = contrasts[[i]])
+        if (length(contrasts) == 1) {
+            res <- results(dds)
             metadata(res)$alpha <- FDR
             out <- as.data.frame(res)
             out.l2fc[,i] <- out[,2]
             out.padj[,i] <- out[,6]
+        } else { 
+            for (i in 1:length(contrasts)) {
+                res <- results(dds, contrast = contrasts[[i]])
+                metadata(res)$alpha <- FDR
+                out <- as.data.frame(res)
+                out.l2fc[,i] <- out[,2]
+                out.padj[,i] <- out[,6]
+            }
         }
 
     }
 
     # Output TPM normalized counts
     message('\nComputing expression estimates...')
-    TPM <- counts_to_tpm(counts(dds), featureLength)
+    TPM <- counts_to_tpm(counts(dds, normalized = TRUE), featureLength)
     colnames(TPM) <- e$SampleName
     results2 <- matrix(unlist(lapply( unique(gsub("_rep.", "", colnames(TPM))), function(x) { rowMeans(matrix(TPM[,grep(x, colnames(TPM))], nrow = nrow(TPM))) } )), nrow = nrow(TPM))
     colnames(results2) <- unique(gsub("_rep.", "", colnames(TPM)))
@@ -297,8 +310,13 @@ doDiffExpr <- function(e, contrasts, model, results.path, featureLength, mode, v
     colnames(results2) <- unique(gsub("_rep.", "", colnames(TPM)))
     results3 <- results
     results3[is.na(results3)] <- 0
-    results3$sign.l2FC <- apply(results3[,grepl("l2FC", colnames(results3))], 1, function(x) any(x < -FC | x > FC))
-    results3$sign.padj <- apply(results3[,grepl("padj", colnames(results3))], 1, function(x) any(x < FDR))
+    if (sum(grepl("l2FC", colnames(results3))) == 1) {
+        results3$sign.l2FC <- results3[,grepl("l2FC", colnames(results3))] < -FC | results3[,grepl("l2FC", colnames(results3))] > FC
+        results3$sign.padj <- results3[,grepl("padj", colnames(results3))] < FDR
+    } else if (sum(grepl("l2FC", colnames(results3))) > 1) {
+        results3$sign.l2FC <- apply(results3[,grepl("l2FC", colnames(results3))], 1, function(x) any(x < -FC | x > FC))
+        results3$sign.padj <- apply(results3[,grepl("padj", colnames(results3))], 1, function(x) any(x < FDR))
+    }
 
     # Save results
     message('\nWriting results...')
