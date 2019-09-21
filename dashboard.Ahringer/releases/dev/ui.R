@@ -510,7 +510,7 @@ TAB5 <- tabItem(
               </script>
               "
             )
-        ),
+        ), 
         textOutput("keepAlive")
     )
 )

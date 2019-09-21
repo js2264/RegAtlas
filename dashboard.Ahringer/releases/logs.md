@@ -16,6 +16,10 @@
 
 ------------ 
 
+## [0.4.1] - 2019-09-21
+##### Added 
+- Prevent timeout of the app. 
+
 ## [0.4.0] - 2019-09-20
 ##### Added 
 - Tab 1 : Flexible match of genes (not case sensitive, can remove weird characters)

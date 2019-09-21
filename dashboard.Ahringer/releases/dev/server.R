@@ -705,7 +705,7 @@ shinyServer <- function(input, output, session) {
     
     # Prevent timeout (https://support.dominodatalab.com/hc/en-us/articles/360015932932-Increasing-the-timeout-for-Shiny-Server)
     output$keepAlive <- renderText({
-        req(input$count)
+        req(input$count) 
         paste("Shiny app is live.")
     })
     
