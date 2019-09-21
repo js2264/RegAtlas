@@ -401,14 +401,37 @@ getCao06 <- function(vec) {
   print(mat)
 }
 # Function to get a lot of informations on an individual gene
+matchGenes <- function(genes, genes.gtf) {
+    genes <- gsub('"', '', genes)
+    genes <- gsub("'", '', genes)
+    genes <- unlist(strsplit(genes, ',|;| ') )
+    rows <- lapply(genes, function(gene) {
+        wb_match <- grep(gene, names(genes.gtf), ignore.case = TRUE)
+        names_match <- grep(paste0('^', gene, '$'), genes.gtf$gene_name, ignore.case = TRUE)
+        row <- c(wb_match, names_match)
+        if (length(row)) {
+            return(names(genes.gtf[row]))
+        } else {
+            return(NA)
+        }
+    }) %>% unlist()
+    return(rows)
+}
 getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
     suppressWarnings(suppressMessages(library(GenomicRanges)))
 
     if (any(unlist(lapply(list(all, genes.gtf, cao03, LCAP, max.tissue.df.LCAP, order.tissues, SUMM), is.null)))) {stop('Some objects are missing. Aborting.')}
+    matched_genes <- matchGenes(GENES, genes.gtf)
+    if (any(is.na(matched_genes))) {
+        message(paste(GENES[is.na(matched_genes)], collapse = ', '), ' genes not found in genes model. Aborting.')
+        res <- list()
+        res$valid <- FALSE
+        return(res)
+    }
 
-    for (GENE in GENES) {
+    for (GENE in matched_genes) {
         # Convert gene in WormBaseID and get locus name
-        if (!grepl('WBGene', GENE)) { WBID <- name2WB(GENE) } else { WBID <- GENE }
+        WBID <- GENE
         locusID <- WB2name(WBID)
         biotype <- genes.gtf[WBID]$gene_biotype
         # Get gene expression infos from cao and tissue.spe LCAP
@@ -451,6 +474,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
 
         # Build results object
         res <- list()
+        res$valid <- TRUE
         res[['Gene.info']] <- c(WormBaseID = WBID, locus = locusID, Biotype = biotype, Enriched.tissue = tissue)
         res[['Gene.expr.TPM']] <- round(rbind(Cao = CAO.GENE, tiss.spe.LCAP = LCAP.GENE),2)
         res[['Gene.expr.l2mean']] <- round(rbind(Cao = l2mean.CAO.GENE, tiss.spe.LCAP = l2mean.LCAP.GENE),2)

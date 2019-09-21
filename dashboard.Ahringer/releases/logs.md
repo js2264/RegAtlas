@@ -1,7 +1,6 @@
 # Changelog
 
 ## To do list
-- Switch to ggplot2 plots?
 - Browser: 
 	- [ ] Display color key
 	- [ ] Change the genes model tracks to see the gene names at the top
@@ -9,28 +8,30 @@
 	- [ ] Possibility to save Genome browser Settings
 	- [ ] Add heteroK tracks
 	- [ ] bookmark options
-- Reference gProfileR
-- fix search (not case sensitive, can remove weird character)
-- Remove 2nd / 3rd column, replace by a dropdown list as "example". 
 - Add infodroplet
-- Tab1: print the gene infos on a third column
 
 ------------ 
 
 ## [Unreleased]
 
-
 ------------ 
 
 ## [0.4.0] - 2019-09-20
+##### Added 
+- Tab 1 : Flexible match of genes (not case sensitive, can remove weird characters)
+- Reference gProfileR
+- Added Informations tab
+
 ##### UI changes
 - Removed the download buttons in explore/download data, put them in a dropdown
 - Also added the bigwig tracks download buttons to the same dropdown
-- Added Informations tab
-- Reduced my photo
+- Reduced size of my photo
+- Tab 1: remodelled the display
+- Tab 2: Remove 2nd / 3rd column, replace by a dropdown list as "example". 
 
 ##### Fixed
 - Fix all download buttons
+- Fixed the error messages (tab 1) when genes don't exist
 
 ##### Deleted
 - Fixed TAB 1 REs table issue: removed the developmental TPM values for REs

@@ -22,7 +22,6 @@ require(shinycssloaders)
 require(shinyBS)
 require(magrittr)
 require(GenomicRanges)
-require(devtools)
 require(DT)
 require(urltools)
 require(htmltools)
@@ -67,15 +66,15 @@ colnames(lcap.dt)[colnames(lcap.dt) == 'gene_id'] <- "WormBaseID"
 colnames(lcap.dt)[colnames(lcap.dt) == 'gene_name'] <- "geneID"
 lcap.dt$gene_biotype <- factor(lcap.dt$gene_biotype)
 lcap.dt$domain <- factor(lcap.dt$domain)
-hypod.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Hypod.']
-neurons.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Neurons']
-germline.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Germline']
-muscle.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Muscle']
-intest.genes <- row.names(max.tissue.df.LCAP)[max.tissue.df.LCAP$which.tissues == 'Intest.']
-list.genes <- list(hypod.genes, neurons.genes, germline.genes, muscle.genes, intest.genes)
+germline.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Germline']
+neurons.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Neurons']
+muscle.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Muscle']
+hypod.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Hypod.']
+intest.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Intest.']
+list.genes <- list(germline.genes, neurons.genes, muscle.genes, hypod.genes, intest.genes)
 names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes')
 colors.decimals <- c(0.10395294, 0.3906374, 0.1192665, 0.14261010, 0.14226132, 0.13421772)
-link <- "http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&loc=chrIII&tracks=genes%2Cregulatory_elements%2Chypod.atac%2Cneurons.atac%2Cgonad.atac%2Cmuscle.atac%2Cintest.atac%2Chypod.lcap.fwd%2Cneurons.lcap.fwd%2Cgonad.lcap.fwd%2Cmuscle.lcap.fwd%2Cintest.lcap.fwd%2Chypod.lcap.rev%2Cneurons.lcap.rev%2Cgonad.lcap.rev%2Cmuscle.lcap.rev%2Cintest.lcap.rev%2Ctranscripts&highlight=&menu=1&nav=1&tracklist=1&overview=1"
+link <- "http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&loc=chrIII&tracks=genes%2Cregulatory_elements%2Cgonad.atac%2Cneurons.atac%2Cmuscle.atac%2Chypod.atac%2Cintest.atac%2Cgonad.lcap.fwd%2Cneurons.lcap.fwd%2Cmuscle.lcap.fwd%2Chypod.lcap.fwd%2Cintest.lcap.fwd%2Cgonad.lcap.rev%2Cneurons.lcap.rev%2Cmuscle.lcap.rev%2Chypod.lcap.rev%2Cintest.lcap.rev%2Ctranscripts&highlight=&menu=1&nav=1&tracklist=1&overview=1"
 NCLUST_LCAPdev <- 5
 NCLUST_LCAP <- 5
 NCLUST_ATAC <- 5

@@ -9,31 +9,60 @@
 #                                                                             #
 #=============================================================================#
 
-## Define server function ----------------------------------------------------------------------------------------------------
+## Define server function ------------------------------------------------------
 
 shinyServer <- function(input, output, session) {
     
     # Read gene name and get gene infos
     {
-        
-        gene <- reactive ({ input$searchGene })
+        gene <- reactive({ input$searchGene })
         output$gene <- renderText({ gene() })
         infos.gene <- reactive ({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
-        
+        # Get the gene info / description
         output$geneInfos <- renderUI({
-            WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[1])
-            LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
-            COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
-            BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[3])
-            ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[5])
-            HTML(paste("", WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
+            WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[['WormBaseID']])
+            LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[['locus']])
+            COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])))
+            BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[['Biotype']])
+            ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[['Enriched.tissue']])
+            HTML(paste(WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
         })
-        
-        output$geneDescr <- renderUI({ INFOS <- HTML(paste0("<h4>Description:</h4><br/>", fetchWBinfos(infos.gene()$Gene.info[2]))) })
-        
+        output$geneDescr <- renderUI({ INFOS <- HTML(fetchWBinfos(infos.gene()$Gene.info[2])) })
+        # Get the gene expression graphs
+        output$Expr.plots_dev <- renderPlot({
+            par(mar=c(6,5,2,5))
+            vec <- unlist(infos.gene()[['Gene.expr.dev.TPM']])
+            if (is.null(vec)) vec <- rep(0, 5)
+            plot(
+                vec,
+                type = 'l', lty = 1, lwd = 3, 
+                xlab = "", ylab = "Gene expression (TPM)", 
+                bty = 'n',
+                main = "Stage-specific gene expression\n(mixed tissues)", 
+                xaxt = 'n'
+            )
+            axis(1, labels = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'), at = 1:6)
+        })
+        output$Expr.plots_tis <- renderPlot({
+            par(mar=c(6,5,2,5))
+            vec <- unlist(infos.gene()[['Gene.expr.TPM']]['tiss.spe.LCAP',])
+            if (is.null(vec)) vec <- rep(0, 5)
+            barplot(
+                vec,
+                col = color.tissues, ylab = "Gene expression (TPM)",
+                names = order.tissues[1:5],
+                main = "Tissue-specific gene expression (YA)", 
+                las = 3
+            )
+        })
+        # Trigger the display of the informations
+        output$displayPanelsTab1 <- renderText({ ifelse(infos.gene()$valid, 1, 0) })
+        outputOptions(output, "displayPanelsTab1", suspendWhenHidden = FALSE)
     }
     
-    # Generate buttons to download gene-specific text file, all tracks in zip, and genes list full report
+    # Generate buttons to download gene-specific text file, all tracks in zip, 
+    # and genes list full report
+    
     {
         output$downloadINFOS <- downloadHandler(
             reactive(paste0(infos.gene()$Gene.info[2], "_summary.txt")),
@@ -135,16 +164,9 @@ shinyServer <- function(input, output, session) {
     # Generate buttons to access to Genome Browser and WormBase
     {
         observeEvent(input$switchToGenome, { updateTabItems(session, "tabs", "browser") })
-    
         output$Link <- renderUI({
-            url <-paste0("https://www.wormbase.org/species/c_elegans/gene/", infos.gene()$Gene.info[1])
+            url <-paste0("https://www.wormbase.org/species/c_elegans/gene/", infos.gene()$Gene.info[['WormBaseID']])
             HTML(paste0('<button class="action-button bttn bttn-fill bttn-sm bttn-primary bttn-no-outline" id="Link" type="button"><i class="fa fa-book"></i> <a href="', url, '" target="_blank">Go to Wormbase entry</a> </button>'))
-            
-            # tags$a( 
-            #     "Go to Wormbase entry", 
-            #     href = paste0("https://www.wormbase.org/species/c_elegans/gene/", infos.gene()$Gene.info[1]), 
-            #     target = "_blank"
-            # )
         })
     }
     
@@ -192,7 +214,7 @@ shinyServer <- function(input, output, session) {
             LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
             COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
             BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[3])
-            ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[5])
+            ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[4])
             
             h3("Quick gene view")
             HTML(paste(
@@ -248,52 +270,44 @@ shinyServer <- function(input, output, session) {
             })
         }
         
-    # Generate the expression profiles plots
-    {
-        #1: Plot expr. during development
-        output$Expr.plots_dev <- renderPlot({
-            par(mar=c(6,5,2,5))
-            plot(
-                as.numeric(infos.gene()$Gene.expr.dev.TPM),
-                type = 'l', lty = 1, lwd = 3, xlab = "", ylab = "Expr. (TPM) over time", bty = 'n',
-                main = "Stage-specific gene expression (mixed)", xaxt = 'n'
-            )
-            axis(1, labels = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'), at = 1:6)
-        })
-        #2: Plot expr. / tissue
-        output$Expr.plots_tis <- renderPlot({
-            par(mar=c(6,5,2,5))
-            barplot(
-                as.numeric(infos.gene()$Gene.expr.TPM[2,]),
-                col = color.tissues, ylab = "Expr. / tissue (TPM)",
-                names = order.tissues[1:5],
-                main = "Tissue-specific gene expression (YA)", 
-                las = 3
-            )
-        })
-        
-    }
-    
     # Get the list of multiple genes
     {
-        
-        multipleGenes <- eventReactive( input$getList, { 
-            
-            # Get gene names from text box (allows for *)
-            input.genes <- unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' ))
-            if(any(grepl('\\*', input.genes))) { input.genes <- c(genes.gtf$gene_name[grep(paste(input.genes[grepl('\\*', input.genes)], collapse = '|'), genes.gtf$gene_name)], input.genes[!grepl('\\*', input.genes)]) }
-            text.list <- unique(input.genes %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
-            # Get gene names from classes of genes
-            checkbox.list <- unlist(list.genes[input$checkGroupGeneClasses])
-            # Get gene names from the bsModal of genes associated with tissue-specific promoters
-            bsmodal.list <- row.names(mat.proms.gene)[which(apply(mat.proms.gene, 1, function(x) {all(names(x)[x == T] %in% input$checkGroupGeneClasses_2) & all(input$checkGroupGeneClasses_2 %in% names(x)[x == T])}))]
-            
-            genes <- unique(c(text.list, checkbox.list, bsmodal.list))
-            return(genes[genes %in% names(genes.gtf)])
-            
-        } )
-        
-        observe( if (input$resetGenes > 0) {
+        # Get the full list of genes
+        multipleGenes <- eventReactive( 
+            input$getList, 
+            { 
+                # Get gene names from text box (allows for *)
+                input.genes <- unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' ))
+                if(any(grepl('\\*', input.genes))) { input.genes <- c(genes.gtf$gene_name[grep(paste(input.genes[grepl('\\*', input.genes)], collapse = '|'), genes.gtf$gene_name)], input.genes[!grepl('\\*', input.genes)]) }
+                text_list <- unique(input.genes %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
+                # Get gene names from the bsModal (list of examples of gene lists)
+                bsmodal_list <- unlist(
+                    list(
+                        "Germline-specific genes" = germline.genes, 
+                        "Neurons-specific genes" = neurons.genes, 
+                        "Muscle-specific genes" = muscle.genes, 
+                        "Hypodermis-specific genes" = hypod.genes, 
+                        "Intestine-specific genes" = intest.genes, 
+                        "Soma-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Soma'], 
+                        "Ubiquitous genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Ubiq.'], 
+                        "Genes with germline-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Germline],
+                        "Genes with neurons-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Neurons],
+                        "Genes with muscle-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Muscle],
+                        "Genes with hypodermis-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Hypod.],
+                        "Genes with intestine-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Intest.],
+                        "Genes with Neurons & Muscle-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Neurons_Muscle],
+                        "Genes with Hypodermis & Intestine-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Hypod._Intest.],
+                        "Genes with soma-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Soma],
+                        "Genes with ubiquitous promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Ubiq.]
+                    )[as.numeric(input$checkGroupGeneClasses)]
+                )
+                # Fuse lists
+                genes <- unique(c(text_list, bsmodal_list))
+                return(genes[genes %in% names(genes.gtf)])
+            } 
+        )
+        # Reset gene lists when reset button clicked
+        observeEvent(input$resetGenes, {
             updateTextAreaInput(
                 session, 
                 "searchMulitpleGenePaste", 
@@ -303,68 +317,44 @@ shinyServer <- function(input, output, session) {
             updateCheckboxGroupInput(
                 session, 
                 "checkGroupGeneClasses", 
-                choices = list(
-                    "Hypodermis-enriched genes" = "hypod.genes", 
-                    "Neurons-enriched genes" = "neurons.genes", 
-                    "Germline-enriched genes" = "germline.genes", 
-                    "Muscle-enriched genes" = "muscle.genes", 
-                    "Intestine-enriched genes" = "intest.genes" 
-                ),
-                selected = NULL
-            )
-            updateCheckboxGroupInput(
-                session, 
-                "checkGroupGeneClasses_2", 
                 choiceNames = c(
-                    "Hypodermis-specific promoter(s)",
-                    "Neurons-specific promoter(s)",
-                    "Germline-specific promoter(s)",
-                    "Muscle-specific promoter(s)",
-                    "Intestine-specific promoter(s)",
-                    "Hypodermis & Neurons-specific promoter(s)",
-                    "Hypodermis & Germline-specific promoter(s)",
-                    "Hypodermis & Muscle-specific promoter(s)",
-                    "Hypodermis & Intestine-specific promoter(s)",
-                    "Neurons & Germline-specific promoter(s)",
-                    "Neurons & Muscle-specific promoter(s)",
-                    "Neurons & Intestine-specific promoter(s)",
-                    "Germline & Muscle-specific promoter(s)",
-                    "Germline & Intestine-specific promoter(s)",
-                    "Muscle & Intestine-specific promoter(s)",
-                    "Hypodermis & Neurons & Germline-specific promoter(s)",
-                    "Hypodermis & Neurons & Muscle-specific promoter(s)",
-                    "Hypodermis & Neurons & Intestine-specific promoter(s)",
-                    "Hypodermis & Germline & Muscle-specific promoter(s)",
-                    "Hypodermis & Germline & Intestine-specific promoter(s)",
-                    "Hypodermis & Muscle & Intestine-specific promoter(s)",
-                    "Neurons & Germline & Muscle-specific promoter(s)",
-                    "Neurons & Germline & Intestine-specific promoter(s)",
-                    "Neurons & Muscle & Intestine-specific promoter(s)",
-                    "Germline & Muscle & Intestine-specific promoter(s)",
-                    "Neurons & Germline & Muscle & Intestine-specific promoter(s)",
-                    "Hypodermis & Germline & Muscle & Intestine-specific promoter(s)",
-                    "Hypodermis & Neurons & Germline & Intestine-specific promoter(s)",
-                    "Hypodermis & Neurons & Germline & Muscle-specific promoter(s)",
-                    "Soma-specific promoter(s)",
-                    "Ubiquitous promoter(s)"
+                    "Germline-specific genes",
+                    "Neurons-specific genes",
+                    "Muscle-specific genes",
+                    "Hypodermis-specific genes",
+                    "Intestine-specific genes",
+                    "Soma-specific genes",
+                    "Ubiquitous genes",
+                    "Genes with germline-specific promoter(s)",
+                    "Genes with meurons-specific promoter(s)",
+                    "Genes with muscle-specific promoter(s)",
+                    "Genes with hypodermis-specific promoter(s)",
+                    "Genes with Intestine-specific promoter(s)",
+                    "Genes with Neurons & Muscle-specific promoter(s)",
+                    "Genes with Hypodermis & Intestine-specific promoter(s)",
+                    "Genes with soma-specific promoter(s)",
+                    "Genes with ubiquitous promoter(s)"
                 ),
-                choiceValues = order.tissues[c(1:27, 29, 30, 32:33)],
+                choiceValues = 1:16,
                 selected = NULL
             )
         } )
-        
-        output$multipleGenesPromsGroupsLength <- reactive ({ paste(length(input$checkGroupGeneClasses_2), "group(s) selected.") })
-        output$multipleGenesLength <- reactive ({ 
+        # Text infos
+        output$multipleGenesPromsGroupsLength <- reactive ({ paste(length(input$checkGroupGeneClasses), "group(s) selected.") })
+        output$multipleGenesLength <- reactive({ 
             l <- length(multipleGenes())
-            if (l < 2) {
+            if (l == 0) {
+                'No input genes.\nEnter or select at least 2 genes and click on "Perform analysis" button.'
+            } else if (l == 1) {
                 'No genes found.\nEnter or select at least 2 genes and click on "Perform analysis" button.'
             } else {
                 paste(l, "valid genes found.") 
             }
         })
-        
         output$genesList <- renderUI({ HTML(paste(c("<h3>Genes query</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
-        
+        # Trigger the display of the informations
+        output$displayPanelsTab2 <- renderText({ ifelse(length(multipleGenes()) > 0, 1, 0) })
+        outputOptions(output, "displayPanelsTab2", suspendWhenHidden = FALSE)
     }
     
     # Get GOs plot (enriched in multiple genes) and button to download results
@@ -382,11 +372,11 @@ shinyServer <- function(input, output, session) {
             d <- d[!duplicated(d[, c("p.value", "overlap.size")],),]
             d <- d[1:min(20, dim(d)[1]),]
             if (nrow(d) > 0) {
-                par(las = 0, mar = c(4,20,4,1))
-                plot <- barplot(height=-log10(d$p.value), col=colorGO[d$domain], horiz=T, main = "Enrichment of associated GOs", xlim = c(0, max(25, d$p.value)))
+                par(las = 0, mar = c(4,30,4,1))
+                plot <- barplot(height=-log10(d$p.value), col=colorGO[d$domain], horiz=T, main = "Enrichment of associated GOs\n(gProfileR)", xlim = c(0, max(-log10(d$p.value))))
                 par(xpd=T)
                 #text(x=rep(-1, times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 40), ifelse(nchar(d$term.name) > 40, '...', ''), ' (n=', d$overlap.size, ')'), pos = 2)
-                text(x=rep(-1, times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 40), ifelse(nchar(d$term.name) > 40, '...', '')), pos = 2)
+                text(x=rep(-1/25*max(-log10(d$p.value)), times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 60), ifelse(nchar(d$term.name) > 60, '...', '')), pos = 2)
                 par(xpd=F)
                 legend("topright", legend=names(colorGO), fill=colorGO, col="#00000000", pch=15, bty="n")
                 mtext(text="-log10(adj-p.val)",side=1,line=3,outer=FALSE, cex=0.85)
@@ -600,11 +590,11 @@ shinyServer <- function(input, output, session) {
     # Get venn Diagrams
     {
         
-        output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[1]], multipleGenes(), names = c("Germline-enrich.\ngenes", "Genes query"), col = c(color.tissues[1], 'grey50')) })
-        output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[2]], multipleGenes(), names = c("Neurons-enrich.\ngenes", "Genes query"), col = c(color.tissues[2], 'grey50')) })
-        output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[3]], multipleGenes(), names = c("Muscle-enrich.\ngenes", "Genes query"), col = c(color.tissues[3], 'grey50')) })
-        output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[4]], multipleGenes(), names = c("Hypod.-enrich.\ngenes", "Genes query"), col = c(color.tissues[4], 'grey50')) })
-        output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[[5]], multipleGenes(), names = c("Intest.-enrich.\ngenes", "Genes query"), col = c(color.tissues[5], 'grey50')) })
+        output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['germline.genes']], multipleGenes(), names = c("Germline-enrich.\ngenes", "Genes query"), col = c(color.tissues[1], 'grey50')) })
+        output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['neurons.genes']], multipleGenes(), names = c("Neurons-enrich.\ngenes", "Genes query"), col = c(color.tissues[2], 'grey50')) })
+        output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['muscle.genes']], multipleGenes(), names = c("Muscle-enrich.\ngenes", "Genes query"), col = c(color.tissues[3], 'grey50')) })
+        output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['hypod.genes']], multipleGenes(), names = c("Hypod.-enrich.\ngenes", "Genes query"), col = c(color.tissues[4], 'grey50')) })
+        output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['intest.genes']], multipleGenes(), names = c("Intest.-enrich.\ngenes", "Genes query"), col = c(color.tissues[5], 'grey50')) })
         
     }
     
@@ -712,5 +702,11 @@ shinyServer <- function(input, output, session) {
             )
         })
     }
-        
+    
+    # Prevent timeout (https://support.dominodatalab.com/hc/en-us/articles/360015932932-Increasing-the-timeout-for-Shiny-Server)
+    output$keepAlive <- renderText({
+        req(input$count)
+        paste("Shiny app is live.")
+    })
+    
 } #EOF
