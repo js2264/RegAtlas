@@ -36,7 +36,7 @@ TAB1 <- tabItem(
             ## WRONG ENTRY ERROR MESSAGE
             fluidRow(
                 column(width = 12, {
-                    h4("Gene not found. Please enter a valid gene locus (e.g. hlh-1) or WormBaseID (e.g. WBGene00001948)", style = "padding-left: 40px; color: FireBrick ; font-weight: bold")
+                    h4("Gene not found. Please enter a valid gene locus (e.g. hlh-1) or WormBaseID (e.g. WBGene00001948)", style = "color: FireBrick ; font-weight: bold")
                 })
             )
         )
