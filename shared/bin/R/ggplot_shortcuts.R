@@ -15,3 +15,8 @@ gg_legend_bottom <- function(p) {
     guides(fill = guide_legend(title.position = "top", title.hjust = 0.5))
 }
 
+
+empty_ggplot <- function() {
+    p <- ggplot() + theme_void()
+    return(p)
+}

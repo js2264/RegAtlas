@@ -15,7 +15,7 @@
 TAB1 <- tabItem(
     tabName = 'genelookup',
     fluidPage(
-        ## Row 1: Gene entry
+        ## Row 0: Gene entry
         fluidRow(
             column(width = 3, {
                 searchInput(
@@ -31,8 +31,21 @@ TAB1 <- tabItem(
         )
     ),
     conditionalPanel(
+        condition = "output.displayPanelsTab1 == '0'", 
+        fluidPage(
+            ## WRONG ENTRY ERROR MESSAGE
+            fluidRow(
+                column(width = 12, {
+                    h4("Gene not found. Please enter a valid gene locus (e.g. hlh-1) or WormBaseID (e.g. WBGene00001948)", style = "padding-left: 40px; color: FireBrick ; font-weight: bold")
+                })
+            )
+        )
+    ),
+    conditionalPanel(
         condition = "output.displayPanelsTab1 == '1'", 
         fluidPage(
+            
+            ## Row 1: Gene infos
             fluidRow(
                 column(width = 3, { 
                     fluidRow(

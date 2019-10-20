@@ -237,7 +237,8 @@ doDiffExpr <- function(e, contrasts, model, results.path, featureLength, mode, v
         dds <- DESeqDataSet(e, design = ~ chosen.design)
         dds <- DESeq(dds, betaPrior = FALSE)
         
-    } else if (mode == 'one_vs_one') {
+    } 
+    else if (mode == 'one_vs_one') {
     
         # Perform DE analysis
         message('\tGenerating dds object')

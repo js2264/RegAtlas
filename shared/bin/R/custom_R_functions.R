@@ -125,6 +125,23 @@ vec.split <- function(x, split) {
     vec <- unlist(strsplit(x, split))
     return(vec)
 }
+# Shift vector by n elements (add extra zeros)
+shiftVector <- function(vec, shift, replacement = 0) {
+    if (shift >= 0) {
+        first <- 1 + shift
+        c(
+            vec[first:length(vec)],
+            rep(replacement, shift) 
+        )
+    } 
+    else {
+        last <- length(vec) + shift
+        c(
+            rep(replacement, abs(shift)), 
+            vec[1:last]
+        )
+    }
+}
 # Function to increment 1
 `%+=%` = function(e1,e2) eval.parent(substitute(e1 <- e1 + e2))
 # Make counts table from 2 factors
@@ -1607,9 +1624,12 @@ import.list.bw <- function(folder = '_bw-files/', suffix = '_YA_ATAC_combined.bw
 scale.list.bw <- function(list.bw) {
     l <- mclapply(list.bw, function(bw.file) {
         message('Get Z-score...')
-        RleList(mclapply(bw.file, function(chr) {
-            chr %>% scale %>% Rle
-        }, mc.cores = length(bw.file)))
+        cov <- bw.file
+        ucov <- unlist(cov)
+        mi <- mean(ucov)
+        mu <- sd(ucov)
+        zsc <- (cov-mi)/mu
+        return(zsc)
     }, mc.cores = length(list.bw))
     return(l)
 }

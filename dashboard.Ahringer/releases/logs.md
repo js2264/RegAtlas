@@ -9,12 +9,18 @@
 	- [ ] Add heteroK tracks
 	- [ ] bookmark options
 - Add infodroplet
+- Loading screen 
 
 ------------ 
 
 ## [Unreleased]
 
 ------------ 
+
+## [0.4.2] - 2019-10-20
+##### Added 
+- Error message when looking for unknown gene [TAB 1]
+
 
 ## [0.4.1] - 2019-09-21
 ##### Added 

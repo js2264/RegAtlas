@@ -15,20 +15,15 @@ output:
 
 # %TITLE
 
-IMPORTANT: This code has been written by Jacques SERIZAY, for the purpose of analysing datasets generated in the Ahringer lab, at the Gurdon Institute, University of Cambridge.  
-
----  
-
-## Set up chunks options 
-```{r "chunk-options_%SUFFIX"}
-knitr::opts_chunk$set(echo = TRUE, fig.path = '_figures-files/', warning = FALSE, message = FALSE, tidy = 'styler', fig.align = 'center', cache = TRUE, cache.path = '.cache/')
-```
+IMPORTANT: This code has been written by Jacques SERIZAY, for the purpose of 
+analysing datasets generated in the Ahringer lab, at the Gurdon Institute, 
+University of Cambridge.  
 
 ---  
 
 ## Set up environment
 ```{r "env-setup_%SUFFIX", collapse=T}
-    if (!isTRUE(getOption('knitr.in.progress'))) {PROJECT_PATH <- '~/%FOLDER/'} else {PROJECT_PATH <- '~/tissueSpeWormBook/'}
+    PROJECT_PATH <- '~/%FOLDER/'
     setwd(PROJECT_PATH)
     require(tidyverse)
     require(magrittr)
@@ -42,14 +37,12 @@ knitr::opts_chunk$set(echo = TRUE, fig.path = '_figures-files/', warning = FALSE
 ```{r "var-setup_%SUFFIX"}
     load('~/shared/data/classification_tissue-spe-genes-REs.RData')
     # -----------
-    
 ```
 
 ---  
 
 ## Define functions 
 ```{r "fun-setup_%SUFFIX"}
-    
     # -----------
     .sourceDirs()
 ```

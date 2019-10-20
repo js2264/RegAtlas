@@ -45,7 +45,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h | --help)
             usage
-            exit
+            exit 0
             ;;
         *)
             echo "ERROR: unknown parameter \"$key\""
@@ -76,6 +76,8 @@ checkcurrentfolder
         --exclude 'annots/' \
         --exclude 'meme_db/' \
         --exclude 'bin/R/packages/' \
+        --exclude 'bin/R/packages/' \
+        --exclude 'genomesData.RDS' \
         'js2264@cb-head3.gurdon.private.cam.ac.uk:~/shared/' \
         './shared/'
 }

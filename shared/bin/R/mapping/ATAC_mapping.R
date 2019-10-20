@@ -33,7 +33,7 @@ cores <- opt$cores
 #                                                       #
 #########################################################
 
-atac.se_raw2bw <- function(sample, list.samples = list.samples, steps, ncore = 8, which.genome = '../_data/ce10.fa') {
+atac.se_raw2bw <- function(sample, list.samples = list.samples, steps, ncore = 8, which.genome = '~/_data/ce11/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa') {
 
     write(paste0('\n\n\n--------- Script ran @ ', date(), ' ---------'), file = list.samples[[sample]]$log, append = TRUE)
     write(paste0('--------- Now starting mapping of sample ', sample, ' ---------'), file = list.samples[[sample]]$log, append = TRUE)
@@ -100,7 +100,7 @@ trim.reads <- function(sample, list.samples, l = 20) {
 }
 
 # Align reads to ce10
-se.bwa_aln <- function(sample, list.samples, genome = '../_data/ce10.fa', ncore = 8) {
+se.bwa_aln <- function(sample, list.samples, genome = '~/_data/ce11/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa', ncore = 8) {
 
     cmd1 <- sprintf("bwa samse %s <(bwa aln -t %i %s %s) %s | samtools view -@ %i -bSu - | samtools sort -@ %i -m 44294967296 - -o %s", genome, ncore, genome, list.samples[[sample]]$trimmed, list.samples[[sample]]$trimmed, ncore, ncore, list.samples[[sample]]$aligned)
     cmd2 <- sprintf('echo "%s" | bash', cmd1)
@@ -117,7 +117,7 @@ filter.chrM <- function(sample, list.samples, ncore = 8) {
 }
 
 # Filter blacklisted regions
-filter.blacklist <- function(sample, list.samples, ncore = 8, blacklist = '../_data/ce10_blacklist.bed') {
+filter.blacklist <- function(sample, list.samples, ncore = 8, blacklist = '~/_data/ce11/ce10_blacklist.bed') {
 
     cmd <- sprintf('samtools view -@ %i -b -L %s -U %s %s > /dev/null', ncore, blacklist, list.samples[[sample]]$rm_blacklist, list.samples[[sample]]$rm_chrM)
     system(cmd, wait = TRUE)
@@ -133,7 +133,7 @@ filter.q10 <- function(sample, list.samples, ncore = 8) {
 }
 
 # Generate BigWig track
-getBwTrack <- function(sample, list.samples, genome.chrom.sizes = '../_data/ce10.chrom.sizes') {
+getBwTrack <- function(sample, list.samples, genome.chrom.sizes = '~/_data/ce11/ce11.chrom.sizes') {
 
 
     cmd1 <- sprintf('macs2 callpeak -t %s --format BAM --bdg --SPMR --gsize ce --nolambda --nomodel --extsize 150 --shift -75 --keep-dup all --name %s', list.samples[[sample]]$q10, paste0(sample, '.tmp.bg'))
@@ -279,7 +279,15 @@ for (sample in SAMPLES) {
 }
 
 library(parallel)
-mclapply(SAMPLES, atac.se_raw2bw, list.samples = list.samples, steps = which.steps, ncore = 4, which.genome = '../_data/ce10.fa', mc.cores = cores)
+mclapply(
+    SAMPLES, 
+    atac.se_raw2bw, 
+    list.samples = list.samples, 
+    steps = which.steps, 
+    ncore = 4, 
+    which.genome = '~/_data/ce10.fa', 
+    mc.cores = cores
+)
 
 # Then finish up the script (rename, stats, cleanup)
 if ('cleaning' %in% which.steps) {

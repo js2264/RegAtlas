@@ -432,3 +432,179 @@ heatmapPlotWrapper <- function(
     }
     if(!embed) layout(1)
 }
+
+# heatmapPlotWrapper <- function(
+#     mat, 
+#     axhline = NULL,
+#     titles = '',
+#     bin = 1,
+#     xlab = '',
+#     ylab = '',
+#     Leg = TRUE,
+#     autoscale = TRUE,
+#     zmin = 0,
+#     zmax = 10,
+#     xlim = NULL,
+#     ylim = NULL,
+#     ln.v = TRUE,
+#     e = NULL,
+#     s = 0.01,
+#     indi = TRUE,
+#     o_min = NA,
+#     o_max = NA,
+#     colvec = NULL,
+#     colorspace = NULL,
+#     ...) {
+# 
+# 
+# 
+#     # Define colors
+#     if (length(colorspace)) {
+#         gcol <- colorRampPalette(colorspace)
+#     } else {
+#         gcol <- colorRampPalette(c(
+#             "#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", 
+#             "#FF7F00", "red", "#7F0000"
+#         ))     
+#     }
+#     min <- min(datapoints, na.rm = TRUE)
+#     max <- max(datapoints, na.rm = TRUE) 
+# 
+#     if (!indi) {
+#         if (autoscale) {
+#             zlim <- quantile(datapoints, c(s,1-s), na.rm = TRUE)
+#             zmin<-zlim[1]
+#             zmax<-zlim[2]
+#         } 
+#         if(!embed) 
+#             layout(
+#                 matrix(seq(NP+1), nrow = 1, ncol = NP+1), 
+#                 widths = c(rep(12/NP, NP), 1), heights = rep(1,NP+1)
+#             )
+#         ColorRamp <-gcol(ncollevel)
+#         ColorLevels <- seq(to = zmax,from = zmin, length = ncollevel)
+#     } else {
+#         if(!embed) invisible(capture.output( fields::set.panel(1, NP) ))
+#     }
+# 
+#     for( i in seq(length(MAT)) ) {
+#         data <- MAT[[i]]
+# 
+#         xinds <- if (is.null(xlim)) range(bins) else xlim
+# 
+#         if( !indi ) { # If heatmaps scales must all be the same
+#             data[data<zmin] <- zmin
+#             data[data>zmax] <- zmax
+#             ColorRamp_ex <- ColorRamp[round( 
+#                 (min(data, na.rm = TRUE)-zmin)*ncollevel/(zmax-zmin) ) : round( 
+#                     (max(data, na.rm = TRUE)-zmin)*ncollevel/(zmax-zmin) 
+#                 )]
+#             image(
+#                 bins, 1:nrow(data), t(data), axes = TRUE, col = ColorRamp_ex, 
+#                 xlab = xlab, ylab = ylab, add = FALSE, ylim = ylim,
+#                 xlim = if (is.null(xlim)) range(bins) else xlim,
+#                 cex = 1, cex.main = lfs, cex.lab = lfs, cex.axis = afs,
+#                 useRaster = raster, xaxt = "n", yaxt = "n", panel.first = {
+#                     axis(2, at = ylim, labels = ylim, cex.axis = afs*0.9,  col.axis = 'darkgrey')
+#                     if(is.null(e)) { 
+#                         axis(
+#                             1, at = c(min(xinds), 0,  max(xinds)), 
+#                             labels = c(num2bp(min(xinds)), '0bp', 
+#                                      num2bp(max(xinds))), cex.axis = afs
+#                         ) 
+#                     } else {
+#                         axis(
+#                             1, at = c(min(xinds), 0,  e, max(xinds)), 
+#                             labels = c(
+#                                 num2bp(min(xinds)), '0bp', '0bp', 
+#                                 num2bp(max(xinds)-e)
+#                             ), cex.axis = afs
+#                         )
+#                     }
+#                     rect(
+#                         par("usr")[1],par("usr")[3],par("usr")[2],
+#                         par("usr")[4],col = "lightgrey"
+#                     )
+#                 }, ...
+#             )
+# 
+#         } else { # If heatmaps scales are independant
+#             if (autoscale) {
+#                 zlim <- quantile(data, c(s,1-s), na.rm = TRUE)
+#                 zmin<-zlim[1]
+#                 zmax<-zlim[2]
+#             } 
+# 
+#             if( is.na(o_min[i]) ) {
+#                 data[data<zmin] <- zmin 
+#             } else {
+#                 data[data<o_min[i]] <- o_min[i]
+#             }
+#             if( is.na(o_max[i]) ) {
+#                 data[data>zmax] <- zmax 
+#             } else {
+#                 data[data>o_max[i]] <- o_max[i]
+#             }
+# 
+#             keycolor_lim <- range(data, na.rm = TRUE)
+#             if( is.na(o_min[i]) ) {
+#                 keycolor_lim[1] <- zmin 
+#             } else {
+#                 keycolor_lim[1] <- o_min[i]
+#             }
+#             if( is.na(o_max[i]) ) {
+#                 keycolor_lim[2] <- zmax
+#             } else {
+#                 keycolor_lim[2] <- o_max[i]
+#             }
+# 
+#             col <- if( is.null(colvec) ) {
+#                 gcol(ncollevel)
+#             } else if( is.character(colvec[[i]]) & !any(is.na(colvec[[i]])) ) {
+#                 if( length(colvec[[i]]) == 1 ) {
+#                     colorRampPalette(c('white', colvec[[i]]))(ncollevel)
+#                 } else {
+#                     colorRampPalette(colvec[[i]])(ncollevel)
+#                 }
+#             } else {
+#                 gcol(ncollevel)
+#             }
+# 
+#             if( any(is.na(keycolor_lim)) | any(is.infinite(keycolor_lim)) ) {
+#                 plot.new()
+#                 text(0.5, 0.5, 'No\ndata\nto\nplot', cex = lfs*2)
+#             } else {
+#                 imPlot2(
+#                     bins, 1:nrow(data), t(data), axes = TRUE, xlab = xlab, ylab = ylab, 
+#                     xlim = if (is.null(xlim)) range(bins) else xlim,  
+#                     zlim = keycolor_lim, col = col, ylim = ylim,
+#                     legend.width = 1, horizontal = TRUE, useRaster = raster, 
+#                     xinds = xinds, e = e, xaxt = "n", yaxt = "n",
+#                     cex = 1, cex.main = lfs, cex.lab = lfs, cex.axis = afs, 
+#                     ylast = nrow(data), afs = afs, 
+#                     axis.args = list(cex.axis = afs), ...
+#                 )
+# 
+#             }
+#         }
+#         title( main = titles[i], cex.main = lfs ); box()
+#         if (!is.null(axhline)){
+#             #message(paste(axhline, collapse = ', '))
+#             abline(h = cumsum(axhline)+.5, lwd = 2)
+#             axis(
+#                 2, at = cumsum(axhline)-(axhline/2)+.5, 
+#                 labels = paste0('C', 1:length(axhline)), las = 1, 
+#                 col.axis = 'darkred', font.axis = 2, cex.axis = afs
+#             )
+# 
+#             #cumsum(axhline)
+# 
+#         }
+#         if (ln.v){
+#             abline(v = c(0, ncol(data)/2), lwd = 0.5)
+#         }
+# 
+#         if(embed) break()
+#     }
+# 
+# }

@@ -19,7 +19,7 @@ option_list = list(
               help="Which steps to perform (separated by commas and between single quotes)", metavar="character"),
   make_option("--cores", type="integer", default = 5,
               help="How many cores to use?", metavar="character"),
-  make_option("--doCombineReps", type="logical", default = F,
+  make_option("--doCombineReps", type="logical", default = FALSE,
               help="Should the raw files be combined first?", metavar="character")
 )
 
@@ -27,7 +27,7 @@ opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 
 doCombineReps <- opt$doCombineReps
-if (doCombineReps == T) { system("Rscript ../_scripts/bin/master-scripts/ATAC_pooling.R", wait = T) }
+if (doCombineReps == T) { system("Rscript ~/shared/bin/mapping/ATAC_pooling.R", wait = TRUE) }
 
 SAMPLES <- if (opt$samples == 'all') { gsub('.combined.fq.gz', '', list.files(path = '_raw_data/', pattern = 'rep..combined.fq.gz')) } else { unlist(strsplit(opt$samples, ',')) }
 which.steps <- if (opt$steps == 'all') { unlist(strsplit('trim,aln,chrM,blacklist,q10,tracks,cleaning,stats,combinetracks', ',')) } else { unlist(strsplit(opt$steps, ',')) }
@@ -252,7 +252,15 @@ for (sample in SAMPLES) {
 }
 
 library(parallel)
-mclapply(SAMPLES, atac.se_raw2bw, list.samples = list.samples, steps = which.steps, ncore = 4, which.genome = '../_data/ce11/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa', mc.cores = cores)
+mclapply(
+    SAMPLES,
+    atac.se_raw2bw, 
+    list.samples = list.samples,
+    steps = which.steps, 
+    ncore = 4, 
+    which.genome = '../_data/ce11/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa', 
+    mc.cores = cores
+)
 
 # Then finish up the script (rename, stats, cleanup)
 if ('cleaning' %in% which.steps) {
