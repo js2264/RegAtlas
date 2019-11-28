@@ -16,6 +16,11 @@
 ------------ 
 
 ## [Unreleased]
+
+------------ 
+
+## [0.4.4] - 2019-11-28
+##### Added 
 ##### UI changes
 - Barplot for developmental LCAP
 - Added "Orientation" to the quick gene infos
@@ -25,13 +30,11 @@
 - Added pop-up for genome browser 
 - Added blurb for methods
 - Added Venn for ubiquitous genes
-
------------- 
+- Changed some labels in single-gene tab
 
 ## [0.4.2] - 2019-10-20
 ##### Added 
 - Error message when looking for unknown gene [TAB 1]
-
 
 ## [0.4.1] - 2019-09-21
 ##### Added 
