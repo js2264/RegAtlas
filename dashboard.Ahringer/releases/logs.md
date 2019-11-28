@@ -11,9 +11,20 @@
 - Add infodroplet
 - Loading screen 
 
+- Update the annotation tracks in the browser
+
 ------------ 
 
 ## [Unreleased]
+##### UI changes
+- Barplot for developmental LCAP
+- Added "Orientation" to the quick gene infos
+- Changed 2nd tab label
+- Changed 1st tab icon
+- Tidied up the text output (ggi function)
+- Added pop-up for genome browser 
+- Added blurb for methods
+- Added Venn for ubiquitous genes
 
 ------------ 
 

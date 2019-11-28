@@ -96,7 +96,6 @@ checkcurrentfolder
     CURRENT_FOLDER="${APP_FOLDER}/releases/current"
     ## Copy require files (functions, minimal datasets) to dev folder
     rsync ./shared/data/minimal-data.RData ${DEV_FOLDER}/data/
-    #rsync ./shared/bin/R/custom_R_functions.R ${DEV_FOLDER}/R/
     ## Copy dev folder to new release folder and make a symlink for "current release"
     rm -rf ${RELEASE_FOLDER}
     mkdir ${RELEASE_FOLDER}

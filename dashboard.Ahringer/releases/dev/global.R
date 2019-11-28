@@ -15,23 +15,21 @@
 
 load('data/minimal-data.RData')
 source('R/custom_R_functions.R')
-require(shiny)
-require(shinydashboard)
-require(shinyWidgets)
-require(shinycssloaders)
-require(shinyBS)
-require(magrittr)
-require(GenomicRanges)
-require(DT)
-require(urltools)
-require(htmltools)
-require(httr)
-require(gProfileR)
-require(pheatmap)
-require(d3heatmap)
-require(RColorBrewer)
-require(apputils)
-require(venneuler)
+suppressMessages(require(shiny))
+suppressMessages(require(shinydashboard))
+suppressMessages(require(shinyWidgets))
+suppressMessages(require(shinycssloaders))
+suppressMessages(require(shinyBS))
+suppressMessages(require(magrittr))
+suppressMessages(require(GenomicRanges))
+suppressMessages(require(DT))
+suppressMessages(require(urltools))
+suppressMessages(require(htmltools))
+suppressMessages(require(httr))
+suppressMessages(require(gProfileR))
+suppressMessages(require(pheatmap))
+suppressMessages(require(RColorBrewer))
+suppressMessages(require(apputils))
 
 # Define variables
 colorGO <- c("#52c23164","#20109564","#ef690664", "white")
@@ -71,8 +69,9 @@ neurons.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Neurons']
 muscle.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Muscle']
 hypod.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Hypod.']
 intest.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Intest.']
-list.genes <- list(germline.genes, neurons.genes, muscle.genes, hypod.genes, intest.genes)
-names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes')
+ubiq.genes <- names(genes.gtf)[genes.gtf$which.tissues %in% c('Ubiq.', 'Ubiq.-Biased')]
+list.genes <- list(germline.genes, neurons.genes, muscle.genes, hypod.genes, intest.genes, ubiq.genes)
+names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes', 'ubiq.genes')
 colors.decimals <- c(0.10395294, 0.3906374, 0.1192665, 0.14261010, 0.14226132, 0.13421772)
 link <- "http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&loc=chrIII&tracks=genes%2Cregulatory_elements%2Cgonad.atac%2Cneurons.atac%2Cmuscle.atac%2Chypod.atac%2Cintest.atac%2Cgonad.lcap.fwd%2Cneurons.lcap.fwd%2Cmuscle.lcap.fwd%2Chypod.lcap.fwd%2Cintest.lcap.fwd%2Cgonad.lcap.rev%2Cneurons.lcap.rev%2Cmuscle.lcap.rev%2Chypod.lcap.rev%2Cintest.lcap.rev%2Ctranscripts&highlight=&menu=1&nav=1&tracklist=1&overview=1"
 NCLUST_LCAPdev <- 5
@@ -106,6 +105,12 @@ textareaInput <- function(inputId, label, value = "", placeholder = "", rows = 2
     tags$style(type="text/css", "textarea {width:100%; margin-top: 5px;}"),
     tags$textarea(id = inputId, placeholder = placeholder, rows = rows, value))
 }
+
+# Function to extract last character of a string
+substrRight <- function(x, n) {
+    substr(x, (nchar(x)-n+1), nchar(x))
+}
+
 
 # Function to bypass idle time of Shiny Server
 inactivity <- "function idleTimer() {

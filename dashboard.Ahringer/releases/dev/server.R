@@ -22,10 +22,11 @@ shinyServer <- function(input, output, session) {
         output$geneInfos <- renderUI({
             WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[['WormBaseID']])
             LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[['locus']])
-            COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])))
+            COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])) %>% gsub('.{2}$', '', .))
+            STRAND <- paste("<b>Orientation:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])) %>% substrRight(1))
             BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[['Biotype']])
             ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[['Enriched.tissue']])
-            HTML(paste(WBID, LOCUS, COORDS, BIOTYPE, ENRICHED, sep = '<br/>'))
+            HTML(paste(WBID, LOCUS, COORDS, STRAND, BIOTYPE, ENRICHED, sep = '<br/>'))
         })
         output$geneDescr <- renderUI({ INFOS <- HTML(fetchWBinfos(infos.gene()$Gene.info[2])) })
         # Get the gene expression graphs
@@ -33,15 +34,14 @@ shinyServer <- function(input, output, session) {
             par(mar=c(6,5,2,5))
             vec <- unlist(infos.gene()[['Gene.expr.dev.TPM']])
             if (is.null(vec)) vec <- rep(0, 5)
-            plot(
+            barplot(
                 vec,
-                type = 'l', lty = 1, lwd = 3, 
+                col = 'grey', 
+                names = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'),
                 xlab = "", ylab = "Gene expression (TPM)", 
-                bty = 'n',
-                main = "Stage-specific gene expression\n(mixed tissues)", 
-                xaxt = 'n'
+                main = "Tissue-specific gene expression (YA)", 
+                las = 3
             )
-            axis(1, labels = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'), at = 1:6)
         })
         output$Expr.plots_tis <- renderPlot({
             par(mar=c(6,5,2,5))
@@ -62,7 +62,6 @@ shinyServer <- function(input, output, session) {
     
     # Generate buttons to download gene-specific text file, all tracks in zip, 
     # and genes list full report
-    
     {
         output$downloadINFOS <- downloadHandler(
             reactive(paste0(infos.gene()$Gene.info[2], "_summary.txt")),
@@ -163,7 +162,9 @@ shinyServer <- function(input, output, session) {
     
     # Generate buttons to access to Genome Browser and WormBase
     {
-        observeEvent(input$switchToGenome, { updateTabItems(session, "tabs", "browser") })
+        observeEvent(input$switchToGenome, { 
+            updateTabItems(session, "tabs", "browser")
+        })
         output$Link <- renderUI({
             url <-paste0("https://www.wormbase.org/species/c_elegans/gene/", infos.gene()$Gene.info[['WormBaseID']])
             HTML(paste0('<button class="action-button bttn bttn-fill bttn-sm bttn-primary bttn-no-outline" id="Link" type="button"><i class="fa fa-book"></i> <a href="', url, '" target="_blank">Go to Wormbase entry</a> </button>'))
@@ -202,6 +203,40 @@ shinyServer <- function(input, output, session) {
             )
         )
     }
+    
+    # Generate browser pop-up when clicking on the sidebar
+    {
+        observe({
+            if(input$tabs == 'browser' & counter$cnt < 2) {
+                showModal(
+                    modalDialog(
+                        title = "Browser Informations",
+                        p('Welcome to our embedded genome browser. This browser is built using ', a(href = 'https://jbrowse.org/', target = "_blank", "JBrowse"), '.'),
+                        p('The genome version currently in use is WBcel235/ce11.'),
+                        p('You can access the browser outside of our Shiny app by clicking ', a(href = 'http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&amp;menu=1&amp;nav=1&amp;tracklist=1&amp;overview=1', target = "_blank", "here"), '.'),
+                        hr(),
+                        h4("Quick tips:"),
+                        p("- Local files can be uploaded temporarily and anonymously to this browser using the button in the 'Track' tab."),
+                        p("- Each track can be individually re-scaled. Click on the dropdown button appearing when hovering over the track name for more options."),
+                        p("- Sessions can be shared with other using the 'Share' button located in the top right corner."),
+                        p("- Tissue annotations are available for REs and genes. Click on any element to display more informations."),
+                        br(),
+                        h4('Important: more tracks are available in the "Select tracks" tab located on the left side of the genome-browser!'),
+                        easyClose = TRUE, 
+                        fade = FALSE
+                    )
+                )
+            }
+        })
+        counter <- reactiveValues(cnt = 0)
+        observeEvent(input$tabs, { 
+            if(input$tabs == 'browser') {
+                counter$cnt <- counter$cnt + 1
+            } 
+        })
+        
+    }
+    
     
     # Generate the quickView bsModal 
     {
@@ -590,11 +625,12 @@ shinyServer <- function(input, output, session) {
     # Get venn Diagrams
     {
         
-        output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['germline.genes']], multipleGenes(), names = c("Germline-enrich.\ngenes", "Genes query"), col = c(color.tissues[1], 'grey50')) })
-        output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['neurons.genes']], multipleGenes(), names = c("Neurons-enrich.\ngenes", "Genes query"), col = c(color.tissues[2], 'grey50')) })
-        output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['muscle.genes']], multipleGenes(), names = c("Muscle-enrich.\ngenes", "Genes query"), col = c(color.tissues[3], 'grey50')) })
-        output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['hypod.genes']], multipleGenes(), names = c("Hypod.-enrich.\ngenes", "Genes query"), col = c(color.tissues[4], 'grey50')) })
-        output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['intest.genes']], multipleGenes(), names = c("Intest.-enrich.\ngenes", "Genes query"), col = c(color.tissues[5], 'grey50')) })
+        output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['germline.genes']], multipleGenes(), names = c("Germline-specific\ngenes", "Query"), col = c(color.tissues[1], rgb(0.85, 0.85, 0.85, 0.5))) })
+        output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['neurons.genes']], multipleGenes(), names = c("Neurons-specific\ngenes", "Query"), col = c(color.tissues[2], rgb(0.85, 0.85, 0.85, 0.5))) })
+        output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['muscle.genes']], multipleGenes(), names = c("Muscle-specific\ngenes", "Query"), col = c(color.tissues[3], rgb(0.85, 0.85, 0.85, 0.5))) })
+        output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['hypod.genes']], multipleGenes(), names = c("Hypod.-specific\ngenes", "Query"), col = c(color.tissues[4], rgb(0.85, 0.85, 0.85, 0.5))) })
+        output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['intest.genes']], multipleGenes(), names = c("Intest.-specific\ngenes", "Query"), col = c(color.tissues[5], rgb(0.85, 0.85, 0.85, 0.5))) })
+        output$Venn.Ubiq <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['ubiq.genes']], multipleGenes(), names = c("Ubiq.-specific\ngenes", "Query"), col = c(color.tissues[33], rgb(0.85, 0.85, 0.85, 0.5))) })
         
     }
     

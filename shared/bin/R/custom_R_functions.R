@@ -418,7 +418,7 @@ getCao06 <- function(vec) {
   print(mat)
 }
 # Function to get a lot of informations on an individual gene
-getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
+getGeneInfos <- function(GENES, verbose = TRUE, saveTXT = FALSE, exportResult = FALSE) {
     suppressWarnings(suppressMessages(library(GenomicRanges)))
 
     if (any(unlist(lapply(list(all, genes.gtf, cao03, LCAP, max.tissue.df.LCAP, order.tissues, SUMM), is.null)))) {stop('Some objects are missing. Aborting.')}
@@ -468,7 +468,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
 
         # Build results object
         res <- list()
-        res[['Gene.info']] <- c(WormBaseID = WBID, locus = locusID, Biotype = biotype, Tau.score = tau, Enriched.tissue = tissue)
+        res[['Gene.info']] <- c(WormBaseID = WBID, locus = locusID, tissue_annotation = tissue)
         res[['Gene.expr.TPM']] <- round(rbind(Cao = CAO.GENE, tiss.spe.LCAP = LCAP.GENE),2)
         res[['Gene.expr.l2mean']] <- round(rbind(Cao = l2mean.CAO.GENE, tiss.spe.LCAP = l2mean.LCAP.GENE),2)
         res[['Gene.expr.dev.TPM']] <- round(rbind(LCAPdev = LCAPdev.GENE),2)
@@ -481,7 +481,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         res[['Associated.REs.TFs.infos']] <- cbind(REs.coords, RE.Tau.score = round(REs.tau,2), RE.associated.tissues = REs.tissues)
 
         # Return results
-        if (verbose == T) {
+        if (verbose == TRUE) {
             width.bak <- options()$width
             options("width" = 200)
             cat('\n', rep('=', times = 52+nchar(locusID)), '\n', rep('>', 14),'   ', WBID, ' --- ', locusID, '  ', rep('<', 14),'\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T)
@@ -511,7 +511,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
             options("width" = width.bak)
         }
 
-        if (saveTXT != F) {
+        if (saveTXT != FALSE) {
             width.bak <- options()$width
             options("width" = 200)
 

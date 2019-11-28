@@ -2,7 +2,7 @@ checkInsertSize <- function(
     pairs, 
     n_reads = 1000000, 
     genome = '~/_data/ce11/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa', 
-    blacklist = '~/_data/ce11/ce10_blacklist.bed',
+    blacklist = '~/_data/ce11/ce11_blacklist.bed',
     ncore = 10
 )
 {

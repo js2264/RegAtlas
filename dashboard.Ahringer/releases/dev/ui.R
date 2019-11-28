@@ -81,7 +81,7 @@ TAB1 <- tabItem(
             br(),
             
             ## Row 2: OUTPUT LCAPdev and LCAP-tissues graphs ,as well as gene infos.
-            h4("Temporal and spatial gene expression profiles"),
+            h3("Temporal and spatial gene expression profiles"),
             br(),
             br(),
             fluidRow(
@@ -122,7 +122,6 @@ TAB1 <- tabItem(
 TAB2 <- tabItem(
     tabName = 'geneslookup',
     fluidPage(
-        
         ## Row 1: Multiple genes entry
         fluidRow(
             column(width = 3, fluidRow(
@@ -194,12 +193,13 @@ TAB2 <- tabItem(
             
             ## Row 2a: OUTPUT Venn diagrams
             fluidRow(
-                h4("Intersection of genes query with tissue-enriched genes"),
+                h4("Intersection of query genes with annotated sets of genes"),
                 column(width = 2, { plotOutput("Venn.Germline")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
                 column(width = 2, { plotOutput("Venn.Neurons")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
                 column(width = 2, { plotOutput("Venn.Muscle")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
                 column(width = 2, { plotOutput("Venn.Hypod")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 2, { plotOutput("Venn.Intest")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  })
+                column(width = 2, { plotOutput("Venn.Intest")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
+                column(width = 2, { plotOutput("Venn.Ubiq")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  })
             ),
             br(),
             hr(),
@@ -436,10 +436,9 @@ TAB2 <- tabItem(
 TAB3 <- tabItem(
     tabName = 'browser',
     fluidPage( 
-        fluidRow( { 
-            #JbrowseOutput("jbrowser", height = "100%") ### THIS ONE IS GOOD!!! (IT DOESN'T MATTER)
+        fluidRow(
             htmlOutput("jbrowser")
-        } )
+        )
     )
 )
 
@@ -482,12 +481,13 @@ TAB5 <- tabItem(
             column(width = 12, {
                 HTML(
                     '
-                    <h4>Informations</h4>
+                    <h2>General Informations</h2>
                     <p>The data made available here has been published by the Ahringer lab (see list 
                     <a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>
                     ).</br>
                     All the gene annotations and regulatory elements annotations are performed using 
-                    ce11 genome.</br>
+                    WBcel235/ce11 genome. Genome sequence and gene annotations were obtained from 
+                    Ensembl release 92 (ftp://ftp.ensembl.org/pub/release-92/).</br>
                     For detailed Material and Methods, please refer to the corresponding publication(s)
                     [<a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>].</br>
                     To get access to all the scripts used in our studies, please refer to our GitHub 
@@ -502,6 +502,47 @@ TAB5 <- tabItem(
             })
         ), 
         br(), 
+        fluidRow(
+            column(width = 12, {
+                HTML(
+                    '
+                    <h2>Additional informations</h2>
+                        <h3>Code availability</h3>
+                            <h4>Original pipelines</h4>
+                                <p>Several pacakges were developed for the purpose of this study: </br>
+                                    - <a href = https://github.com/js2264/VplotR>VplotR</a> was used to generate V-plots; </br>
+                                    - <a href = https://github.com/js2264/periodicDNA>periodicDNA</a> was used to compute dinucleotide periodicity scores and tracks. 
+                                </p>
+                            <h4>App development</h4>
+                                <p>This app was built in R 3.5.1 "Feather Spray", with Shiny 1.1.0.</br>
+                                The source code of this app is available on <a href = https://github.com/js2264/jadashboard/tree/master/dashboard.Ahringer/>Github</a>.
+                                </p>
+                        <h3>Tissue-specific gene expression</h3>
+                            <h4>Background RNA contamination</h4>
+                                <p>We found that at highly expressed genes, our tissue-specific data showed background contamination. 
+                                This is most likely due to the way nuclear RNA is isolated; during nuclei preparation and before nuclei sorting,  
+                                cytoplasmic RNA from any type of cells is mixed with all the all the nuclei released from whole young adult worms. 
+                                The nuclei are subsequently sorted, washed, and nuclear RNA is extracted. However, a significant amount of cytoplasmic RNA
+                                molecules might remain bound to the outside of the nuclear envelope and will be carried over. 
+                                The fact that we do not detect such contamination in our ATAC-seq datasets confirms our hypothesis that RNA contamination 
+                                results from RNA adsorbed onto the surface of the nuclear envelope. 
+                                </p>
+                            <h4>Background removal</h4>
+                                <p>We used the DSA 1.0 package [<a href = https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-89>Zhong et al., BMC Bioinformatics 2013</a>] 
+                                in R with default parameters and the linear regression method
+                                to estimate and remove background contamination of RNA from other tissues. </br>
+                                The following genes were used as "pure" tissue-specific genes:</br>
+                                    - Germline: maph-1.2, prom-1, zim-3, htp-2, xnd-1; </br>
+                                    - Neuron: ncx-4, tsp-7, oig-8, Y106G6G.6, Y106G6G.2, C35E7.2, F32B4.5, ttr-39; </br>
+                                    - Muscle: B0379.1, srp-3, ttr-36, Y97E10AR.2, C13C4.7, tsp-11, lev-8; </br>
+                                    - Hypodermis: fip-5, osm-8, ptr-16, F36H9.5, nipi-4, R07E3.7; </br>
+                                    - Intestine: Y106G6H.1, F46A8.11, ugt-6, T02B5.3.</br>
+                                The background-normalized values are only used for display in the "Look-up gene" tab. They were not used at any point in the original publication. 
+                                </p>
+                    '
+                )
+            })
+        ), 
         br(), 
         br(), 
         br(), 
@@ -596,8 +637,8 @@ TAB6 <- tabItem(
 
 SIDEBAR <- sidebarMenu(
     id = "tabs", 
-    menuItem("Look-up gene", tabName = "genelookup", icon = icon("ellipsis-h", lib = "font-awesome")),
-    menuItem("Look-up multiple genes", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
+    menuItem("Look-up gene", tabName = "genelookup", icon = icon("search", lib = "font-awesome")),
+    menuItem("Gene set analyses", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
     menuItem("Explore/Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
     menuItem("Informations", tabName = "infos", icon = icon("info", lib = "font-awesome")),
