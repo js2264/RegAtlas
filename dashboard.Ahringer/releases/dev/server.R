@@ -220,7 +220,8 @@ shinyServer <- function(input, output, session) {
                         p("- Sessions can be shared with other using the 'Share' button located in the top right corner."),
                         p("- Tissue annotations are available for REs and genes. Click on any element to display more information."),
                         br(),
-                        h4('Important:</br>More tracks are available in the "Select tracks" tab located on the left side of the genome-browser!'),
+                        h4('Important:'),
+                        h4('More tracks are available in the "Select tracks" tab located on the left side of the genome-browser!'),
                         easyClose = TRUE, 
                         fade = FALSE
                     )

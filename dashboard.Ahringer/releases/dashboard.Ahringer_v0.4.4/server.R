@@ -38,8 +38,8 @@ shinyServer <- function(input, output, session) {
                 vec,
                 col = 'grey', 
                 names = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'),
-                xlab = "", ylab = "Gene expression (TPM)", 
-                main = "Tissue-specific gene expression (YA)", 
+                xlab = "", ylab = "log2 TPM", 
+                main = "Developmental gene expression (YA)", 
                 las = 3
             )
         })
@@ -49,13 +49,13 @@ shinyServer <- function(input, output, session) {
             if (is.null(vec)) vec <- rep(0, 5)
             barplot(
                 vec,
-                col = color.tissues, ylab = "Gene expression (TPM)",
+                col = color.tissues, ylab = "log2 TPM",
                 names = order.tissues[1:5],
-                main = "Tissue-specific gene expression (YA)", 
+                main = "Background-normalized tissue-specific gene expression (YA)", 
                 las = 3
             )
         })
-        # Trigger the display of the informations
+        # Trigger the display of the information
         output$displayPanelsTab1 <- renderText({ ifelse(infos.gene()$valid, 1, 0) })
         outputOptions(output, "displayPanelsTab1", suspendWhenHidden = FALSE)
     }
@@ -210,7 +210,6 @@ shinyServer <- function(input, output, session) {
             if(input$tabs == 'browser' & counter$cnt < 2) {
                 showModal(
                     modalDialog(
-                        title = "Browser Informations",
                         p('Welcome to our embedded genome browser. This browser is built using ', a(href = 'https://jbrowse.org/', target = "_blank", "JBrowse"), '.'),
                         p('The genome version currently in use is WBcel235/ce11.'),
                         p('You can access the browser outside of our Shiny app by clicking ', a(href = 'http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&amp;menu=1&amp;nav=1&amp;tracklist=1&amp;overview=1', target = "_blank", "here"), '.'),
@@ -219,9 +218,10 @@ shinyServer <- function(input, output, session) {
                         p("- Local files can be uploaded temporarily and anonymously to this browser using the button in the 'Track' tab."),
                         p("- Each track can be individually re-scaled. Click on the dropdown button appearing when hovering over the track name for more options."),
                         p("- Sessions can be shared with other using the 'Share' button located in the top right corner."),
-                        p("- Tissue annotations are available for REs and genes. Click on any element to display more informations."),
+                        p("- Tissue annotations are available for REs and genes. Click on any element to display more information."),
                         br(),
-                        h4('Important: more tracks are available in the "Select tracks" tab located on the left side of the genome-browser!'),
+                        h4('Important:'),
+                        h4('More tracks are available in the "Select tracks" tab located on the left side of the genome-browser!'),
                         easyClose = TRUE, 
                         fade = FALSE
                     )
@@ -387,7 +387,7 @@ shinyServer <- function(input, output, session) {
             }
         })
         output$genesList <- renderUI({ HTML(paste(c("<h3>Genes query</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
-        # Trigger the display of the informations
+        # Trigger the display of the information
         output$displayPanelsTab2 <- renderText({ ifelse(length(multipleGenes()) > 0, 1, 0) })
         outputOptions(output, "displayPanelsTab2", suspendWhenHidden = FALSE)
     }

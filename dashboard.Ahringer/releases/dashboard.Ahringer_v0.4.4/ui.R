@@ -193,7 +193,7 @@ TAB2 <- tabItem(
             
             ## Row 2a: OUTPUT Venn diagrams
             fluidRow(
-                h4("Intersection of query genes with annotated sets of genes"),
+                h4("Intersection of query genes with main annotated sets of genes"),
                 column(width = 2, { plotOutput("Venn.Germline")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
                 column(width = 2, { plotOutput("Venn.Neurons")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
                 column(width = 2, { plotOutput("Venn.Muscle")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
@@ -473,7 +473,7 @@ TAB4 <- tabItem(
     )
 )
 
-# Informations about the data
+# Information about the data
 TAB5 <- tabItem(
     tabName = 'infos',
     fluidPage(
@@ -481,7 +481,7 @@ TAB5 <- tabItem(
             column(width = 12, {
                 HTML(
                     '
-                    <h2>General Informations</h2>
+                    <h2>General Information</h2>
                     <p>The data made available here has been published by the Ahringer lab (see list 
                     <a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>
                     ).</br>
@@ -506,7 +506,7 @@ TAB5 <- tabItem(
             column(width = 12, {
                 HTML(
                     '
-                    <h2>Additional informations</h2>
+                    <h2>Additional information</h2>
                         <h3>Code availability</h3>
                             <h4>Original pipelines</h4>
                                 <p>Several pacakges were developed for the purpose of this study: </br>
@@ -641,7 +641,7 @@ SIDEBAR <- sidebarMenu(
     menuItem("Gene set analyses", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
     menuItem("Explore/Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
-    menuItem("Informations", tabName = "infos", icon = icon("info", lib = "font-awesome")),
+    menuItem("Information", tabName = "infos", icon = icon("info", lib = "font-awesome")),
     menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
     sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
     tags$footer(
