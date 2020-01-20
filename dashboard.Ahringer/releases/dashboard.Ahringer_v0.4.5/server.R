@@ -55,6 +55,12 @@ shinyServer <- function(input, output, session) {
                 las = 3
             )
         })
+        addTooltip(session, "Expr.plots_tis", "Important", content = paste0(
+            "<p>This plot shows gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq, 
+            with background RNA contamination corrected by DSA. 
+            This normalization improves the quantification of gene expression for tissue-specific genes.
+            Hence, these values are recommended when looking at a tissue-specific gene.</p>"
+        ), trigger = 'hover')
         output$Expr.plots_tis_uncorrected <- renderPlot({
             par(mar=c(6,5,4,5))
             vec <- unlist(LCAP[infos.gene()$Gene.info[['WormBaseID']],])
@@ -67,6 +73,10 @@ shinyServer <- function(input, output, session) {
                 las = 3
             )
         })
+        addTooltip(session, "Expr.plots_tis_uncorrected", "Important", content = paste0(
+            "<p>This plot shows gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq. 
+            These values are recommended when looking at a broadly expressed gene (i.e. Ubiquitous).</p>"
+        ), trigger = 'hover')
         # Trigger the display of the information
         output$displayPanelsTab1 <- renderText({ ifelse(infos.gene()$valid, 1, 0) })
         outputOptions(output, "displayPanelsTab1", suspendWhenHidden = FALSE)
