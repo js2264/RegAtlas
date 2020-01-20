@@ -43,18 +43,6 @@ shinyServer <- function(input, output, session) {
                 las = 3
             )
         })
-        output$Expr.plots_tis <- renderPlot({
-            par(mar=c(6,5,4,5))
-            vec <- unlist(infos.gene()[['Gene.expr.TPM']]['tiss.spe.LCAP',])
-            if (is.null(vec)) vec <- rep(0, 5)
-            barplot(
-                vec,
-                col = color.tissues, ylab = "log2 TPM",
-                names = order.tissues[1:5],
-                main = "Background-normalized\ntissue-specific gene expression (YA)", 
-                las = 3
-            )
-        })
         output$Expr.plots_tis_uncorrected <- renderPlot({
             par(mar=c(6,5,4,5))
             vec <- unlist(LCAP[infos.gene()$Gene.info[['WormBaseID']],])
@@ -64,6 +52,18 @@ shinyServer <- function(input, output, session) {
                 col = color.tissues, ylab = "log2 TPM",
                 names = order.tissues[1:5],
                 main = "Tissue-specific gene expression (YA)", 
+                las = 3
+            )
+        })
+        output$Expr.plots_tis <- renderPlot({
+            par(mar=c(6,5,4,5))
+            vec <- unlist(infos.gene()[['Gene.expr.TPM']]['tiss.spe.LCAP',])
+            if (is.null(vec)) vec <- rep(0, 5)
+            barplot(
+                vec,
+                col = color.tissues, ylab = "log2 TPM",
+                names = order.tissues[1:5],
+                main = "Tissue-specific gene expression (YA)\n(background removed)", 
                 las = 3
             )
         })
