@@ -86,8 +86,9 @@ TAB1 <- tabItem(
             br(),
             fluidRow(
                 column(width = 1), 
-                column(width = 5, { plotOutput("Expr.plots_dev", height = '300px') }) %>% withSpinner(),
-                column(width = 5, { plotOutput("Expr.plots_tis", height = '300px') }) %>% withSpinner()
+                column(width = 3, { plotOutput("Expr.plots_dev", height = '300px') }) %>% withSpinner(),
+                column(width = 3, { plotOutput("Expr.plots_tis_uncorrected", height = '300px') }) %>% withSpinner(),
+                column(width = 3, { plotOutput("Expr.plots_tis", height = '300px') }) %>% withSpinner()
             ),
             br(),
             hr(),

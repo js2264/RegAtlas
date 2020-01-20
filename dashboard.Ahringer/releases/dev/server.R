@@ -25,13 +25,13 @@ shinyServer <- function(input, output, session) {
             COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])) %>% gsub('.{2}$', '', .))
             STRAND <- paste("<b>Orientation:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])) %>% substrRight(1))
             BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[['Biotype']])
-            ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[['Enriched.tissue']])
+            ENRICHED <- paste("<b>Gene class:</b>   ", infos.gene()$Gene.info[['Enriched.tissue']])
             HTML(paste(WBID, LOCUS, COORDS, STRAND, BIOTYPE, ENRICHED, sep = '<br/>'))
         })
         output$geneDescr <- renderUI({ INFOS <- HTML(fetchWBinfos(infos.gene()$Gene.info[2])) })
         # Get the gene expression graphs
         output$Expr.plots_dev <- renderPlot({
-            par(mar=c(6,5,2,5))
+            par(mar=c(6,5,4,5))
             vec <- unlist(infos.gene()[['Gene.expr.dev.TPM']])
             if (is.null(vec)) vec <- rep(0, 5)
             barplot(
@@ -39,19 +39,31 @@ shinyServer <- function(input, output, session) {
                 col = 'grey', 
                 names = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'),
                 xlab = "", ylab = "log2 TPM", 
-                main = "Developmental gene expression (YA)", 
+                main = "Developmental gene expression", 
                 las = 3
             )
         })
         output$Expr.plots_tis <- renderPlot({
-            par(mar=c(6,5,2,5))
+            par(mar=c(6,5,4,5))
             vec <- unlist(infos.gene()[['Gene.expr.TPM']]['tiss.spe.LCAP',])
             if (is.null(vec)) vec <- rep(0, 5)
             barplot(
                 vec,
                 col = color.tissues, ylab = "log2 TPM",
                 names = order.tissues[1:5],
-                main = "Background-normalized tissue-specific gene expression (YA)", 
+                main = "Background-normalized\ntissue-specific gene expression (YA)", 
+                las = 3
+            )
+        })
+        output$Expr.plots_tis_uncorrected <- renderPlot({
+            par(mar=c(6,5,4,5))
+            vec <- unlist(LCAP[infos.gene()$Gene.info[['WormBaseID']],])
+            if (is.null(vec)) vec <- rep(0, 5)
+            barplot(
+                vec,
+                col = color.tissues, ylab = "log2 TPM",
+                names = order.tissues[1:5],
+                main = "Tissue-specific gene expression (YA)", 
                 las = 3
             )
         })
@@ -249,7 +261,7 @@ shinyServer <- function(input, output, session) {
             LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
             COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
             BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[3])
-            ENRICHED <- paste("<b>Enriched in tissue:</b>   ", infos.gene()$Gene.info[4])
+            ENRICHED <- paste("<b>Class:</b>   ", infos.gene()$Gene.info[4])
             
             h3("Quick gene view")
             HTML(paste(
@@ -283,7 +295,7 @@ shinyServer <- function(input, output, session) {
                             infos.gene()$Associated.REs[c(1:4, 6)],
                             round(infos.gene()$Associated.REs.tissue, 1)
                         ),
-                        c("Chr", "Start", "Stop", "Regulatory Class", "Enriched in tissue(s)", "Cov. Germline (YA)", "Cov. Neurons (YA)", "Cov. Muscle (YA)", "Cov. Hypod. (YA)", "Cov. Intest. (YA)")
+                        c("Chr", "Start", "Stop", "Regulatory Class", "Class", "Cov. Germline (YA)", "Cov. Neurons (YA)", "Cov. Muscle (YA)", "Cov. Hypod. (YA)", "Cov. Intest. (YA)")
                     ),
                     autoHideNavigation = T,
                     rownames = F,

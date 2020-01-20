@@ -19,6 +19,11 @@
 
 ------------ 
 
+## [0.4.5] - 2020-01-20
+##### UI changes
+- Changed gene report through ggi function (simplified)
+- Added the un-normalized gene expression values
+
 ## [0.4.4] - 2019-11-28
 ##### Added 
 ##### UI changes

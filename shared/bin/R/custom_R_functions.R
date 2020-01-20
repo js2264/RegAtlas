@@ -430,6 +430,115 @@ getGeneInfos <- function(GENES, verbose = TRUE, saveTXT = FALSE, exportResult = 
         biotype <- genes.gtf[WBID]$gene_biotype
         # Get gene expression infos from cao and tissue.spe LCAP
         CAO.GENE <- cao03[WBID,]
+        #LCAP.GENE <- LCAP_normalized[WBID,]
+        LCAP.GENE <- LCAP[WBID,]
+        if (nrow(CAO.GENE) == 0) {stop('Gene not found in Cao data. Aborting.')}
+        if (nrow(LCAP.GENE) == 0) {stop('Gene not found in LCAP data. Aborting.')}
+        l2mean.CAO.GENE <- log2((CAO.GENE+1)/rowMeans(CAO.GENE+1))
+        l2mean.LCAP.GENE <- log2((LCAP.GENE+1)/rowMeans(LCAP.GENE+1))
+        # Get gene expression dynamics from developmental datasets
+        LCAPdev.GENE <- LCAPdev[WBID,]
+        l2mean.LCAPdev.GENE <- log2((LCAPdev.GENE+1)/rowMeans(LCAPdev.GENE+1))
+        # Get FC over other tissues
+        max.tissue.df.LCAP.GENE <- max.tissue.df.LCAP[WBID,]
+        tissue <- as.vector(max.tissue.df.LCAP.GENE[,'which.tissues'])
+        FCs <- round(sapply(order.tissues[1:5], function(TISSUE) {LCAP.GENE[, TISSUE] / mean(unlist(LCAP.GENE[, colnames(LCAP.GENE) != TISSUE]))}), 3)
+        # Get REs associated with gene (which ones, associated tissues and dev. dynamics)
+        which <- grep(WBID, all$WormBaseID)
+        REs <- all[which,]
+        if (nrow(REs) == 0) {
+            message('!!! WARNING !!! No associated REs are found !!!')
+            REs.coords <- NULL ; REs.tissues <- NULL ; REs.TFs <- NULL ; REs.TFs.nb <- NULL ; ATAC.GENE <- 0 ; ATACdev.GENE <- 0 ; l2mean.ATAC.GENE <- 0 ; l2mean.ATACdev.GENE <- 0 
+        } else {
+            REs.coords <- REs[,c(1:3, 11)]
+            row.names(REs.coords) <- paste0('RE_', seq(1:nrow(REs.coords)))
+            REs.tissues <- order.tissues[REs$clustersATAC.tissues]
+            REs.TFs <- SUMM[which,]
+            REs.TFs.nb <- REs.TFs$TFnb
+            ATAC.GENE <- ATAC[which,]
+            #ATACdev.GENE <- ATACdev[row.names(ATACdev) %in% all$coords[which],]
+            l2mean.ATAC.GENE <- round(log2((ATAC.GENE+1)/rowMeans(ATAC.GENE+1)),2)
+            row.names(l2mean.ATAC.GENE) <- row.names(REs.coords)
+            colnames(l2mean.ATAC.GENE) <- colnames(l2mean.LCAP.GENE)
+            #l2mean.ATACdev.GENE <- round(log2((ATACdev.GENE+1)/rowMeans(ATACdev.GENE+1)),2)
+            #row.names(l2mean.ATACdev.GENE) <- row.names(REs.coords)
+            #colnames(l2mean.ATACdev.GENE) <- colnames(l2mean.LCAPdev.GENE)
+        }
+
+        # Build results object
+        res <- list()
+        res[['Gene.info']] <- c(WormBaseID = WBID, Locus = locusID, Annotation = tissue)
+        res[['Gene.expr.YA']] <- remove_rownames(round(LCAP.GENE,2))
+        res[['Gene.expr.Cao']] <- remove_rownames(round(CAO.GENE,2))
+        res[['Gene.expr.Janes']] <- remove_rownames(round(rbind(LCAPdev = LCAPdev.GENE),2))
+        #
+        res[['Associated.REs']] <- remove_rownames(cbind(REs.coords, Annotation = REs.tissues, round(ATAC.GENE,2)))
+
+        # Return results
+        if (verbose == TRUE) {
+            width.bak <- options()$width
+            options("width" = 200)
+            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', rep('>', 14),'   ', WBID, ' --- ', locusID, '  ', rep('<', 14),'\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T)
+
+            cat('\nGene infos\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T)
+                cat(paste0(capture.output(res[['Gene.info']]), collapse = "\n"), sep = "", fill = T)
+            cat('\n\nGene expression\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T)
+                cat('\n>> Tissue-specific gene expr. (YA) (this study)', sep = "", fill = T)
+                    res[['Gene.expr.YA']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T)
+                cat('\n>> Tissue-specific gene expr. (L2) (Cao et al. 2017)', sep = "", fill = T)
+                    res[['Gene.expr.Cao']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T)
+                cat('\n>> Developmental gene expr. (Janes et al. 2018)', sep = "", fill = T)
+                    res[['Gene.expr.Janes']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T)
+            cat('\n\nAssociated regulatory elements\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T)
+                cat('\n>> REs coordinates', sep = "", fill = T)
+                    cat(paste0(capture.output(res[['Associated.REs']]), collapse = "\n"), sep = "", fill = T)
+
+            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', sep = "", fill = T)
+            options("width" = width.bak)
+        }
+
+        if (saveTXT != FALSE) {
+            width.bak <- options()$width
+            options("width" = 200)
+
+            txt.file <- ifelse(is.logical(saveTXT), file(paste0(locusID, '-summary.txt'), open="wt"), as.character(saveTXT))
+            cat(rep('>', 14),'   ', WBID, ' --- ', locusID, '   ', rep('<', 14),'\n', sep = "", fill = T, file = txt.file)
+
+            cat('\nGene infos\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                cat(paste0(capture.output(res[['Gene.info']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
+            cat('\n\nGene expression\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                cat('\n>> Tissue-specific gene expr. (YA) (this study)\n', rep('-', times = 42+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                    res[['Gene.expr.YA']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T, file = txt.file, append = T)
+                cat('\n>> Tissue-specific gene expr. (L2) (Cao et al. 2017)\n', rep('-', times = 47+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                    res[['Gene.expr.Cao']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T, file = txt.file, append = T)
+                cat('\n>> Developmental gene expr. (Janes et al. 2018)\n', rep('-', times = 42+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                    res[['Gene.expr.Janes']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T, file = txt.file, append = T)
+            cat('\n\nAssociated regulatory elements\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                cat('\n>> REs coordinates', sep = "", fill = T, file = txt.file, append = T)
+                    cat(paste0(capture.output(res[['Associated.REs']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
+
+            options("width" = width.bak)
+
+        }
+
+    }
+
+    if (length(GENES) == 1 & exportResult == T) {
+        return(res)
+    }
+}
+getGeneInfosLegacy <- function(GENES, verbose = TRUE, saveTXT = FALSE, exportResult = FALSE) {
+    suppressWarnings(suppressMessages(library(GenomicRanges)))
+
+    if (any(unlist(lapply(list(all, genes.gtf, cao03, LCAP, max.tissue.df.LCAP, order.tissues, SUMM), is.null)))) {stop('Some objects are missing. Aborting.')}
+
+    for (GENE in GENES) {
+        # Convert gene in WormBaseID and get locus name
+        if (!grepl('WBGene', GENE)) { WBID <- name2WB(GENE) } else { WBID <- GENE }
+        locusID <- WB2name(WBID)
+        biotype <- genes.gtf[WBID]$gene_biotype
+        # Get gene expression infos from cao and tissue.spe LCAP
+        CAO.GENE <- cao03[WBID,]
         LCAP.GENE <- LCAP_normalized[WBID,]
         if (nrow(CAO.GENE) == 0) {stop('Gene not found in Cao data. Aborting.')}
         if (nrow(LCAP.GENE) == 0) {stop('Gene not found in LCAP data. Aborting.')}
@@ -1981,6 +2090,12 @@ extend.both.sides <- function(granges, width.bef, width.aft) {
     
     return(granges)
     
+}
+# Subset a GRanges to extract only the ones included within a RleList
+`%covered%` <- function(g, bw) {
+    ranges <- GRanges(names(bw), IRanges(1, width = lengths(bw)))
+    g2 <- subsetByOverlaps(g, ranges, type = 'within')
+    return(g %in% g2)
 }
 
 # ---------------------------------------------------------------------------- #
