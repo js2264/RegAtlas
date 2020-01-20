@@ -86,8 +86,15 @@ TAB1 <- tabItem(
             br(),
             fluidRow(
                 column(width = 1), 
-                column(width = 5, { plotOutput("Expr.plots_dev", height = '300px') }) %>% withSpinner(),
-                column(width = 5, { plotOutput("Expr.plots_tis", height = '300px') }) %>% withSpinner()
+                column(width = 3, { plotOutput("Expr.plots_dev", height = '300px') }),
+                tipify(column(
+                    width = 3,
+                    plotOutput("Expr.plots_tis_uncorrected", height = '300px')
+                ), placement = 'top', "<p>This plot shows gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq. These values are recommended when looking at a broadly expressed gene (i.e. Ubiquitous).</p>"),
+                tipify(column(
+                    width = 3,
+                    plotOutput("Expr.plots_tis", height = '300px')
+                ), placement = 'top', "<p>This plot shows gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq, with background RNA contamination corrected by DSA. This normalization improves the quantification of gene expression for tissue-specific genes, and these values are recommended when looking at a tissue-specific gene.</p>")
             ),
             br(),
             hr(),

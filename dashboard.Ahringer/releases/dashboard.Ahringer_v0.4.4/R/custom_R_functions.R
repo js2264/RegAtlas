@@ -486,7 +486,13 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         res[['Associated.REs.tissue']] <- round(ATAC.GENE,2)
         res[['Associated.REs.tissue.l2mean']] <- l2mean.ATAC.GENE
         res[['Associated.REs.TFs.infos']] <- cbind(REs.coords, RE.Tau.score = round(REs.tau,2), RE.associated.tissues = REs.tissues)
+        #
+        res[['Gene.expr.YA']] <- tibble::remove_rownames(round(LCAP.GENE,2))
+        res[['Gene.expr.Cao']] <- tibble::remove_rownames(round(CAO.GENE,2))
+        res[['Gene.expr.Janes']] <- tibble::remove_rownames(round(rbind(LCAPdev = LCAPdev.GENE),2))
+        res[['Associated.REs']] <- tibble::remove_rownames(cbind(REs.coords, Annotation = REs.tissues, round(ATAC.GENE,2)))
 
+        
         # Return results
         if (verbose == T) {
             width.bak <- options()$width
@@ -525,26 +531,18 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
             txt.file <- ifelse(is.logical(saveTXT), file(paste0(locusID, '-summary.txt'), open="wt"), as.character(saveTXT))
             cat('\n', rep('=', times = 52+nchar(locusID)), '\n', rep('>', 14),'   ', WBID, ' --- ', locusID, '   ', rep('<', 14),'\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file)
 
-            cat('\nGene infos\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+            cat('\nGene infos\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat(paste0(capture.output(res[['Gene.info']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-            cat('\n\nGene expression\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
-                cat('\n>> Gene tissue-specific enrichments (FC vs. other tissues)', sep = "", fill = T, file = txt.file, append = T)
-                    cat(paste0(capture.output(FCs), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-                cat('\n>> Gene TPM (tissue-specific)', sep = "", fill = T, file = txt.file, append = T)
-                    cat(paste0(capture.output(res[['Gene.expr.TPM']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-                cat('\n>> Gene log2 mean-centered TPM (tissue-specific)', sep = "", fill = T, file = txt.file, append = T)
-                    cat(paste0(capture.output(res[['Gene.expr.l2mean']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-                cat('\n>> Gene TPM (dev.)', sep = "", fill = T, file = txt.file, append = T)
-                    cat(paste0(capture.output(res[['Gene.expr.dev.TPM']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-                cat('\n>> Gene log2 mean-centered TPM (dev.)', sep = "", fill = T, file = txt.file, append = T)
-                    cat(paste0(capture.output(res[['Gene.expr.dev.l2mean']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-            cat('\n\nAssociated regulatory elements\n', rep('-', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+            cat('\n\nGene expression\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                cat('\n>> Tissue-specific gene expr. (YA) (this study)\n', rep('-', times = 42+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                    res[['Gene.expr.YA']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T, file = txt.file, append = T)
+                cat('\n>> Tissue-specific gene expr. (L2) (Cao et al. 2017)\n', rep('-', times = 47+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                    res[['Gene.expr.Cao']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T, file = txt.file, append = T)
+                cat('\n>> Developmental gene expr. (Janes et al. 2018)\n', rep('-', times = 42+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
+                    res[['Gene.expr.Janes']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T, file = txt.file, append = T)
+            cat('\n\nAssociated regulatory elements\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> REs coordinates', sep = "", fill = T, file = txt.file, append = T)
                     cat(paste0(capture.output(res[['Associated.REs']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-                cat('\n>> REs log2 mean-centered accessibility (tissue-specific)', sep = "", fill = T, file = txt.file, append = T)
-                    cat(paste0(capture.output(res[['Associated.REs.tissue']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-                #cat('\n>> REs log2 mean-centered accessibility (dev)', sep = "", fill = T, file = txt.file, append = T)
-                #    cat(paste0(capture.output(res[['Associated.REs.dev']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
 
             cat('\n', rep('=', times = 52+nchar(locusID)), '\n', sep = "", fill = T, file = txt.file, append = T)
 

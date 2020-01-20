@@ -15,6 +15,7 @@
 
 load('data/minimal-data.RData')
 source('R/custom_R_functions.R')
+load('data/minimal-data.RData')
 suppressMessages(require(shiny))
 suppressMessages(require(shinydashboard))
 suppressMessages(require(shinyWidgets))

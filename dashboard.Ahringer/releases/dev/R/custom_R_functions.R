@@ -529,7 +529,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
             options("width" = 200)
 
             txt.file <- ifelse(is.logical(saveTXT), file(paste0(locusID, '-summary.txt'), open="wt"), as.character(saveTXT))
-            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', rep('>', 14),'   ', WBID, ' --- ', locusID, '   ', rep('<', 14),'\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file)
+            cat(rep('>', 14),'   ', WBID, ' --- ', locusID, '   ', rep('<', 14), sep = "", fill = T, file = txt.file)
 
             cat('\nGene infos\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat(paste0(capture.output(res[['Gene.info']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
@@ -543,8 +543,6 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
             cat('\n\nAssociated regulatory elements\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> REs coordinates', sep = "", fill = T, file = txt.file, append = T)
                     cat(paste0(capture.output(res[['Associated.REs']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
-
-            cat('\n', rep('=', times = 52+nchar(locusID)), '\n', sep = "", fill = T, file = txt.file, append = T)
 
             options("width" = width.bak)
 
