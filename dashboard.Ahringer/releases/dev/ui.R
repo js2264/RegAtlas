@@ -81,20 +81,37 @@ TAB1 <- tabItem(
             br(),
             
             ## Row 2: OUTPUT LCAPdev and LCAP-tissues graphs ,as well as gene infos.
-            h3("Temporal and spatial gene expression profiles"),
+            fluidRow(column(width = 12,
+                div(style="display: inline-block;",tags$h3('Temporal and spatial gene expression profiles    ')),
+                div(style="display: inline-block; width: 50px"),
+                div(style="display: inline-block; width: 300px", popify(
+                    actionBttn(
+                        inputId = NA, 
+                        color = "royal", 
+                        icon = icon("question"), 
+                        style = 'simple'
+                    ), 
+                    options=list(container="body"),
+                    placement = 'bottom', 
+                    "<p><b>These plots show gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq.</b><br><br>Temporal gene expression values (left) are obtained from Janes et al., 2018.<br><br>Tissue-specific gene expression values (from YA, middle and right) are obtained from Serizay et al., submitted.<br><br>The right plot shows gene expression values with background RNA contamination corrected by DSA. This normalization improves the quantification of gene expression for tissue-specific genes, and these values are recommended when looking at a tissue-specific gene. Otherwise, the uncorrected values (middle plot) are recommended for broadly expressed genes. </br></br>See the Information tab for more details.</p>"
+                ))
+            )),
             br(),
             br(),
             fluidRow(
                 column(width = 1), 
-                column(width = 3, { plotOutput("Expr.plots_dev", height = '300px') }),
+                tipify(column(
+                  width = 3,
+                  plotOutput("Expr.plots_dev", height = '300px')
+                ), placement = 'top', "<p>Gene expression across development, in TPMs (Transcripts Per Million) [Janes et al., 2018]</p>"),
                 tipify(column(
                     width = 3,
                     plotOutput("Expr.plots_tis_uncorrected", height = '300px')
-                ), placement = 'top', "<p>This plot shows gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq. These values are recommended when looking at a broadly expressed gene (i.e. Ubiquitous).</p>"),
+                ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) [Serizay et al., submitted]</p>"),
                 tipify(column(
                     width = 3,
                     plotOutput("Expr.plots_tis", height = '300px')
-                ), placement = 'top', "<p>This plot shows gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq, with background RNA contamination corrected by DSA. This normalization improves the quantification of gene expression for tissue-specific genes, and these values are recommended when looking at a tissue-specific gene.</p>")
+                ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) with background RNA contamination corrected by DSA [Serizay et al., submitted]</p>")
             ),
             br(),
             hr(),
@@ -713,6 +730,7 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML(".card { width: 80%;}"))),
         tags$head(tags$style(HTML(".img-round { width: 80%;}"))),
         tags$head(tags$style(HTML(".narrow { width: 120px; }"))),
+        tags$head(tags$style(HTML(".popover{max-width: 600px;}"))),
         BODY, 
         bsModal(
             id = "quickGENE", 

@@ -8,16 +8,24 @@
 	- [ ] Possibility to save Genome browser Settings
 	- [ ] Add heteroK tracks
 	- [ ] bookmark options
-- Add infodroplet
 - Loading screen 
 
 - Update the annotation tracks in the browser
+- Transform genes.gtf in data.frame to get rid of GenomicRanges dependency?
 
 ------------ 
 
 ## [Unreleased]
+##### Changed
+- Corrected columns of REs table in first tab
+- Removed "print" option from the REs table in first tab
+- Updated single gene txt report
 
 ------------ 
+
+## [0.4.6] - 2020-01-20
+##### Changed
+- Lots of small tweaks. Notably the ggi function now outputs a tidier results txt file.
 
 ## [0.4.5] - 2020-01-20
 ##### UI changes

@@ -17,23 +17,22 @@ shinyServer <- function(input, output, session) {
     {
         gene <- reactive({ input$searchGene })
         output$gene <- renderText({ gene() })
-        infos.gene <- reactive ({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
+        infos.gene <- reactive({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
         # Get the gene info / description
         output$geneInfos <- renderUI({
             WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[['WormBaseID']])
-            LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[['locus']])
+            LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[['Locus']])
             COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])) %>% gsub('.{2}$', '', .))
             STRAND <- paste("<b>Orientation:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[['WormBaseID']]])) %>% substrRight(1))
-            BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[['Biotype']])
-            ENRICHED <- paste("<b>Gene class:</b>   ", infos.gene()$Gene.info[['Enriched.tissue']])
-            HTML(paste(WBID, LOCUS, COORDS, STRAND, BIOTYPE, ENRICHED, sep = '<br/>'))
+            ENRICHED <- paste("<b>Gene class:</b>   ", infos.gene()$Gene.info[['Annotation']])
+            HTML(paste(WBID, LOCUS, COORDS, STRAND, ENRICHED, sep = '<br/>'))
         })
         output$geneDescr <- renderUI({ INFOS <- HTML(fetchWBinfos(infos.gene()$Gene.info[2])) })
         # Get the gene expression graphs
         output$Expr.plots_dev <- renderPlot({
             par(mar=c(6,5,4,5))
-            vec <- unlist(infos.gene()[['Gene.expr.dev.TPM']])
-            if (is.null(vec)) vec <- rep(0, 5)
+            vec <- unlist(infos.gene()[['Gene.expr.Janes']])
+            if (is.null(vec)) vec <- rep(0, 6)
             barplot(
                 vec,
                 col = 'grey', 
@@ -57,7 +56,7 @@ shinyServer <- function(input, output, session) {
         })
         output$Expr.plots_tis <- renderPlot({
             par(mar=c(6,5,4,5))
-            vec <- unlist(infos.gene()[['Gene.expr.TPM']]['tiss.spe.LCAP',])
+            vec <- unlist(LCAP_normalized[infos.gene()$Gene.info[['WormBaseID']],])
             if (is.null(vec)) vec <- rep(0, 5)
             barplot(
                 vec,
@@ -71,6 +70,39 @@ shinyServer <- function(input, output, session) {
         output$displayPanelsTab1 <- renderText({ ifelse(infos.gene()$valid, 1, 0) })
         outputOptions(output, "displayPanelsTab1", suspendWhenHidden = FALSE)
     }
+    
+    # Generate the REs subset table
+    {
+      output$REs.table <- renderDataTable({
+        if (all(infos.gene()$Associated.REs == 0)) { datatable(matrix(0)) } else {
+          datatable(
+            setNames(
+              cbind(
+                infos.gene()$Associated.REs[c(1:5)],
+                round(infos.gene()$Associated.REs[6:10], 1)
+              ),
+              c("Chr", "Start", "Stop", "Regulatory Class", "Class", "RPM\n(Germline YA)", "RPM\n(Neuron YA)", "RPM\n(Muscle YA)", "RPM\n(Hypod. YA)", "RPM\n(Intest. YA)")
+            ),
+            autoHideNavigation = T,
+            rownames = F,
+            style = 'bootstrap',
+            extensions = c('Buttons'),
+            options = list(
+              pageLength = 10,
+              dom = 'Brtip',
+              buttons = list('copy', list(
+                extend = 'collection',
+                buttons = c('csv'),
+                text = 'Download')),
+              scrollX = 200,
+              autoWidth = T,
+              searching = F
+            )
+          )
+        }
+      })
+    }
+    
     
     # Generate buttons to download gene-specific text file, all tracks in zip, 
     # and genes list full report
@@ -249,7 +281,6 @@ shinyServer <- function(input, output, session) {
         
     }
     
-    
     # Generate the quickView bsModal 
     {
         
@@ -260,8 +291,7 @@ shinyServer <- function(input, output, session) {
             WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[1])
             LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
             COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
-            BIOTYPE <- paste("<b>Gene biotype:</b>   ", infos.gene()$Gene.info[3])
-            ENRICHED <- paste("<b>Class:</b>   ", infos.gene()$Gene.info[4])
+            ENRICHED <- paste("<b>Class:</b>   ", infos.gene()$Gene.info[3])
             
             h3("Quick gene view")
             HTML(paste(
@@ -269,7 +299,6 @@ shinyServer <- function(input, output, session) {
                 WBID,
                 LOCUS, 
                 COORDS,
-                BIOTYPE, 
                 ENRICHED, 
                 br(),
                 h3("Gene description from WormBase"), 
@@ -285,38 +314,6 @@ shinyServer <- function(input, output, session) {
         
     }
     
-    # Generate the REs subset table
-    {
-        output$REs.table <- renderDataTable({
-            if (all(infos.gene()$Associated.REs == 0)) { datatable(matrix(0)) } else {
-                datatable(
-                    setNames(
-                        cbind(
-                            infos.gene()$Associated.REs[c(1:4, 6)],
-                            round(infos.gene()$Associated.REs.tissue, 1)
-                        ),
-                        c("Chr", "Start", "Stop", "Regulatory Class", "Class", "Cov. Germline (YA)", "Cov. Neurons (YA)", "Cov. Muscle (YA)", "Cov. Hypod. (YA)", "Cov. Intest. (YA)")
-                    ),
-                    autoHideNavigation = T,
-                    rownames = F,
-                    style = 'bootstrap',
-                    extensions = c('Buttons'),
-                    options = list(
-                        pageLength = 10,
-                        dom = 'Brtip',
-                        buttons = list('copy', 'print', list(
-                            extend = 'collection',
-                            buttons = c('csv'),
-                            text = 'Download')),
-                            scrollX = 200,
-                            autoWidth = T,
-                            searching = F
-                        )
-                    )
-                }
-            })
-        }
-        
     # Get the list of multiple genes
     {
         # Get the full list of genes

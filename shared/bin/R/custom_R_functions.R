@@ -487,7 +487,7 @@ getGeneInfos <- function(GENES, verbose = TRUE, saveTXT = FALSE, exportResult = 
             #row.names(l2mean.ATACdev.GENE) <- row.names(REs.coords)
             #colnames(l2mean.ATACdev.GENE) <- colnames(l2mean.LCAPdev.GENE)
         }
-
+        #
         # Build results object
         res <- list()
         res$valid <- TRUE
@@ -495,9 +495,8 @@ getGeneInfos <- function(GENES, verbose = TRUE, saveTXT = FALSE, exportResult = 
         res[['Gene.expr.YA']] <- tibble::remove_rownames(round(LCAP.GENE,2))
         res[['Gene.expr.Cao']] <- tibble::remove_rownames(round(CAO.GENE,2))
         res[['Gene.expr.Janes']] <- tibble::remove_rownames(round(rbind(LCAPdev = LCAPdev.GENE),2))
-        #
         res[['Associated.REs']] <- tibble::remove_rownames(cbind(REs.coords, Annotation = REs.tissues, round(ATAC.GENE,2)))
-
+        #
         # Return results
         if (verbose == TRUE) {
             width.bak <- options()$width

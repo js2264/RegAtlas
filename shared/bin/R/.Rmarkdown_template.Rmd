@@ -22,7 +22,7 @@ University of Cambridge.
 ---  
 
 ## Set up environment
-```{r "env-setup_%SUFFIX", collapse=T}
+```{r collapse=T}
     PROJECT_PATH <- '~/%FOLDER/'
     setwd(PROJECT_PATH)
     require(tidyverse)
@@ -34,7 +34,7 @@ University of Cambridge.
 ---  
 
 ## Load variables 
-```{r "var-setup_%SUFFIX"}
+```{r}
     load('~/shared/data/classification_tissue-spe-genes-REs.RData')
     # -----------
 ```
@@ -42,7 +42,7 @@ University of Cambridge.
 ---  
 
 ## Define functions 
-```{r "fun-setup_%SUFFIX"}
+```{r}
     # -----------
     .sourceDirs()
 ```
@@ -50,14 +50,12 @@ University of Cambridge.
 ---  
 
 ## Perform analysis
-### Part 1
-```{r "chunk-1_%SUFFIX"}
-    
+```{r}
 ```
 
 ---  
 
 ## SessionInfo 
-```{r "sessionInfo_%SUFFIX", echo=FALSE}
+```{r echo=FALSE}
     sessionInfo()
 ```
