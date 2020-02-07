@@ -17,6 +17,7 @@ TAB1 <- tabItem(
     fluidPage(
         ## Row 0: Gene entry
         fluidRow(
+            h3('Single gene information'), 
             column(width = 3, {
                 searchInput(
                     inputId = "searchGene",
@@ -82,7 +83,7 @@ TAB1 <- tabItem(
             
             ## Row 2: OUTPUT LCAPdev and LCAP-tissues graphs ,as well as gene infos.
             fluidRow(column(width = 12,
-                div(style="display: inline-block;",tags$h3('Temporal and spatial gene expression profiles    ')),
+                div(style="display: inline-block;",tags$h4('Temporal and spatial gene expression profiles    ')),
                 div(style="display: inline-block; width: 50px"),
                 div(style="display: inline-block; width: 300px", popify(
                     actionBttn(
@@ -118,7 +119,7 @@ TAB1 <- tabItem(
             br(),
             
             ## Row 3: OUTPUT table of associated REs table
-            h3('Table of associated regulatory elements (REs)'),
+            h4('Table of associated regulatory elements (REs)'),
             br(),
             fluidRow( dataTableOutput("REs.table") ),
             br(),
@@ -148,10 +149,15 @@ TAB2 <- tabItem(
     fluidPage(
         ## Row 1: Multiple genes entry
         fluidRow(
+            h3('Input a list of genes to determine: '), 
+            h4('(1) their overlap with the gene expression classes defined in Serizay et al., submitted;', style = 'padding-left: 50px;'),
+            h4('(2) their expression in different YA tissues;', style = 'padding-left: 50px;'),
+            h4('(3) The tissue-specific accessibility of the associated accessible chromatin loci;', style = 'padding-left: 50px;'),
+            h4('(4) The GO terms enriched in the gene list;', style = 'padding-left: 50px; padding-bottom: 30px;'),
             column(width = 3, fluidRow(
                 textAreaInput(
                     inputId = "searchMulitpleGenePaste",
-                    label = h4("Paste gene names:"),
+                    label = "Paste gene names:",
                     value = "",
                     placeholder = 'Paste here (one gene per line)\n\n* can be used to find patterns (e.g. nhr-*)',
                     rows = 10
@@ -196,7 +202,7 @@ TAB2 <- tabItem(
                 br(), 
                 br(), 
                 actionBttn("getList", label = "Perform analysis", icon = icon("search", lib = "font-awesome"), style = 'bordered', color = "primary", block = FALSE), 
-                p(style = "color: grey;", 'List longer than 500 genes may take a while to be processed'),
+                p(style = "color: grey;", 'Long lists will take a while to be processed'),
                 br(), 
                 textOutput("multipleGenesLength"),
                 actionBttn("resetGenes", label = "Reset genes query", size = "xs", style = "simple", color = 'primary')
@@ -210,6 +216,7 @@ TAB2 <- tabItem(
             hr(),
             br(), 
             downloadBttn("downloadGenesListGFF", label = "Download detailed report of input genes and associated REs (GFF file, IGV friendly)", size = "sm", style = "simple", color = "primary", block = F),
+            downloadBttn("downloadGenesListTXT", label = "Download detailed report of input genes and associated REs (txt file, Excel friendly)", size = "sm", style = "simple", color = "primary", block = F),
             br(),
             br(),
             hr(),
