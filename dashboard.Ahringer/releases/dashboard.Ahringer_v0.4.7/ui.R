@@ -497,7 +497,7 @@ TAB5 <- tabItem(
                 HTML(
                     '<p>
                     <h2>General Information</h2>
-                        <h3>Data avaiability development</h3>
+                        <h3>Data availability</h3>
                             Most of the data displayed in this application have been recently submitted for publication (Serizay et al., submitted). The raw data are hosted on GEO (accession number GSE141213) and the processed data are downloadable in the fourth tab "Explore/Download datasets" of this application.</br>
                             Other datasets come from previous work in the Ahringer lab (see list <a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>).</br>
                             Feel free to contact us directly for any specific request!</br>
