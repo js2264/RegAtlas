@@ -30,6 +30,9 @@ suppressMessages(require(gProfileR))
 suppressMessages(require(pheatmap))
 suppressMessages(require(RColorBrewer))
 suppressMessages(require(apputils))
+suppressMessages(require(tidyr))
+suppressMessages(require(dplyr))
+suppressMessages(require(ggplot2))
 
 # Define variables
 colorGO <- c("#52c23164","#20109564","#ef690664", "white")
@@ -42,7 +45,7 @@ all.deconv <- cbind(
     dplyr::mutate(uniqueWormBaseID = strsplit(as.character(WormBaseID),',')) %>% 
     tidyr::unnest(uniqueWormBaseID)
 atac.dt <- cbind(
-    all[, c('chr','start','stop','gene_name','regulatory_class','domain','which.tissues')], 
+    all[, c('chr','start','stop','gene_name','regulatory_class','which.tissues')], 
     round(ATAC, 3), 
     max.tissue.df[, grepl('max.tissue$', colnames(max.tissue.df))]
 )
@@ -53,17 +56,14 @@ colnames(atac.dt)[grep(paste(order.tissues, collapse = '|'), colnames(atac.dt))]
     '_TPM'
 )
 atac.dt$regulatory_class <- factor(atac.dt$regulatory_class)
-atac.dt$domain <- factor(atac.dt$domain)
 lcap.dt <- cbind(
-    as.data.frame(genes.gtf)[,c(1:3,5,10,11,13,16,18)], 
+    as.data.frame(genes.gtf)[,c(1:3,5,10,11,18)], 
     round(LCAP, 3),
     max.tissue.df.LCAP[, grepl('max.tissue$', colnames(max.tissue.df.LCAP))]
 )
 colnames(lcap.dt)[1:3] <- c('chr', 'start', 'stop')
 colnames(lcap.dt)[colnames(lcap.dt) == 'gene_id'] <- "WormBaseID"
 colnames(lcap.dt)[colnames(lcap.dt) == 'gene_name'] <- "geneID"
-lcap.dt$gene_biotype <- factor(lcap.dt$gene_biotype)
-lcap.dt$domain <- factor(lcap.dt$domain)
 germline.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Germline']
 neurons.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Neurons']
 muscle.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Muscle']
@@ -110,7 +110,6 @@ textareaInput <- function(inputId, label, value = "", placeholder = "", rows = 2
 substrRight <- function(x, n) {
     substr(x, (nchar(x)-n+1), nchar(x))
 }
-
 
 # Function to bypass idle time of Shiny Server
 inactivity <- "function idleTimer() {
