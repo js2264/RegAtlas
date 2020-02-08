@@ -143,62 +143,111 @@ shinyServer <- function(input, output, session) {
                 )
                 
                 # Generate REs GFF part
+                subset_REs <- all$WormBaseID %in% multipleGenes()
                 infos <- paste0(
-                    "ID=", make.unique(paste(all$gene_name, all$regulatory_class, sep = '--'), sep = '_'), 
-                    ";Associated-gene-Name=", all$gene_name, 
-                    ";Associated-gene-WB=", all$WormBaseID, 
-                    ";domain=", all$domain
+                    "ID=", make.unique(paste(all$gene_name[subset_REs], all$regulatory_class[subset_REs], sep = '--'), sep = '_'), 
+                    ";Associated-gene-Name=", all$gene_name[subset_REs], 
+                    ";Associated-gene-WB=", all$WormBaseID[subset_REs], 
+                    ";domain=", all$domain[subset_REs]
                 )
                 values <- paste0(
-                    ';color=', color.tissues[max.tissue.df$which.tissues], 
+                    ';color=', color.tissues[max.tissue.df$which.tissues[subset_REs]], 
                     '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', 
-                    ';Ranked-tissues=', apply(max.tissue.df[,5:9], 1, function(x) paste0(x, collapse = ' / ')), 
-                    ';Ranked-tissue-ATACseq-TPM=', apply(max.tissue.df[,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
-                    ';Consecutive-ratios=', apply(max.tissue.df[,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
-                    ";Tissue-specificity=", gsub('\\.', '', max.tissue.df$which.tissues)
+                    ';Ranked-tissues=', apply(max.tissue.df[subset_REs,5:9], 1, function(x) paste0(x, collapse = ' / ')), 
+                    ';Ranked-tissue-ATACseq-TPM=', apply(max.tissue.df[subset_REs,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    ';Consecutive-ratios=', apply(max.tissue.df[subset_REs,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    ";Tissue-specificity=", gsub('\\.', '', max.tissue.df$which.tissues[subset_REs])
                 )
                 GFF_ATAC <- cbind(
-                    as.character(all$chr), 
-                    rep('Ahringer-tissue-spe-REs', 
-                    times = nrow(all)), 
-                    as.character(all$regulatory_class), 
-                    all$start, 
-                    all$stop, 
-                    rep(".", times=nrow(all)), 
-                    ifelse(is.null(all$strand), ".", all$strand), 
-                    rep(".", times=nrow(all)), 
+                    as.character(all$chr[subset_REs]), 
+                    rep('Ahringer-tissue-spe-REs', times = sum(subset_REs)), 
+                    as.character(all$regulatory_class[subset_REs]), 
+                    all$start[subset_REs], 
+                    all$stop[subset_REs], 
+                    rep(".", times = sum(subset_REs)), 
+                    ifelse(is.null(all$strand[subset_REs]), ".", all$strand[subset_REs]), 
+                    rep(".", times = sum(subset_REs)), 
                     paste0(infos, values)
                 )
                 
                 # Generate genes GFF part
+                subset_genes <- names(genes.gtf) %in% multipleGenes()
                 infos <- paste0(
-                    "ID=", genes.gtf$gene_id,
-                    ";domain=", genes.gtf$domain
+                    "ID=", genes.gtf$gene_id[subset_genes],
+                    ";domain=", genes.gtf$domain[subset_genes]
                 )
                 values <- paste0(
-                    ';color=', c(color.tissues[1], "#081d89", "#081d89", color.tissues[2:36])[max.tissue.df.LCAP$which.tissues], 
+                    ';color=', c(color.tissues[1], "#081d89", "#081d89", color.tissues[2:36])[max.tissue.df.LCAP$which.tissues[subset_genes]], 
                     '; =: : : : : : : : : : : : : : : : : : : : : : : : : ',
-                    ';Ranked-tissues=', apply(max.tissue.df.LCAP[,5:9], 1, function(x) paste0(x, collapse = ' * ')), 
-                    ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[,grep('cov', colnames(max.tissue.df.LCAP))], 1, function(x) paste0(round(x, 3), collapse = ' * ')), 
-                    ';Tissue-zscore=', apply(round(t(apply(max.tissue.df.LCAP[,grepl('max.tissue.cov', colnames(max.tissue.df.LCAP))], 1, scale)), 2), 1, function(x) { paste(x, collapse = ' * ') } ),
-                    ';Consecutive-ratios=', apply(max.tissue.df.LCAP[,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
-                    ";Tissue-specificity=", gsub('\\.', '', max.tissue.df.LCAP$which.tissues)
+                    ';Ranked-tissues=', apply(max.tissue.df.LCAP[subset_genes,5:9], 1, function(x) paste0(x, collapse = ' * ')), 
+                    ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[subset_genes,grep('cov', colnames(max.tissue.df.LCAP))], 1, function(x) paste0(round(x, 3), collapse = ' * ')), 
+                    ';Tissue-zscore=', apply(round(t(apply(max.tissue.df.LCAP[subset_genes,grepl('max.tissue.cov', colnames(max.tissue.df.LCAP))], 1, scale)), 2), 1, function(x) { paste(x, collapse = ' * ') } ),
+                    ';Consecutive-ratios=', apply(max.tissue.df.LCAP[subset_genes,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    ";Tissue-specificity=", gsub('\\.', '', max.tissue.df.LCAP$which.tissues[subset_genes])
                 )
                 GFF_LCAP <- cbind(
-                    as.character(as.character(seqnames(genes.gtf))),
-                    rep('WormBase', times = length(genes.gtf)),
-                    as.character(genes.gtf$gene_biotype),
-                    start(genes.gtf),
-                    end(genes.gtf),
-                    rep(".", length(genes.gtf)),
-                    as.character(strand(genes.gtf)),
-                    rep(".", length(genes.gtf)),
+                    as.character(as.character(seqnames(genes.gtf[subset_genes]))),
+                    rep('WormBase', times = sum(subset_genes)),
+                    as.character(genes.gtf$gene_biotype[subset_genes]),
+                    start(genes.gtf[subset_genes]),
+                    end(genes.gtf[subset_genes]),
+                    rep(".", sum(subset_genes)),
+                    as.character(strand(genes.gtf[subset_genes])),
+                    rep(".", sum(subset_genes)),
                     paste0(infos, values)
                 )
                 
                 # Export GFF file
-                write.table(rbind(HEADER, GFF_LCAP[names(genes.gtf) %in% multipleGenes(),], GFF_ATAC[all$WormBaseID %in% multipleGenes(),]), file, quote = F, row = F, col = F, sep = '\t')
+                write.table(rbind(
+                    HEADER, 
+                    GFF_LCAP, 
+                    GFF_ATAC
+                ), file, quote = F, row = F, col = F, sep = '\t')
+            }
+        )
+        output$downloadGenesListTXT <- downloadHandler(
+            "gene-list_full-report.txt",
+            content = function(file) {
                 
+                # Generate REs GFF part
+                subset_REs <- all$WormBaseID %in% multipleGenes()
+                df_ATAC <- data.frame(
+                    chr = as.character(all$chr[subset_REs]), 
+                    start = all$start[subset_REs], 
+                    stop = all$stop[subset_REs], 
+                    strand = ifelse(is.null(all$strand[subset_REs]), ".", all$strand[subset_REs]), 
+                    regulatory_class = as.character(all$regulatory_class[subset_REs]), 
+                    Associated_gene_Name = all$gene_name[subset_REs], 
+                    Associated_gene_WB = all$WormBaseID[subset_REs], 
+                    Ranked_tissues= apply(max.tissue.df[subset_REs,5:9], 1, function(x) paste0(x, collapse = ' / ')), 
+                    Ranked_tissue_TPM= apply(max.tissue.df[subset_REs,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    Consecutive_ratios= apply(max.tissue.df[subset_REs,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    Tissue_specificity= gsub('\\.', '', max.tissue.df$which.tissues[subset_REs]), 
+                    stringsAsFactors = FALSE
+                )
+                
+                # Generate genes GFF part
+                subset_genes <- names(genes.gtf) %in% multipleGenes()
+                df_LCAP <- data.frame(
+                    chr = as.character(as.character(seqnames(genes.gtf[subset_genes]))),
+                    start = start(genes.gtf[subset_genes]),
+                    stop = end(genes.gtf[subset_genes]),
+                    strand = as.character(strand(genes.gtf[subset_genes])),
+                    regulatory_class = 'protein_coding_gene',
+                    Associated_gene_Name = genes.gtf$gene_name[subset_genes],
+                    Associated_gene_WB = genes.gtf$gene_id[subset_genes],
+                    Ranked_tissues = apply(max.tissue.df.LCAP[subset_genes,5:9], 1, function(x) paste0(x, collapse = ' * ')), 
+                    Ranked_tissue_TPM = apply(max.tissue.df.LCAP[subset_genes,grep('cov', colnames(max.tissue.df.LCAP))], 1, function(x) paste0(round(x, 3), collapse = ' * ')), 
+                    Consecutive_ratios = apply(max.tissue.df.LCAP[subset_genes,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    Tissue_specificity = gsub('\\.', '', max.tissue.df.LCAP$which.tissues[subset_genes]),
+                    stringsAsFactors = FALSE
+                )
+                
+                # Export GFF file
+                write.table(rbind(
+                    df_ATAC, 
+                    df_LCAP
+                ), file, quote = F, row = F, col = T, sep = '\t')
             }
         )
         
@@ -483,6 +532,7 @@ shinyServer <- function(input, output, session) {
                 ANNOTS_DF <- data.frame(Cluster = ANNOTS)
                 ANNOTS_COL <- list(Cluster = rep(brewer.pal('Set1', n = 11), 2)[1:NCLUST_LCAPdev])
             }
+            colnames(mat) <- c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA')
             pheatmap(
                 mat,
                 color = colorScale2_LCAPdev(),
@@ -569,7 +619,7 @@ shinyServer <- function(input, output, session) {
                 cluster_cols = F, 
                 treeheight_row = 20, 
                 show_rownames = F,
-                main = paste0("Associated REs accessibility (", titleLab_ATAC(), ")\nin each tissue"),
+                main = paste0("Accessibility of associated elementsn\n(", titleLab_ATAC(), ") in each tissue"),
                 annotation_row = ANNOTS_DF,
                 annotation_colors = ANNOTS_COL
             )
@@ -631,16 +681,26 @@ shinyServer <- function(input, output, session) {
         
     }
     
-    # Get venn Diagrams
+    # Get intersection heatmap with my dataset
     {
-        
-        output$Venn.Germline <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['germline.genes']], multipleGenes(), names = c("Germline-specific\ngenes", "Query"), col = c(color.tissues[1], rgb(0.85, 0.85, 0.85, 0.5))) })
-        output$Venn.Neurons <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['neurons.genes']], multipleGenes(), names = c("Neurons-specific\ngenes", "Query"), col = c(color.tissues[2], rgb(0.85, 0.85, 0.85, 0.5))) })
-        output$Venn.Muscle <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['muscle.genes']], multipleGenes(), names = c("Muscle-specific\ngenes", "Query"), col = c(color.tissues[3], rgb(0.85, 0.85, 0.85, 0.5))) })
-        output$Venn.Hypod <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['hypod.genes']], multipleGenes(), names = c("Hypod.-specific\ngenes", "Query"), col = c(color.tissues[4], rgb(0.85, 0.85, 0.85, 0.5))) })
-        output$Venn.Intest <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['intest.genes']], multipleGenes(), names = c("Intest.-specific\ngenes", "Query"), col = c(color.tissues[5], rgb(0.85, 0.85, 0.85, 0.5))) })
-        output$Venn.Ubiq <- renderPlot({ par(mar = c(0,0,0,0), oma = c(0,0,0,0)) ; a <- plot.2way.Venn(list.genes[['ubiq.genes']], multipleGenes(), names = c("Ubiq.-specific\ngenes", "Query"), col = c(color.tissues[33], rgb(0.85, 0.85, 0.85, 0.5))) })
-        
+        output$intersection_bars <- renderPlot({
+            tissues_annotations <- data.frame(
+                class = factor(order.tissues[1:34], levels = order.tissues[1:34]), 
+                nb = table(genes.gtf[multipleGenes()]$which.tissues) %>% c() %>% ifelse(. == 'Sperm', 'Germline', .) %>% "["(c(1,4:36)), 
+                total = table(genes.gtf$which.tissues) %>% c()%>% ifelse(. == 'Sperm', 'Germline', .)  %>% "["(c(1,4:36))
+            ) 
+            levels(tissues_annotations$class) = paste0(levels(tissues_annotations$class), ' (n=', tissues_annotations$total, ')')
+            # levels(tissues_annotations$class) <- paste0(tissues_annotations$class, ' (', tissues_annotations$nb, ')')
+            p <- ggplot(tissues_annotations, aes(x = class, y = nb, fill = class)) +
+                geom_col() + 
+                # geom_col(aes(y = total), alpha = 0.3) + 
+                scale_fill_manual(values = color.tissues[1:34]) + 
+                theme_bw() + 
+                labs(y = '# of genes', x = 'Gene expression classes', title = paste0(length(multipleGenes()), ' genes in the query (', length(multipleGenes())-sum(tissues_annotations$nb), ' not classified)')) + 
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+                theme(legend.position = 'none')
+            return(p)
+        })
     }
     
     # Generate tables to display and button to download them
@@ -706,7 +766,10 @@ shinyServer <- function(input, output, session) {
     }
     {
         output$atac.table <- renderDataTable({
-            datatable(atac.dt,
+            colnames(atac.dt) <- c(
+                'chr', 'start', 'stop', 'geneID', 'Regulatory Class', 'Tissue annotation', paste0(order.tissues[1:5], ' (RPM, YA)'), "1st.max.tissue", "2nd.max.tissue", "3rd.max.tissue", "4th.max.tissue","5th.max.tissue"
+            )
+            d <- datatable(atac.dt,
                 autoHideNavigation = T,
                 class = 'cell-border compact',
                 rownames = F,
@@ -716,7 +779,7 @@ shinyServer <- function(input, output, session) {
                 options = list(
                     pageLength = 200,
                     dom = 'Brtip',
-                    buttons = list('copy', 'print', list(extend = 'collection', buttons = c('csv', 'excel', 'pdf'), text = 'Download visible data'), I('colvis')),
+                    buttons = list('copy', list(extend = 'collection', buttons = c('csv', 'excel'), text = 'Download visible data'), I('colvis')),
                     scrollX = 200,
                     scrollY = 200,
                     searching = T,
@@ -725,8 +788,10 @@ shinyServer <- function(input, output, session) {
                 )
             )
         })
-        
         output$lcap.table <- renderDataTable({
+            colnames(lcap.dt) <- c(
+                'chr', 'start', 'stop', 'strand', 'WormBaseID', 'geneID', 'Tissue annotation', paste0(order.tissues[1:5], ' (TPM, YA)'), "1st.max.tissue", "2nd.max.tissue", "3rd.max.tissue", "4th.max.tissue","5th.max.tissue"
+            )
             datatable(lcap.dt,
                 autoHideNavigation = T,
                 class = 'cell-border compact',
@@ -737,7 +802,7 @@ shinyServer <- function(input, output, session) {
                 options = list(
                     pageLength = 200,
                     dom = 'Brtip',
-                    buttons = list('copy', 'print', list(extend = 'collection', buttons = c('csv', 'excel', 'pdf'), text = 'Download visible data'), I('colvis')),
+                    buttons = list('copy', list(extend = 'collection', buttons = c('csv', 'excel'), text = 'Download visible data'), I('colvis')),
                     scrollX = 200,
                     scrollY = 200,
                     searching = T,
