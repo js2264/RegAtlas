@@ -9,19 +9,22 @@
 	- [ ] Add heteroK tracks
 	- [ ] bookmark options
 - Loading screen 
-
 - Update the annotation tracks in the browser
 - Transform genes.gtf in data.frame to get rid of GenomicRanges dependency?
 
 ------------ 
 
 ## [Unreleased]
+
+------------ 
+
+## [0.4.7] - 2020-02-08
 ##### Changed
 - Corrected columns of REs table in first tab
 - Removed "print" option from the REs table in first tab
 - Updated single gene txt report
-
------------- 
+- Fixed regex match in multiple gene queries
+- Changed height of heatmaps in multiple gene queries
 
 ## [0.4.6] - 2020-01-20
 ##### Changed

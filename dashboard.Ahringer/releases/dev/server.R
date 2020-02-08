@@ -368,10 +368,15 @@ shinyServer <- function(input, output, session) {
         # Get the full list of genes
         multipleGenes <- eventReactive( 
             input$getList, 
-            { 
+            {
                 # Get gene names from text box (allows for *)
-                input.genes <- unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' ))
-                if(any(grepl('\\*', input.genes))) { input.genes <- c(genes.gtf$gene_name[grep(paste(input.genes[grepl('\\*', input.genes)], collapse = '|'), genes.gtf$gene_name)], input.genes[!grepl('\\*', input.genes)]) }
+                input.genes <- gsub('\\*', '.*', unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' )))
+                if (any(grepl('\\*', input.genes))) { 
+                    input.genes <- c(
+                        genes.gtf$gene_name[grep(paste(input.genes[grepl('\\*', input.genes)], collapse = '|'), genes.gtf$gene_name)], 
+                        input.genes[!grepl('\\*', input.genes)]
+                    ) 
+                }
                 text_list <- unique(input.genes %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
                 # Get gene names from the bsModal (list of examples of gene lists)
                 bsmodal_list <- unlist(
@@ -690,7 +695,6 @@ shinyServer <- function(input, output, session) {
                 total = table(genes.gtf$which.tissues) %>% c()%>% ifelse(. == 'Sperm', 'Germline', .)  %>% "["(c(1,4:36))
             ) 
             levels(tissues_annotations$class) = paste0(levels(tissues_annotations$class), ' (n=', tissues_annotations$total, ')')
-            # levels(tissues_annotations$class) <- paste0(tissues_annotations$class, ' (', tissues_annotations$nb, ')')
             p <- ggplot(tissues_annotations, aes(x = class, y = nb, fill = class)) +
                 geom_col() + 
                 # geom_col(aes(y = total), alpha = 0.3) + 

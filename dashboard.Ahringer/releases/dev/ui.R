@@ -125,19 +125,6 @@ TAB1 <- tabItem(
             br(),
             hr(),
             br(),
-            
-            ## Row 4: OUTPUT tSNE plots (ATAC / LCAP)
-            #h4('t-SNE plots of promoters (left) and genes (right)'),
-            #br(),
-            #h5("Black dots represent the gene and its associated promoters."),
-            #br(),
-            #fluidRow(
-            #    column(width = 5, { plotOutput("tSNE.plots_genes")  }),
-            #    column(width = 2, { plotOutput("tSNE.plots_legend")  }),
-            #    column(width = 5, { plotOutput("tSNE.plots_proms")  })
-            #),
-            #br(),
-            #hr(),
             br()
         )
     )
@@ -235,9 +222,9 @@ TAB2 <- tabItem(
             
             ## Row 2b: OUTPUT HMs.plot
             fluidRow(
-                column(width = 4, { plotOutput("HMs.plot_LCAPdev") }),
-                column(width = 4, { plotOutput("HMs.plot_LCAP") }),
-                column(width = 4, { plotOutput("HMs.plot_ATAC") })
+                column(width = 4, { plotOutput("HMs.plot_LCAPdev", height = '500px') }),
+                column(width = 4, { plotOutput("HMs.plot_LCAP", height = '500px') }),
+                column(width = 4, { plotOutput("HMs.plot_ATAC", height = '500px') })
             ),
             br(),
             fluidRow(
