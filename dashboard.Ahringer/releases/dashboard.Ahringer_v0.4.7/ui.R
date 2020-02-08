@@ -100,17 +100,16 @@ TAB1 <- tabItem(
             br(),
             br(),
             fluidRow(
-                column(width = 1), 
                 tipify(column(
-                  width = 3,
+                  width = 4,
                   plotOutput("Expr.plots_dev", height = '300px')
                 ), placement = 'top', "<p>Gene expression across development, in TPMs (Transcripts Per Million) [Janes et al., 2018]</p>"),
                 tipify(column(
-                    width = 3,
+                    width = 4,
                     plotOutput("Expr.plots_tis_uncorrected", height = '300px')
                 ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) [Serizay et al. (submitted)]</p>"),
                 tipify(column(
-                    width = 3,
+                    width = 4,
                     plotOutput("Expr.plots_tis", height = '300px')
                 ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) with background RNA contamination corrected by DSA [Serizay et al. (submitted)]</p>")
             ),
@@ -119,7 +118,7 @@ TAB1 <- tabItem(
             br(),
             
             ## Row 3: OUTPUT table of associated REs table
-            h4('Table of associated regulatory elements (REs)'),
+            h4('Associated accessible elements and tissue-specific accessibility values'),
             br(),
             fluidRow( dataTableOutput("REs.table") ),
             br(),
@@ -138,9 +137,9 @@ TAB2 <- tabItem(
         fluidRow(
             h3('Input a list of genes to determine: '), 
             h4('(1) their overlap with the gene expression classes defined in Serizay et al. (submitted);', style = 'padding-left: 50px;'),
-            h4('(2) their expression in different YA tissues;', style = 'padding-left: 50px;'),
-            h4('(3) The tissue-specific accessibility of the associated accessible chromatin loci;', style = 'padding-left: 50px;'),
-            h4('(4) The GO terms enriched in the gene list;', style = 'padding-left: 50px; padding-bottom: 30px;'),
+            h4('(2) their expression in different young adult (YA) tissues;', style = 'padding-left: 50px;'),
+            h4('(3) the tissue-specific accessibility of the associated accessible chromatin loci;', style = 'padding-left: 50px;'),
+            h4('(4) the GO terms enriched in the gene list.', style = 'padding-left: 50px; padding-bottom: 30px;'),
             column(width = 3, fluidRow(
                 textAreaInput(
                     inputId = "searchMulitpleGenePaste",
@@ -192,7 +191,7 @@ TAB2 <- tabItem(
                 p(style = "color: grey;", 'Long lists will take a while to be processed'),
                 br(), 
                 textOutput("multipleGenesLength"),
-                actionBttn("resetGenes", label = "Reset genes query", size = "xs", style = "simple", color = 'primary')
+                actionBttn("resetGenes", label = "Reset query genes", size = "xs", style = "simple", color = 'primary')
             ))
         )
     ),
@@ -212,9 +211,7 @@ TAB2 <- tabItem(
             ## Row 2a: OUTPUT intersection diagrams
             fluidRow(
                 h4("Intersection of query genes with adult gene expression classes from Serizay et al. (submitted)"),
-                column(width = 1),
-                column(width = 10, { plotOutput("intersection_bars", height = '400px') %>% withSpinner(type = 6, color = "#421500", size = 0.5) }),
-                column(width = 1)
+                column(width = 12, { plotOutput("intersection_bars", height = '400px') %>% withSpinner(type = 6, color = "#421500", size = 0.5) })
             ),
             br(),
             hr(),
@@ -462,7 +459,7 @@ TAB4 <- tabItem(
     tabName = 'download',
     fluidPage(
         fluidRow(
-            column(3, h4("Download our tissue-specific datasets", style = 'display: inline-block')), 
+            column(3, h4("Download full tissue-specific datasets", style = 'display: inline-block')), 
             column(7, dropdownButton(
                     downloadBttn("downloadATAC.txt", label = "Download tissue-specific ATAC-seq dataset (txt format, Excel friendly)", size = "sm", style = "simple", color = "primary", block = TRUE), 
                     downloadBttn("downloadATAC.gff", label = "Download tissue-specific ATAC-seq dataset (GFF format, IGV friendly)", size = "sm", style = "simple", color = "primary", block = TRUE), 
@@ -478,12 +475,12 @@ TAB4 <- tabItem(
         hr(),
         
         # Browse ATAC table
-        h4("Navigate ATAC-seq data"),
+        h4("Search ATAC-seq data"),
         fluidRow( column(width = 12, { dataTableOutput("atac.table") } ) ),
         hr(),
         
         # Browse LCAP table
-        h4("Navigate RNA-seq data"),
+        h4("Search RNA-seq data"),
         fluidRow( column(width = 12, { dataTableOutput("lcap.table") } ) )
     )
 )
@@ -498,24 +495,19 @@ TAB5 <- tabItem(
                     '<p>
                     <h2>General Information</h2>
                         <h3>Data availability</h3>
-                            Most of the data displayed in this application have been recently submitted for publication (Serizay et al., submitted). The raw data are hosted on GEO (accession number GSE141213) and the processed data are downloadable in the fourth tab "Explore/Download datasets" of this application.</br>
-                            Other datasets come from previous work in the Ahringer lab (see list <a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>).</br>
-                            Feel free to contact us directly for any specific request!</br>
+                        The tissue-specific accessibility and expression data displayed in this application are from Serizay et al, submitted; raw data are available from GEO accession number GSE141213. Processed data are downloadable from the "Explore/Download datasets" of this application.
+                        Developmental time course accessibility and expression data are from Janes et al, 2018 (DOI: 10.7554/eLife.37344e).
+                        Tissue-specific expresssion at the L2 stage are from single cell sequencing data in Cao et al, 2017 (DOI: 10.1126/science.aam8940).
                         <h3>Genome version</h3>
-                            All the gene annotations and regulatory elements annotations are performed using WBcel235/ce11 genome. Genome sequence and gene annotations were obtained from <a href = ftp://ftp.ensembl.org/pub/release-92/>Ensembl release 92</a>.</br>
-                        <h3>App development</h3>
-                            This app was built in R 3.5.1 "Feather Spray", with Shiny 1.1.0. The source code of this app is available on <a href = https://github.com/js2264/jadashboard/>Github</a>.
+                            Gene and regulatory element coordinates are in the WBcel235/ce11 version of the genome. Genome sequence and gene annotations were obtained from <a href = ftp://ftp.ensembl.org/pub/release-92/>Ensembl release 92</a>.</br>
                     </br>
                     </br>
                     <h2>Additional information</h2>
                         <h3>Background RNA contamination</h3>
-                            We found that at highly expressed genes, our tissue-specific datasets have background contamination. 
-                            This is most likely due to the way nuclear RNA is isolated; during nuclei preparation and before nuclei sorting,  
-                            cytoplasmic RNA from any type of cell is mixed with all the nuclei released from young adult worms. 
-                            The nuclei are subsequently sorted, washed, and nuclear RNA is extracted. However, a significant amount of cytoplasmic RNA
-                            molecules might remain bound to the nuclear envelope and will be carried over. 
+                            We found that RNA from some highly expressed tissue-specific genes was unexpectedly detected in all sorted tissue samples. This appears to be due to contamination by cytoplasmic mature RNA released during nuclear isolation. This RNA, released from all of the tissues of the animal, may have adhered to the outside nuclei, and thus be carried over into all samples. We found that the carry-over is primarily detectable for highly expressed genes (e.g, muscle myosin <i>unc-54</i>).
                         <h3>Background removal</h3>
                             To estimate and remove background contamination in our RNA-seq samples, we used the DSA 1.0 package [<a href = https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-89>Zhong et al., BMC Bioinformatics 2013</a>] in R with default parameters and the linear regression method. The corrected gene expression values are displayed in the "Look-up gene" tab (third barplot).</br>
+                            The DSA package estimates tissue-specific gene expression from mixed samples (e.g. complex tissues or samples with contamination) using profiles of "pure" genes known to be expressed in a single tissue. DSA normalisation improves profiles for tissue-specific genes, but introduce tissue biases for broadly expressed genes.</br>
                             </br>
                             The following genes were used as "pure" tissue-specific genes for the DSA-based background correction:</br>
                                 - Germline: maph-1.2, prom-1, zim-3, htp-2, xnd-1; </br>
@@ -524,8 +516,8 @@ TAB5 <- tabItem(
                                 - Hypodermis: fip-5, osm-8, ptr-16, F36H9.5, nipi-4, R07E3.7; </br>
                                 - Intestine: Y106G6H.1, F46A8.11, ugt-6, T02B5.3.</br>
                             </br>
-                            The DSA package is designed to extract tissue-specific gene expression from mixed samples (e.g. samples with contamination) by relying on "pure" genes known to be expressed in a single tissue. For this reason, it performs poorly at removing background for ubiquitously expressed genes.</br>
-                            When looking up the expression of a tissue-specific gene, we recommend using the background-removed values (third barplot on the "Look-up gene" tab). Otherwise, for broadly expressed genes, gene expression values are more accurate when background is not removed (central barplot on the "Look-up gene" tab).
+                    <h2>App development</h2>
+                        This app was built in R 3.5.1 "Feather Spray", with Shiny 1.1.0. The source code of this app is available on <a href = https://github.com/js2264/jadashboard/>Github</a>.
                     </p>'
                 )
             })
@@ -630,7 +622,7 @@ SIDEBAR <- sidebarMenu(
     menuItem("Explore/Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
     menuItem("Information", tabName = "infos", icon = icon("info", lib = "font-awesome")),
     menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
-    sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
+    # sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
     tags$footer(
         img(src = "http://ahringerlab.com/assets/img/sidebar-img_150x150.png", alt = "", style = "
         color: #b8c7ce;

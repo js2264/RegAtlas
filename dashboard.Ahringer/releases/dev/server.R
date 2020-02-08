@@ -30,7 +30,7 @@ shinyServer <- function(input, output, session) {
         output$geneDescr <- renderUI({ INFOS <- HTML(fetchWBinfos(infos.gene()$Gene.info[2])) })
         # Get the gene expression graphs
         output$Expr.plots_dev <- renderPlot({
-            par(mar=c(6,5,4,5))
+            par(mar=c(6,5,5,2))
             vec <- unlist(infos.gene()[['Gene.expr.Janes']])
             if (is.null(vec)) vec <- rep(0, 6)
             barplot(
@@ -38,31 +38,31 @@ shinyServer <- function(input, output, session) {
                 col = 'grey', 
                 names = c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA'),
                 xlab = "", ylab = "log2 TPM", 
-                main = "Developmental gene expression", 
+                main = "Developmental\ngene expression", 
                 las = 3
             )
         })
         output$Expr.plots_tis_uncorrected <- renderPlot({
-            par(mar=c(6,5,4,5))
+            par(mar=c(6,5,5,2))
             vec <- unlist(LCAP[infos.gene()$Gene.info[['WormBaseID']],])
             if (is.null(vec)) vec <- rep(0, 5)
             barplot(
                 vec,
                 col = color.tissues, ylab = "log2 TPM",
                 names = order.tissues[1:5],
-                main = "Tissue-specific gene expression (YA)", 
+                main = "Tissue-specific\ngene expression (YA)", 
                 las = 3
             )
         })
         output$Expr.plots_tis <- renderPlot({
-            par(mar=c(6,5,4,5))
+            par(mar=c(6,5,5,2))
             vec <- unlist(LCAP_normalized[infos.gene()$Gene.info[['WormBaseID']],])
             if (is.null(vec)) vec <- rep(0, 5)
             barplot(
                 vec,
                 col = color.tissues, ylab = "log2 TPM",
                 names = order.tissues[1:5],
-                main = "Tissue-specific gene expression (YA)\n(background removed)", 
+                main = "Tissue-specific\ngene expression (YA)\n(background removed)", 
                 las = 3
             )
         })
@@ -102,7 +102,6 @@ shinyServer <- function(input, output, session) {
         }
       })
     }
-    
     
     # Generate buttons to download gene-specific text file, all tracks in zip, 
     # and genes list full report
@@ -153,9 +152,9 @@ shinyServer <- function(input, output, session) {
                 values <- paste0(
                     ';color=', color.tissues[max.tissue.df$which.tissues[subset_REs]], 
                     '; =: : : : : : : : : : : : : : : : : : : : : : : : : ', 
-                    ';Ranked-tissues=', apply(max.tissue.df[subset_REs,5:9], 1, function(x) paste0(x, collapse = ' / ')), 
-                    ';Ranked-tissue-ATACseq-TPM=', apply(max.tissue.df[subset_REs,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
-                    ';Consecutive-ratios=', apply(max.tissue.df[subset_REs,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    ';Ranked-tissues=', apply(max.tissue.df[subset_REs,5:9], 1, function(x) paste0(x, collapse = ' ; ')), 
+                    ';Ranked-tissue-ATACseq-TPM=', apply(max.tissue.df[subset_REs,10:14], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
+                    ';Consecutive-ratios=', apply(max.tissue.df[subset_REs,15:18], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
                     ";Tissue-specificity=", gsub('\\.', '', max.tissue.df$which.tissues[subset_REs])
                 )
                 GFF_ATAC <- cbind(
@@ -179,10 +178,10 @@ shinyServer <- function(input, output, session) {
                 values <- paste0(
                     ';color=', c(color.tissues[1], "#081d89", "#081d89", color.tissues[2:36])[max.tissue.df.LCAP$which.tissues[subset_genes]], 
                     '; =: : : : : : : : : : : : : : : : : : : : : : : : : ',
-                    ';Ranked-tissues=', apply(max.tissue.df.LCAP[subset_genes,5:9], 1, function(x) paste0(x, collapse = ' * ')), 
-                    ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[subset_genes,grep('cov', colnames(max.tissue.df.LCAP))], 1, function(x) paste0(round(x, 3), collapse = ' * ')), 
-                    ';Tissue-zscore=', apply(round(t(apply(max.tissue.df.LCAP[subset_genes,grepl('max.tissue.cov', colnames(max.tissue.df.LCAP))], 1, scale)), 2), 1, function(x) { paste(x, collapse = ' * ') } ),
-                    ';Consecutive-ratios=', apply(max.tissue.df.LCAP[subset_genes,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    ';Ranked-tissues=', apply(max.tissue.df.LCAP[subset_genes,5:9], 1, function(x) paste0(x, collapse = ' ; ')), 
+                    ';Ranked-tissue-RNAseq-TPM=', apply(max.tissue.df.LCAP[subset_genes,grep('cov', colnames(max.tissue.df.LCAP))], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
+                    ';Tissue-zscore=', apply(round(t(apply(max.tissue.df.LCAP[subset_genes,grepl('max.tissue.cov', colnames(max.tissue.df.LCAP))], 1, scale)), 2), 1, function(x) { paste(x, collapse = ' ; ') } ),
+                    ';Consecutive-ratios=', apply(max.tissue.df.LCAP[subset_genes,15:18], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
                     ";Tissue-specificity=", gsub('\\.', '', max.tissue.df.LCAP$which.tissues[subset_genes])
                 )
                 GFF_LCAP <- cbind(
@@ -219,9 +218,9 @@ shinyServer <- function(input, output, session) {
                     regulatory_class = as.character(all$regulatory_class[subset_REs]), 
                     Associated_gene_Name = all$gene_name[subset_REs], 
                     Associated_gene_WB = all$WormBaseID[subset_REs], 
-                    Ranked_tissues= apply(max.tissue.df[subset_REs,5:9], 1, function(x) paste0(x, collapse = ' / ')), 
-                    Ranked_tissue_TPM= apply(max.tissue.df[subset_REs,10:14], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
-                    Consecutive_ratios= apply(max.tissue.df[subset_REs,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    Ranked_tissues= apply(max.tissue.df[subset_REs,5:9], 1, function(x) paste0(x, collapse = ' ; ')), 
+                    Ranked_tissue_TPM= apply(max.tissue.df[subset_REs,10:14], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
+                    Consecutive_ratios= apply(max.tissue.df[subset_REs,15:18], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
                     Tissue_specificity= gsub('\\.', '', max.tissue.df$which.tissues[subset_REs]), 
                     stringsAsFactors = FALSE
                 )
@@ -236,17 +235,17 @@ shinyServer <- function(input, output, session) {
                     regulatory_class = 'protein_coding_gene',
                     Associated_gene_Name = genes.gtf$gene_name[subset_genes],
                     Associated_gene_WB = genes.gtf$gene_id[subset_genes],
-                    Ranked_tissues = apply(max.tissue.df.LCAP[subset_genes,5:9], 1, function(x) paste0(x, collapse = ' * ')), 
-                    Ranked_tissue_TPM = apply(max.tissue.df.LCAP[subset_genes,grep('cov', colnames(max.tissue.df.LCAP))], 1, function(x) paste0(round(x, 3), collapse = ' * ')), 
-                    Consecutive_ratios = apply(max.tissue.df.LCAP[subset_genes,15:18], 1, function(x) paste0(round(x, 3), collapse = ' / ')), 
+                    Ranked_tissues = apply(max.tissue.df.LCAP[subset_genes,5:9], 1, function(x) paste0(x, collapse = ' ; ')), 
+                    Ranked_tissue_TPM = apply(max.tissue.df.LCAP[subset_genes,grep('cov', colnames(max.tissue.df.LCAP))], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
+                    Consecutive_ratios = apply(max.tissue.df.LCAP[subset_genes,15:18], 1, function(x) paste0(round(x, 3), collapse = ' ; ')), 
                     Tissue_specificity = gsub('\\.', '', max.tissue.df.LCAP$which.tissues[subset_genes]),
                     stringsAsFactors = FALSE
                 )
                 
                 # Export GFF file
                 write.table(rbind(
-                    df_ATAC, 
-                    df_LCAP
+                    df_LCAP,
+                    df_ATAC 
                 ), file, quote = F, row = F, col = T, sep = '\t')
             }
         )
@@ -449,7 +448,7 @@ shinyServer <- function(input, output, session) {
                 paste(l, "valid genes found.") 
             }
         })
-        output$genesList <- renderUI({ HTML(paste(c("<h3>Genes query</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
+        output$genesList <- renderUI({ HTML(paste(c("<h3>Query genes</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
         # Trigger the display of the information
         output$displayPanelsTab2 <- renderText({ ifelse(length(multipleGenes()) > 0, 1, 0) })
         outputOptions(output, "displayPanelsTab2", suspendWhenHidden = FALSE)
@@ -624,7 +623,7 @@ shinyServer <- function(input, output, session) {
                 cluster_cols = F, 
                 treeheight_row = 20, 
                 show_rownames = F,
-                main = paste0("Accessibility of associated elementsn\n(", titleLab_ATAC(), ") in each tissue"),
+                main = paste0("Accessibility of associated elements\n(", titleLab_ATAC(), ") in each tissue"),
                 annotation_row = ANNOTS_DF,
                 annotation_colors = ANNOTS_COL
             )
@@ -783,7 +782,7 @@ shinyServer <- function(input, output, session) {
                 options = list(
                     pageLength = 200,
                     dom = 'Brtip',
-                    buttons = list('copy', list(extend = 'collection', buttons = c('csv', 'excel'), text = 'Download visible data'), I('colvis')),
+                    buttons = list(list(text = "Download CSV", extend = 'csv', filename= 'Query_tissue-specific_accessibility_data.csv'), I('colvis')),
                     scrollX = 200,
                     scrollY = 200,
                     searching = T,
@@ -806,7 +805,7 @@ shinyServer <- function(input, output, session) {
                 options = list(
                     pageLength = 200,
                     dom = 'Brtip',
-                    buttons = list('copy', list(extend = 'collection', buttons = c('csv', 'excel'), text = 'Download visible data'), I('colvis')),
+                    buttons = list(list(text = "Download CSV", extend = 'csv', filename= 'Query_tissue-specific_gene-expression_data.csv'), I('colvis')),
                     scrollX = 200,
                     scrollY = 200,
                     searching = T,
@@ -820,7 +819,7 @@ shinyServer <- function(input, output, session) {
     # Prevent timeout (https://support.dominodatalab.com/hc/en-us/articles/360015932932-Increasing-the-timeout-for-Shiny-Server)
     output$keepAlive <- renderText({
         req(input$count) 
-        paste("Shiny app is live.")
+        paste("")
     })
     
 } #EOF

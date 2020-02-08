@@ -480,6 +480,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         res[['Gene.expr.Cao']] <- tibble::remove_rownames(round(CAO.GENE,2))
         res[['Gene.expr.Janes']] <- tibble::remove_rownames(round(rbind(LCAPdev = LCAPdev.GENE),2))
         res[['Associated.REs']] <- tibble::remove_rownames(cbind(REs.coords, Annotation = REs.tissues, round(ATAC.GENE,2)))
+        colnames(res[['Gene.expr.Janes']]) <- c("Emb.", "L1", "L2", "L3", "L4", "YA")
         
         # Return results
         if (verbose == T) {
@@ -520,7 +521,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
             cat(rep('>', 14),'   ', WBID, ' --- ', locusID, '   ', rep('<', 14),'\n', sep = "", fill = T, file = txt.file)
 
             cat('\nGene information\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
-                cat(paste0(capture.output(res[['Gene.info']]), collapse = "\n"), sep = "", fill = T, file = txt.file, append = T)
+                cat(gsub('"', ' ',paste0(capture.output(res[['Gene.info']]), collapse = "\n")), sep = "", fill = T, file = txt.file, append = T)
             cat('\n\nGene expression (TPM)\n', rep('=', times = 52+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                 cat('\n>> Tissue-specific gene expr. (YA) (Serizay et al., submitted)\n', rep('-', times = 42+nchar(locusID)), sep = "", fill = T, file = txt.file, append = T)
                     res[['Gene.expr.YA']] %>% capture.output() %>% paste0(collapse = "\n") %>% gsub('\n1 ', '\n', .) %>% gsub('^  ', '', .) %>% cat(sep = "", fill = T, file = txt.file, append = T)
