@@ -94,7 +94,7 @@ TAB1 <- tabItem(
                     ), 
                     options=list(container="body"),
                     placement = 'bottom', 
-                    "<p><b>These plots show gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq.</b><br><br>Temporal gene expression values (left) are obtained from Janes et al., 2018.<br><br>Tissue-specific gene expression values (from YA, middle and right) are obtained from Serizay et al., submitted.<br><br>The right plot shows gene expression values with background RNA contamination corrected by DSA. This normalization improves the quantification of gene expression for tissue-specific genes, and these values are recommended when looking at a tissue-specific gene. Otherwise, the uncorrected values (middle plot) are recommended for broadly expressed genes. </br></br>See the Information tab for more details.</p>"
+                    "<p><b>These plots show gene expression in TPMs (Transcripts Per Millions) from nuclear RNA-seq.</b><br><br>Temporal gene expression values (left) are obtained from Janes et al., 2018.<br><br>Tissue-specific gene expression values (from YA, middle and right) are obtained from Serizay et al. (submitted).<br><br>The right plot shows gene expression values with background RNA contamination corrected by DSA. This normalization improves the quantification of gene expression for tissue-specific genes, and these values are recommended when looking at a tissue-specific gene. Otherwise, the uncorrected values (middle plot) are recommended for broadly expressed genes. </br></br>See the Information tab for more details.</p>"
                 ))
             )),
             br(),
@@ -108,11 +108,11 @@ TAB1 <- tabItem(
                 tipify(column(
                     width = 3,
                     plotOutput("Expr.plots_tis_uncorrected", height = '300px')
-                ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) [Serizay et al., submitted]</p>"),
+                ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) [Serizay et al. (submitted)]</p>"),
                 tipify(column(
                     width = 3,
                     plotOutput("Expr.plots_tis", height = '300px')
-                ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) with background RNA contamination corrected by DSA [Serizay et al., submitted]</p>")
+                ), placement = 'top', "<p>Gene expression in YA tissues, in TPMs (Transcripts Per Million) with background RNA contamination corrected by DSA [Serizay et al. (submitted)]</p>")
             ),
             br(),
             hr(),
@@ -150,7 +150,7 @@ TAB2 <- tabItem(
         ## Row 1: Multiple genes entry
         fluidRow(
             h3('Input a list of genes to determine: '), 
-            h4('(1) their overlap with the gene expression classes defined in Serizay et al., submitted;', style = 'padding-left: 50px;'),
+            h4('(1) their overlap with the gene expression classes defined in Serizay et al. (submitted);', style = 'padding-left: 50px;'),
             h4('(2) their expression in different YA tissues;', style = 'padding-left: 50px;'),
             h4('(3) The tissue-specific accessibility of the associated accessible chromatin loci;', style = 'padding-left: 50px;'),
             h4('(4) The GO terms enriched in the gene list;', style = 'padding-left: 50px; padding-bottom: 30px;'),
@@ -215,22 +215,19 @@ TAB2 <- tabItem(
             br(),
             hr(),
             br(), 
-            downloadBttn("downloadGenesListGFF", label = "Download detailed report of input genes and associated REs (GFF file, IGV friendly)", size = "sm", style = "simple", color = "primary", block = F),
-            downloadBttn("downloadGenesListTXT", label = "Download detailed report of input genes and associated REs (txt file, Excel friendly)", size = "sm", style = "simple", color = "primary", block = F),
+            downloadBttn("downloadGenesListGFF", label = "Download annotated GFF file of input genes and associated accessible sites (GFF file, IGV friendly)", size = "sm", style = "simple", color = "primary", block = F),
+            downloadBttn("downloadGenesListTXT", label = "Download detailed text report of input genes and associated accessible sites (txt file, Excel friendly)", size = "sm", style = "simple", color = "primary", block = F),
             br(),
             br(),
             hr(),
             br(),
             
-            ## Row 2a: OUTPUT Venn diagrams
+            ## Row 2a: OUTPUT intersection diagrams
             fluidRow(
-                h4("Intersection of query genes with main annotated sets of genes"),
-                column(width = 2, { plotOutput("Venn.Germline")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 2, { plotOutput("Venn.Neurons")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 2, { plotOutput("Venn.Muscle")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 2, { plotOutput("Venn.Hypod")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 2, { plotOutput("Venn.Intest")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 2, { plotOutput("Venn.Ubiq")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  })
+                h4("Intersection of query genes with adult gene expression classes from Serizay et al. (submitted)"),
+                column(width = 1),
+                column(width = 10, { plotOutput("intersection_bars", height = '400px') %>% withSpinner(type = 6, color = "#421500", size = 0.5) }),
+                column(width = 1)
             ),
             br(),
             hr(),
@@ -238,9 +235,9 @@ TAB2 <- tabItem(
             
             ## Row 2b: OUTPUT HMs.plot
             fluidRow(
-                column(width = 4, { plotOutput("HMs.plot_LCAPdev")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 4, { plotOutput("HMs.plot_LCAP")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  }),
-                column(width = 4, { plotOutput("HMs.plot_ATAC")%>% withSpinner(type = 6, color = "#421500", size = 0.5)  })
+                column(width = 4, { plotOutput("HMs.plot_LCAPdev") }),
+                column(width = 4, { plotOutput("HMs.plot_LCAP") }),
+                column(width = 4, { plotOutput("HMs.plot_ATAC") })
             ),
             br(),
             fluidRow(
@@ -450,7 +447,7 @@ TAB2 <- tabItem(
                         downloadBttn("downloadGO", label = "Download full GO report (.txt file)", size = "sm", style = "simple", color = "primary", block = T)
                     )
                 } ),
-                column(width = 10, { plotOutput("GO.plot") %>% withSpinner(type = 6, color = "#421500", size = 0.5) } )
+                column(width = 10, { plotOutput("GO.plot") } )
             ),
             br(),
             hr(),
@@ -509,68 +506,40 @@ TAB5 <- tabItem(
     tabName = 'infos',
     fluidPage(
         fluidRow(
-            column(width = 12, {
+            column(width = 10, {
                 HTML(
-                    '
+                    '<p>
                     <h2>General Information</h2>
-                    <p>The data made available here has been published by the Ahringer lab (see list 
-                    <a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>
-                    ).</br>
-                    All the gene annotations and regulatory elements annotations are performed using 
-                    WBcel235/ce11 genome. Genome sequence and gene annotations were obtained from 
-                    Ensembl release 92 (ftp://ftp.ensembl.org/pub/release-92/).</br>
-                    For detailed Material and Methods, please refer to the corresponding publication(s)
-                    [<a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>].</br>
-                    To get access to all the scripts used in our studies, please refer to our GitHub 
-                    repositories 
-                    <a href = https://github.com/js2264>here</a>, 
-                    <a href = https://github.com/jurgjn>here</a> and 
-                    <a href = https://github.com/Przemol/>here</a>. 
-                    Feel free to contact us directly for any request!
-                    </p>
-                    '
-                )
-            })
-        ), 
-        br(), 
-        fluidRow(
-            column(width = 12, {
-                HTML(
-                    '
+                        <h3>Data avaiability development</h3>
+                            Most of the data displayed in this application have been recently submitted for publication (Serizay et al., submitted). The raw data are hosted on GEO (accession number GSE141213) and the processed data are downloadable in the fourth tab "Explore/Download datasets" of this application.</br>
+                            Other datasets come from previous work in the Ahringer lab (see list <a href = http://www.ahringer.group.gurdon.cam.ac.uk/publications.html>here</a>).</br>
+                            Feel free to contact us directly for any specific request!</br>
+                        <h3>Genome version</h3>
+                            All the gene annotations and regulatory elements annotations are performed using WBcel235/ce11 genome. Genome sequence and gene annotations were obtained from <a href = ftp://ftp.ensembl.org/pub/release-92/>Ensembl release 92</a>.</br>
+                        <h3>App development</h3>
+                            This app was built in R 3.5.1 "Feather Spray", with Shiny 1.1.0. The source code of this app is available on <a href = https://github.com/js2264/jadashboard/>Github</a>.
+                    </br>
+                    </br>
                     <h2>Additional information</h2>
-                        <h3>Code availability</h3>
-                            <h4>Original pipelines</h4>
-                                <p>Several pacakges were developed for the purpose of this study: </br>
-                                    - <a href = https://github.com/js2264/VplotR>VplotR</a> was used to generate V-plots; </br>
-                                    - <a href = https://github.com/js2264/periodicDNA>periodicDNA</a> was used to compute dinucleotide periodicity scores and tracks. 
-                                </p>
-                            <h4>App development</h4>
-                                <p>This app was built in R 3.5.1 "Feather Spray", with Shiny 1.1.0.</br>
-                                The source code of this app is available on <a href = https://github.com/js2264/jadashboard/tree/master/dashboard.Ahringer/>Github</a>.
-                                </p>
-                        <h3>Tissue-specific gene expression</h3>
-                            <h4>Background RNA contamination</h4>
-                                <p>We found that at highly expressed genes, our tissue-specific data showed background contamination. 
-                                This is most likely due to the way nuclear RNA is isolated; during nuclei preparation and before nuclei sorting,  
-                                cytoplasmic RNA from any type of cells is mixed with all the all the nuclei released from whole young adult worms. 
-                                The nuclei are subsequently sorted, washed, and nuclear RNA is extracted. However, a significant amount of cytoplasmic RNA
-                                molecules might remain bound to the outside of the nuclear envelope and will be carried over. 
-                                The fact that we do not detect such contamination in our ATAC-seq datasets confirms our hypothesis that RNA contamination 
-                                results from RNA adsorbed onto the surface of the nuclear envelope. 
-                                </p>
-                            <h4>Background removal</h4>
-                                <p>We used the DSA 1.0 package [<a href = https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-89>Zhong et al., BMC Bioinformatics 2013</a>] 
-                                in R with default parameters and the linear regression method
-                                to estimate and remove background contamination of RNA from other tissues. </br>
-                                The following genes were used as "pure" tissue-specific genes:</br>
-                                    - Germline: maph-1.2, prom-1, zim-3, htp-2, xnd-1; </br>
-                                    - Neuron: ncx-4, tsp-7, oig-8, Y106G6G.6, Y106G6G.2, C35E7.2, F32B4.5, ttr-39; </br>
-                                    - Muscle: B0379.1, srp-3, ttr-36, Y97E10AR.2, C13C4.7, tsp-11, lev-8; </br>
-                                    - Hypodermis: fip-5, osm-8, ptr-16, F36H9.5, nipi-4, R07E3.7; </br>
-                                    - Intestine: Y106G6H.1, F46A8.11, ugt-6, T02B5.3.</br>
-                                The background-normalized values are only used for display in the "Look-up gene" tab. They were not used at any point in the original publication. 
-                                </p>
-                    '
+                        <h3>Background RNA contamination</h3>
+                            We found that at highly expressed genes, our tissue-specific datasets have background contamination. 
+                            This is most likely due to the way nuclear RNA is isolated; during nuclei preparation and before nuclei sorting,  
+                            cytoplasmic RNA from any type of cell is mixed with all the nuclei released from young adult worms. 
+                            The nuclei are subsequently sorted, washed, and nuclear RNA is extracted. However, a significant amount of cytoplasmic RNA
+                            molecules might remain bound to the nuclear envelope and will be carried over. 
+                        <h3>Background removal</h3>
+                            To estimate and remove background contamination in our RNA-seq samples, we used the DSA 1.0 package [<a href = https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-89>Zhong et al., BMC Bioinformatics 2013</a>] in R with default parameters and the linear regression method. The corrected gene expression values are displayed in the "Look-up gene" tab (third barplot).</br>
+                            </br>
+                            The following genes were used as "pure" tissue-specific genes for the DSA-based background correction:</br>
+                                - Germline: maph-1.2, prom-1, zim-3, htp-2, xnd-1; </br>
+                                - Neuron: ncx-4, tsp-7, oig-8, Y106G6G.6, Y106G6G.2, C35E7.2, F32B4.5, ttr-39; </br>
+                                - Muscle: B0379.1, srp-3, ttr-36, Y97E10AR.2, C13C4.7, tsp-11, lev-8; </br>
+                                - Hypodermis: fip-5, osm-8, ptr-16, F36H9.5, nipi-4, R07E3.7; </br>
+                                - Intestine: Y106G6H.1, F46A8.11, ugt-6, T02B5.3.</br>
+                            </br>
+                            The DSA package is designed to extract tissue-specific gene expression from mixed samples (e.g. samples with contamination) by relying on "pure" genes known to be expressed in a single tissue. For this reason, it performs poorly at removing background for ubiquitously expressed genes.</br>
+                            When looking up the expression of a tissue-specific gene, we recommend using the background-removed values (third barplot on the "Look-up gene" tab). Otherwise, for broadly expressed genes, gene expression values are more accurate when background is not removed (central barplot on the "Look-up gene" tab).
+                    </p>'
                 )
             })
         ), 
@@ -649,7 +618,7 @@ TAB6 <- tabItem(
                     <br/>
                     <br/>
                     <p class="cardtitle">PhD candidate</p>
-                    <p class="cardtitle">Developer/Maintenance of JABrowse</p>
+                    <p class="cardtitle">Developer/Maintenance of the tissue-specific database</p>
                     <br/>
                     <p>Gurdon Institute, UK</p>
                     <p>Cambridge University, UK</p>
