@@ -13,24 +13,34 @@
 
 shinyServer <- function(input, output, session) {
     
-    # suppressMessages(require(GenomicRanges))
+    # in server
+    show_modal_progress_line() # show the modal window
     suppressMessages(require(tidyr))
+    update_modal_progress(0.1) 
     suppressMessages(require(dplyr))
+    update_modal_progress(0.2) 
     suppressMessages(require(ggplot2))
+    update_modal_progress(0.3) 
     suppressMessages(require(magrittr))
+    update_modal_progress(0.4) 
     suppressMessages(require(RColorBrewer))
+    update_modal_progress(0.5) 
+    suppressMessages(require(GenomicRanges))
+    update_modal_progress(0.75) 
     germline.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Germline']
     neurons.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Neurons']
     muscle.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Muscle']
     hypod.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Hypod.']
+    update_modal_progress(0.85) 
     intest.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Intest.']
     ubiq.genes <- names(genes.gtf)[genes.gtf$which.tissues %in% c('Ubiq.', 'Ubiq.-Biased')]
     list.genes <- list(germline.genes, neurons.genes, muscle.genes, hypod.genes, intest.genes, ubiq.genes)
     names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes', 'ubiq.genes')
-    
+    remove_modal_progress() # remove it when done
+
     # Startup message
     toggleModal(session, "startupModal", toggle = "open")
-    
+
     ### TAB 1
     {
         gene <- eventReactive( input$searchGene_search, input$searchGene )

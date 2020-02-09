@@ -20,6 +20,7 @@
 - Moved many loading functions to server file. Notably, GenomicRanges is loaded automatically, and only when needed.
 - put a reactiveEvent for single gene searches. 
 - Landing page info
+- loading buffer indicator
 
 ## [0.4.7] - 2020-02-08
 ##### Changed

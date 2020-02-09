@@ -13,6 +13,7 @@
 
 # Single-gene entry
 TAB1 <- tabItem(
+    add_busy_bar(color = "red", height = '10px'),
     tabName = 'genelookup',
     fluidPage(
         
@@ -660,6 +661,22 @@ shinyUI <- dashboardPage(
     ),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
+        ### Startup modal 
+        bsModal(
+            id = 'startupModal', 
+            title = NULL, 
+            trigger = '', 
+            size = 'large', 
+            HTML('<img src="http://ahringerlab.com/assets/img/startup_picture.png" title="" style="max-width: 100%; max-height: 100%; display: block; ">')
+        ),
+        # Quick search modal
+        bsModal(
+            id = "quickGENE", 
+            title = "Quick gene view",
+            trigger = '', 
+            size = "large", 
+            htmlOutput("quickResults")
+        ), 
         tags$script(inactivity),
         tags$head(includeCSS("assets/custom.css")),
         tags$head(tags$link(rel = "shortcut icon", href = "http://ahringerlab.com/assets/img/favicon.ico")),
@@ -689,24 +706,7 @@ shinyUI <- dashboardPage(
         tags$head(tags$style("#startupModal .modal-dialog{ width: 90vw; height: 90vh}")),
         tags$head(tags$style("#startupModal .modal-content{ background-color: #fff; }")),
         tags$head(tags$style("#startupModal .modal-header{ height: 0px; visibility: hidden; padding: 0px; }")),
-        tags$head(tags$style("#startupModal .modal-footer{ padding: 0px 10px 10px 0px; }")),
-        BODY, 
-        # Quick search modal
-        bsModal(
-            id = "quickGENE", 
-            title = "Quick gene view",
-            trigger = '', 
-            size = "large", 
-            htmlOutput("quickResults")
-        ),
-        ### Startup modal 
-        bsModal(
-            id = 'startupModal', 
-            title = NULL, 
-            trigger = '', 
-            size = 'large', 
-            HTML('<img src="http://ahringerlab.com/assets/img/startup_picture.png" title="startup"/ style="max-width: 100%; max-height: 100%; display: block; ">')
-        )
+        BODY
     )
 )
 
