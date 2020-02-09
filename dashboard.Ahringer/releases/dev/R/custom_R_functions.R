@@ -420,7 +420,7 @@ matchGenes <- function(genes, genes.gtf) {
 getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
     suppressWarnings(suppressMessages(library(GenomicRanges)))
 
-    if (any(unlist(lapply(list(all, genes.gtf, cao03, LCAP, max.tissue.df.LCAP, order.tissues, SUMM), is.null)))) {stop('Some objects are missing. Aborting.')}
+    if (any(unlist(lapply(list(all, genes.gtf, cao03, LCAP, max.tissue.df.LCAP, order.tissues), is.null)))) {stop('Some objects are missing. Aborting.')}
     matched_genes <- matchGenes(GENES, genes.gtf)
     if (any(is.na(matched_genes))) {
         message(paste(GENES[is.na(matched_genes)], collapse = ', '), ' genes not found in genes model. Aborting.')
@@ -460,8 +460,6 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
             row.names(REs.coords) <- paste0('RE_', seq(1:nrow(REs.coords)))
             REs.tau <- REs$TauScore
             REs.tissues <- order.tissues[REs$clustersATAC.tissues]
-            REs.TFs <- SUMM[which,]
-            REs.TFs.nb <- REs.TFs$TFnb
             ATAC.GENE <- ATAC[which,]
             #ATACdev.GENE <- ATACdev[row.names(ATACdev) %in% all$coords[which],]
             l2mean.ATAC.GENE <- round(log2((ATAC.GENE+1)/rowMeans(ATAC.GENE+1)),2)

@@ -8,15 +8,18 @@
 	- [ ] Possibility to save Genome browser Settings
 	- [ ] Add heteroK tracks
 	- [ ] bookmark options
-- Loading screen 
 - Update the annotation tracks in the browser
-- Transform genes.gtf in data.frame to get rid of GenomicRanges dependency?
 
 ------------ 
 
 ## [Unreleased]
 
 ------------ 
+
+## [0.5.0] - 2020-02-09
+- Moved many loading functions to server file. Notably, GenomicRanges is loaded automatically, and only when needed.
+- put a reactiveEvent for single gene searches. 
+- Landing page info
 
 ## [0.4.7] - 2020-02-08
 ##### Changed

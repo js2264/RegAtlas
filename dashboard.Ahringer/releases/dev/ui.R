@@ -15,6 +15,7 @@
 TAB1 <- tabItem(
     tabName = 'genelookup',
     fluidPage(
+        
         ## Row 0: Gene entry
         fluidRow(
             h3('Single gene information'), 
@@ -22,7 +23,6 @@ TAB1 <- tabItem(
                 searchInput(
                     inputId = "searchGene",
                     label = "Look up a gene:",
-                    value = 'hlh-1',
                     placeholder = 'e.g. WBGene00001251 or hlh-1', 
                     btnSearch = icon("search", lib = "glyphicon"),
                     btnReset = icon("remove", lib = "glyphicon"),
@@ -686,13 +686,26 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML(".img-round { width: 80%;}"))),
         tags$head(tags$style(HTML(".narrow { width: 120px; }"))),
         tags$head(tags$style(HTML(".popover{max-width: 600px;}"))),
+        tags$head(tags$style("#startupModal .modal-dialog{ width: 90vw; height: 90vh}")),
+        tags$head(tags$style("#startupModal .modal-content{ background-color: #fff; }")),
+        tags$head(tags$style("#startupModal .modal-header{ height: 0px; visibility: hidden; padding: 0px; }")),
+        tags$head(tags$style("#startupModal .modal-footer{ padding: 0px 10px 10px 0px; }")),
         BODY, 
+        # Quick search modal
         bsModal(
             id = "quickGENE", 
             title = "Quick gene view",
             trigger = '', 
             size = "large", 
             htmlOutput("quickResults")
+        ),
+        ### Startup modal 
+        bsModal(
+            id = 'startupModal', 
+            title = NULL, 
+            trigger = '', 
+            size = 'large', 
+            HTML('<img src="http://ahringerlab.com/assets/img/startup_picture.png" title="startup"/ style="max-width: 100%; max-height: 100%; display: block; ">')
         )
     )
 )

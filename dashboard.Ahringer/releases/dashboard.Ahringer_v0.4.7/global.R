@@ -21,58 +21,15 @@ suppressMessages(require(shinydashboard))
 suppressMessages(require(shinyWidgets))
 suppressMessages(require(shinycssloaders))
 suppressMessages(require(shinyBS))
-suppressMessages(require(magrittr))
-suppressMessages(require(GenomicRanges))
 suppressMessages(require(DT))
 suppressMessages(require(urltools))
 suppressMessages(require(htmltools))
 suppressMessages(require(httr))
-suppressMessages(require(gProfileR))
-suppressMessages(require(pheatmap))
-suppressMessages(require(RColorBrewer))
 suppressMessages(require(apputils))
-suppressMessages(require(tidyr))
-suppressMessages(require(dplyr))
-suppressMessages(require(ggplot2))
 
 # Define variables
 colorGO <- c("#52c23164","#20109564","#ef690664", "white")
 names(colorGO) <- c("MF", "BP", "CC", "kegg")
-all.deconv <- cbind(
-    all, 
-    ATAC, 
-    max.tissue.df[, grepl('max.tissue|ratio', colnames(max.tissue.df))]
-) %>% 
-    dplyr::mutate(uniqueWormBaseID = strsplit(as.character(WormBaseID),',')) %>% 
-    tidyr::unnest(uniqueWormBaseID)
-atac.dt <- cbind(
-    all[, c('chr','start','stop','gene_name','regulatory_class','which.tissues')], 
-    round(ATAC, 3), 
-    max.tissue.df[, grepl('max.tissue$', colnames(max.tissue.df))]
-)
-row.names(atac.dt) <- all$coords
-colnames(atac.dt)[colnames(atac.dt) == 'gene_name'] <- "geneID"
-colnames(atac.dt)[grep(paste(order.tissues, collapse = '|'), colnames(atac.dt))] <- paste0(
-    order.tissues[1:length(grep(paste(order.tissues, collapse = '|'), colnames(atac.dt)))], 
-    '_TPM'
-)
-atac.dt$regulatory_class <- factor(atac.dt$regulatory_class)
-lcap.dt <- cbind(
-    as.data.frame(genes.gtf)[,c(1:3,5,10,11,18)], 
-    round(LCAP, 3),
-    max.tissue.df.LCAP[, grepl('max.tissue$', colnames(max.tissue.df.LCAP))]
-)
-colnames(lcap.dt)[1:3] <- c('chr', 'start', 'stop')
-colnames(lcap.dt)[colnames(lcap.dt) == 'gene_id'] <- "WormBaseID"
-colnames(lcap.dt)[colnames(lcap.dt) == 'gene_name'] <- "geneID"
-germline.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Germline']
-neurons.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Neurons']
-muscle.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Muscle']
-hypod.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Hypod.']
-intest.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Intest.']
-ubiq.genes <- names(genes.gtf)[genes.gtf$which.tissues %in% c('Ubiq.', 'Ubiq.-Biased')]
-list.genes <- list(germline.genes, neurons.genes, muscle.genes, hypod.genes, intest.genes, ubiq.genes)
-names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes', 'ubiq.genes')
 colors.decimals <- c(0.10395294, 0.3906374, 0.1192665, 0.14261010, 0.14226132, 0.13421772)
 link <- "http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&loc=chrIII&tracks=genes%2Cregulatory_elements%2Cgonad.atac%2Cneurons.atac%2Cmuscle.atac%2Chypod.atac%2Cintest.atac%2Cgonad.lcap.fwd%2Cneurons.lcap.fwd%2Cmuscle.lcap.fwd%2Chypod.lcap.fwd%2Cintest.lcap.fwd%2Cgonad.lcap.rev%2Cneurons.lcap.rev%2Cmuscle.lcap.rev%2Chypod.lcap.rev%2Cintest.lcap.rev%2Ctranscripts&highlight=&menu=1&nav=1&tracklist=1&overview=1"
 NCLUST_LCAPdev <- 5

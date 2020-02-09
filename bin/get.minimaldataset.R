@@ -4,19 +4,41 @@
 load('./shared/data/classification_tissue-spe-genes-REs.RData')
 # Load required libraries
 library(GenomicRanges)
+library(magrittr)
 # Load custom functions
 source("./shared/bin/R/custom_R_functions.R")
-# Add extra variables for tSNE plots
-valid.groups = c(1:33)
-CLASSES.proms <- colortransp[factor(order.tissues[all[which(all$is.prom & all$clustersATAC.tissues %in% valid.groups),]$clustersATAC.tissues], levels = order.tissues)]
-all.proms.valid <- all[all$is.prom & all$clustersATAC.tissues %in% valid.groups,]
-valid.groups = order.tissues[c(1:5, 33)]
-CLASSES.genes = colortransp[c(1:5, 33)][factor(order.tissues[c(1:5, 33)][max.tissue.df.LCAP[genes.gtf$is.prot.cod & max.tissue.df.LCAP$which.tissues %in% valid.groups,]$which.tissues], levels = order.tissues[c(1:5, 33)])]
-genes.valid <- max.tissue.df.LCAP$which.tissues %in% order.tissues[1:33]
+#
+all.deconv <- cbind(
+    all, 
+    ATAC, 
+    max.tissue.df[, grepl('max.tissue|ratio', colnames(max.tissue.df))]
+) %>% 
+    dplyr::mutate(uniqueWormBaseID = strsplit(as.character(WormBaseID),',')) %>% 
+    tidyr::unnest(uniqueWormBaseID)
+atac.dt <- cbind(
+    all[, c('chr','start','stop','gene_name','regulatory_class','which.tissues')], 
+    round(ATAC, 3), 
+    max.tissue.df[, grepl('max.tissue$', colnames(max.tissue.df))]
+)
+row.names(atac.dt) <- all$coords
+colnames(atac.dt)[colnames(atac.dt) == 'gene_name'] <- "geneID"
+colnames(atac.dt)[grep(paste(order.tissues, collapse = '|'), colnames(atac.dt))] <- paste0(
+    order.tissues[1:length(grep(paste(order.tissues, collapse = '|'), colnames(atac.dt)))], 
+    '_TPM'
+)
+atac.dt$regulatory_class <- factor(atac.dt$regulatory_class)
+lcap.dt <- cbind(
+    as.data.frame(genes.gtf)[,c(1:3,5,10,11,18)], 
+    round(LCAP, 3),
+    max.tissue.df.LCAP[, grepl('max.tissue$', colnames(max.tissue.df.LCAP))]
+)
+colnames(lcap.dt)[1:3] <- c('chr', 'start', 'stop')
+colnames(lcap.dt)[colnames(lcap.dt) == 'gene_id'] <- "WormBaseID"
+colnames(lcap.dt)[colnames(lcap.dt) == 'gene_name'] <- "geneID"
+genes.gtf2 <- as.data.frame(genes.gtf)
 # Save data
 save(file = "./shared/data/minimal-data.RData", list = c(
     # color/names vars
-    'colortransp',
     'color.tissues',
     'order.tissues',
     # data vars
@@ -29,17 +51,12 @@ save(file = "./shared/data/minimal-data.RData", list = c(
     'LCAP_normalized',
     'max.tissue.df.LCAP',
     'genes.gtf',
-    'SUMM',
+    'genes.gtf2',
     'convID',
-    # tSNE vars
-    #'tSNE.df.proms',
-    #'tSNE.df.LCAP',
     'LCAPdev',
-    'ATACdev',
-    'CLASSES.proms',
-    'all.proms.valid',
-    'CLASSES.genes',
-    'genes.valid',
+    'all.deconv', 
+    'atac.dt', 
+    'lcap.dt',
     # Functions
     'getGeneInfos',
     'name2WB',

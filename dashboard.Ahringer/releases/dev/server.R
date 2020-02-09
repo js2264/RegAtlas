@@ -13,11 +13,30 @@
 
 shinyServer <- function(input, output, session) {
     
-    # Read gene name and get gene infos
+    # suppressMessages(require(GenomicRanges))
+    suppressMessages(require(tidyr))
+    suppressMessages(require(dplyr))
+    suppressMessages(require(ggplot2))
+    suppressMessages(require(magrittr))
+    suppressMessages(require(RColorBrewer))
+    germline.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Germline']
+    neurons.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Neurons']
+    muscle.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Muscle']
+    hypod.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Hypod.']
+    intest.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Intest.']
+    ubiq.genes <- names(genes.gtf)[genes.gtf$which.tissues %in% c('Ubiq.', 'Ubiq.-Biased')]
+    list.genes <- list(germline.genes, neurons.genes, muscle.genes, hypod.genes, intest.genes, ubiq.genes)
+    names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes', 'ubiq.genes')
+    
+    # Startup message
+    toggleModal(session, "startupModal", toggle = "open")
+    
+    ### TAB 1
     {
-        gene <- reactive({ input$searchGene })
+        gene <- eventReactive( input$searchGene_search, input$searchGene )
         output$gene <- renderText({ gene() })
         infos.gene <- reactive({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
+        
         # Get the gene info / description
         output$geneInfos <- renderUI({
             WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[['WormBaseID']])
@@ -28,6 +47,26 @@ shinyServer <- function(input, output, session) {
             HTML(paste(WBID, LOCUS, COORDS, STRAND, ENRICHED, sep = '<br/>'))
         })
         output$geneDescr <- renderUI({ INFOS <- HTML(fetchWBinfos(infos.gene()$Gene.info[2])) })
+        
+        # Generate buttons to access to Genome Browser and WormBase
+        observeEvent(input$switchToGenome, { 
+            updateTabItems(session, "tabs", "browser")
+        })
+        output$Link <- renderUI({
+            url <-paste0("https://www.wormbase.org/species/c_elegans/gene/", infos.gene()$Gene.info[['WormBaseID']])
+            HTML(paste0('<button class="action-button bttn bttn-fill bttn-sm bttn-primary bttn-no-outline" id="Link" type="button"><i class="fa fa-book"></i> <a href="', url, '" target="_blank">Go to Wormbase entry</a> </button>'))
+        })
+
+        # download txt report button
+        output$downloadINFOS <- downloadHandler(
+            reactive(paste0(infos.gene()$Gene.info[2], "_summary.txt")),
+            content = function(file) {
+                temp <- tempfile()
+                getGeneInfos(gene(), saveTXT = temp, verbose = F, exportResult = F)
+                writeLines(readLines(temp), file)
+            }
+        )
+
         # Get the gene expression graphs
         output$Expr.plots_dev <- renderPlot({
             par(mar=c(6,5,5,2))
@@ -66,69 +105,161 @@ shinyServer <- function(input, output, session) {
                 las = 3
             )
         })
+        
+        # Generate the REs subset table
+        output$REs.table <- renderDataTable({
+            if (all(infos.gene()$Associated.REs == 0)) { datatable(matrix(0)) } else {
+              datatable(
+                setNames(
+                  cbind(
+                    infos.gene()$Associated.REs[c(1:5)],
+                    round(infos.gene()$Associated.REs[6:10], 1)
+                  ),
+                  c("Chr", "Start", "Stop", "Regulatory Class", "Class", "RPM\n(Germline YA)", "RPM\n(Neuron YA)", "RPM\n(Muscle YA)", "RPM\n(Hypod. YA)", "RPM\n(Intest. YA)")
+                ),
+                autoHideNavigation = T,
+                rownames = F,
+                style = 'bootstrap',
+                extensions = c('Buttons'),
+                options = list(
+                  pageLength = 10,
+                  dom = 'Brtip',
+                  buttons = list('copy', list(
+                    extend = 'collection',
+                    buttons = c('csv'),
+                    text = 'Download')),
+                  scrollX = 200,
+                  autoWidth = T,
+                  searching = F
+                )
+              )
+            }
+          })
+        
         # Trigger the display of the information
         output$displayPanelsTab1 <- renderText({ ifelse(infos.gene()$valid, 1, 0) })
         outputOptions(output, "displayPanelsTab1", suspendWhenHidden = FALSE)
     }
     
-    # Generate the REs subset table
+    # Generate the quickView bsModal 
     {
-      output$REs.table <- renderDataTable({
-        if (all(infos.gene()$Associated.REs == 0)) { datatable(matrix(0)) } else {
-          datatable(
-            setNames(
-              cbind(
-                infos.gene()$Associated.REs[c(1:5)],
-                round(infos.gene()$Associated.REs[6:10], 1)
-              ),
-              c("Chr", "Start", "Stop", "Regulatory Class", "Class", "RPM\n(Germline YA)", "RPM\n(Neuron YA)", "RPM\n(Muscle YA)", "RPM\n(Hypod. YA)", "RPM\n(Intest. YA)")
-            ),
-            autoHideNavigation = T,
-            rownames = F,
-            style = 'bootstrap',
-            extensions = c('Buttons'),
-            options = list(
-              pageLength = 10,
-              dom = 'Brtip',
-              buttons = list('copy', list(
-                extend = 'collection',
-                buttons = c('csv'),
-                text = 'Download')),
-              scrollX = 200,
-              autoWidth = T,
-              searching = F
-            )
-          )
-        }
-      })
+        output$quickResults <- renderUI({
+            
+            gene <- reactive ({ input$quickGene })
+            infos.gene <- reactive ({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
+            WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[1])
+            LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
+            COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
+            ENRICHED <- paste("<b>Class:</b>   ", infos.gene()$Gene.info[3])
+            
+            h3("Quick gene view")
+            HTML(paste(
+                h3("Quick gene view"), 
+                WBID,
+                LOCUS, 
+                COORDS,
+                ENRICHED, 
+                br(),
+                h3("Gene description from WormBase"), 
+                p(HTML(fetchWBinfos(infos.gene()$Gene.info[2]))),
+                sep = '<br/>'
+            ))
+            
+        })
+        observeEvent(input$quickSearch, {
+            toggleModal(session, "quickGENE", toggle = "open")
+        })
     }
     
-    # Generate buttons to download gene-specific text file, all tracks in zip, 
-    # and genes list full report
+    ### TAB 2
     {
-        output$downloadINFOS <- downloadHandler(
-            reactive(paste0(infos.gene()$Gene.info[2], "_summary.txt")),
-            content = function(file) {
-                temp <- tempfile()
-                getGeneInfos(gene(), saveTXT = temp, verbose = F, exportResult = F)
-                writeLines(readLines(temp), file)
-            }
+        # Get the full list of genes
+        multipleGenes <- eventReactive( 
+            input$getList, 
+            {
+                # Get gene names from text box (allows for *)
+                input.genes <- gsub('\\*', '.*', unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' )))
+                if (any(grepl('\\*', input.genes))) { 
+                    input.genes <- c(
+                        genes.gtf$gene_name[grep(paste(input.genes[grepl('\\*', input.genes)], collapse = '|'), genes.gtf$gene_name)], 
+                        input.genes[!grepl('\\*', input.genes)]
+                    ) 
+                }
+                text_list <- unique(input.genes %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
+                # Get gene names from the bsModal (list of examples of gene lists)
+                bsmodal_list <- unlist(
+                    list(
+                        "Germline-specific genes" = germline.genes, 
+                        "Neurons-specific genes" = neurons.genes, 
+                        "Muscle-specific genes" = muscle.genes, 
+                        "Hypodermis-specific genes" = hypod.genes, 
+                        "Intestine-specific genes" = intest.genes, 
+                        "Soma-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Soma'], 
+                        "Ubiquitous genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Ubiq.'], 
+                        "Genes with germline-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Germline],
+                        "Genes with neurons-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Neurons],
+                        "Genes with muscle-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Muscle],
+                        "Genes with hypodermis-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Hypod.],
+                        "Genes with intestine-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Intest.],
+                        "Genes with Neurons & Muscle-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Neurons_Muscle],
+                        "Genes with Hypodermis & Intestine-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Hypod._Intest.],
+                        "Genes with soma-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Soma],
+                        "Genes with ubiquitous promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Ubiq.]
+                    )[as.numeric(input$checkGroupGeneClasses)]
+                )
+                # Fuse lists
+                genes <- unique(c(text_list, bsmodal_list))
+                return(genes[genes %in% names(genes.gtf)])
+            } 
         )
-        
-        output$downloadBWLCAP <- downloadHandler(
-            "tissue-specific-RNAseq_bigwig-tracks.tar.gz",
-            content = function(file) {
-                download.file("http://ahringerlab.com/public/RNAseq_tracks.tar.gz", file)
+        # Reset gene lists when reset button clicked
+        observeEvent(input$resetGenes, {
+            updateTextAreaInput(
+                session, 
+                "searchMulitpleGenePaste", 
+                value = "", 
+                placeholder = 'Paste here (one gene per line)'
+            )
+            updateCheckboxGroupInput(
+                session, 
+                "checkGroupGeneClasses", 
+                choiceNames = c(
+                    "Germline-specific genes",
+                    "Neurons-specific genes",
+                    "Muscle-specific genes",
+                    "Hypodermis-specific genes",
+                    "Intestine-specific genes",
+                    "Soma-specific genes",
+                    "Ubiquitous genes",
+                    "Genes with germline-specific promoter(s)",
+                    "Genes with meurons-specific promoter(s)",
+                    "Genes with muscle-specific promoter(s)",
+                    "Genes with hypodermis-specific promoter(s)",
+                    "Genes with Intestine-specific promoter(s)",
+                    "Genes with Neurons & Muscle-specific promoter(s)",
+                    "Genes with Hypodermis & Intestine-specific promoter(s)",
+                    "Genes with soma-specific promoter(s)",
+                    "Genes with ubiquitous promoter(s)"
+                ),
+                choiceValues = 1:16,
+                selected = NULL
+            )
+        } )
+        # Text infos
+        output$multipleGenesPromsGroupsLength <- reactive ({ paste(length(input$checkGroupGeneClasses), "group(s) selected.") })
+        output$multipleGenesLength <- reactive({ 
+            l <- length(multipleGenes())
+            if (l == 0) {
+                'No input genes.\nEnter or select at least 2 genes and click on "Perform analysis" button.'
+            } else if (l == 1) {
+                'No genes found.\nEnter or select at least 2 genes and click on "Perform analysis" button.'
+            } else {
+                paste(l, "valid genes found.") 
             }
-        )
+        })
+        output$genesList <- renderUI({ HTML(paste(c("<h3>Query genes</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
         
-        output$downloadBWATAC <- downloadHandler(
-            "tissue-specific-ATAC-seq_bigwig-tracks.tar.gz",
-            content = function(file) {
-                download.file("http://ahringerlab.com/public/ATACseq_tracks.tar.gz", file)
-            }
-        )
-        
+        # Generate genes list full report
         output$downloadGenesListGFF <- downloadHandler(
             "gene-list_full-report.gff",
             content = function(file) {
@@ -249,269 +380,44 @@ shinyServer <- function(input, output, session) {
                 ), file, quote = F, row = F, col = T, sep = '\t')
             }
         )
-        
-    }
-    
-    # Generate buttons to access to Genome Browser and WormBase
-    {
-        observeEvent(input$switchToGenome, { 
-            updateTabItems(session, "tabs", "browser")
-        })
-        output$Link <- renderUI({
-            url <-paste0("https://www.wormbase.org/species/c_elegans/gene/", infos.gene()$Gene.info[['WormBaseID']])
-            HTML(paste0('<button class="action-button bttn bttn-fill bttn-sm bttn-primary bttn-no-outline" id="Link" type="button"><i class="fa fa-book"></i> <a href="', url, '" target="_blank">Go to Wormbase entry</a> </button>'))
-        })
-    }
-    
-    # Generate browser
-    {
-        RE.coords <- reactive ({ c(
-            as.character(infos.gene()$Associated.REs[1,1]),
-            as.character(min(infos.gene()$Associated.REs[,2])-3000),
-            as.character(max(infos.gene()$Associated.REs[,3])+3000)
-        ) })
-        gene.coords <- reactive ({ c(
-            paste0('chr', as.character(seqnames(genes.gtf[infos.gene()$Gene.info[1]]))),
-            as.character(start(genes.gtf[infos.gene()$Gene.info[1]])-3000),
-            as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+3000)
-        ) })
-        coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
-        #-->
-        url <- reactive ({ getURL(as.character(coords()[1]), as.numeric(coords()[2]), as.numeric(coords()[3]), "1.12.5") })
-        output$jbrowser <- renderUI(
-            tags$div(
-                id="jbrowser", 
-                style="width: 100%; height: 100%; visibility: inherit;",
-                class="trewjb html-widget html-widget-output shiny-bound-output",
-                div(
-                    style = "width: 100%; height: calc(100vh - 100px);", 
-                    tags$iframe(
-                        style = "border: 1px solid black",
-                        width = "100%",
-                        height = "100%",
-                        src = url()
-                    )
-                )
-            )
-        )
-    }
-    
-    # Generate browser pop-up when clicking on the sidebar
-    {
-        observe({
-            if(input$tabs == 'browser' & counter$cnt < 2) {
-                showModal(
-                    modalDialog(
-                        p('Welcome to our embedded genome browser. This browser is built using ', a(href = 'https://jbrowse.org/', target = "_blank", "JBrowse"), '.'),
-                        p('The genome version currently in use is WBcel235/ce11.'),
-                        p('You can access the browser outside of our Shiny app by clicking ', a(href = 'http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&amp;menu=1&amp;nav=1&amp;tracklist=1&amp;overview=1', target = "_blank", "here"), '.'),
-                        hr(),
-                        h4("Quick tips:"),
-                        p("- Local files can be uploaded temporarily and anonymously to this browser using the button in the 'Track' tab."),
-                        p("- Each track can be individually re-scaled. Click on the dropdown button appearing when hovering over the track name for more options."),
-                        p("- Sessions can be shared with other using the 'Share' button located in the top right corner."),
-                        p("- Tissue annotations are available for REs and genes. Click on any element to display more information."),
-                        br(),
-                        h4('Important:'),
-                        h4('More tracks are available in the "Select tracks" tab located on the left side of the genome-browser!'),
-                        easyClose = TRUE, 
-                        fade = FALSE
-                    )
-                )
-            }
-        })
-        counter <- reactiveValues(cnt = 0)
-        observeEvent(input$tabs, { 
-            if(input$tabs == 'browser') {
-                counter$cnt <- counter$cnt + 1
-            } 
+
+        # Get intersection heatmap with my dataset
+        output$intersection_bars <- renderPlot({
+            tissues_annotations <- data.frame(
+                class = factor(order.tissues[1:34], levels = order.tissues[1:34]), 
+                nb = table(genes.gtf[multipleGenes()]$which.tissues) %>% c() %>% ifelse(. == 'Sperm', 'Germline', .) %>% "["(c(1,4:36)), 
+                total = table(genes.gtf$which.tissues) %>% c()%>% ifelse(. == 'Sperm', 'Germline', .)  %>% "["(c(1,4:36))
+            ) 
+            levels(tissues_annotations$class) = paste0(levels(tissues_annotations$class), ' (n=', tissues_annotations$total, ')')
+            p <- ggplot(tissues_annotations, aes(x = class, y = nb, fill = class)) +
+                geom_col() + 
+                # geom_col(aes(y = total), alpha = 0.3) + 
+                scale_fill_manual(values = color.tissues[1:34]) + 
+                theme_bw() + 
+                labs(y = '# of genes', x = 'Gene expression classes', title = paste0(length(multipleGenes()), ' genes in the query (', length(multipleGenes())-sum(tissues_annotations$nb), ' not classified)')) + 
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+                theme(legend.position = 'none')
+            return(p)
         })
         
-    }
-    
-    # Generate the quickView bsModal 
-    {
-        
-        output$quickResults <- renderUI({
-            
-            gene <- reactive ({ input$quickGene })
-            infos.gene <- reactive ({ getGeneInfos(gene(), saveTXT = F, verbose = F, exportResult = T) })
-            WBID <- paste("<b>WormBase ID:</b>   ", infos.gene()$Gene.info[1])
-            LOCUS <- paste("<b>Locus:</b>   ", infos.gene()$Gene.info[2])
-            COORDS <- paste("<b>Coordinates:</b>   ", as.character(base::range(genes.gtf[infos.gene()$Gene.info[1]])))
-            ENRICHED <- paste("<b>Class:</b>   ", infos.gene()$Gene.info[3])
-            
-            h3("Quick gene view")
-            HTML(paste(
-                h3("Quick gene view"), 
-                WBID,
-                LOCUS, 
-                COORDS,
-                ENRICHED, 
-                br(),
-                h3("Gene description from WormBase"), 
-                p(HTML(fetchWBinfos(infos.gene()$Gene.info[2]))),
-                sep = '<br/>'
-            ))
-            
-        })
-        
-        observeEvent(input$quickSearch, {
-            toggleModal(session, "quickGENE", toggle = "open")
-        })
-        
-    }
-    
-    # Get the list of multiple genes
-    {
-        # Get the full list of genes
-        multipleGenes <- eventReactive( 
-            input$getList, 
-            {
-                # Get gene names from text box (allows for *)
-                input.genes <- gsub('\\*', '.*', unlist(strsplit(x = gsub(" ", "", input$searchMulitpleGenePaste), split = ',|;|[\r\n]' )))
-                if (any(grepl('\\*', input.genes))) { 
-                    input.genes <- c(
-                        genes.gtf$gene_name[grep(paste(input.genes[grepl('\\*', input.genes)], collapse = '|'), genes.gtf$gene_name)], 
-                        input.genes[!grepl('\\*', input.genes)]
-                    ) 
-                }
-                text_list <- unique(input.genes %>% ifelse(!grepl('WBGene', .), name2WB(.), .) %>% .[!is.na(.)])
-                # Get gene names from the bsModal (list of examples of gene lists)
-                bsmodal_list <- unlist(
-                    list(
-                        "Germline-specific genes" = germline.genes, 
-                        "Neurons-specific genes" = neurons.genes, 
-                        "Muscle-specific genes" = muscle.genes, 
-                        "Hypodermis-specific genes" = hypod.genes, 
-                        "Intestine-specific genes" = intest.genes, 
-                        "Soma-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Soma'], 
-                        "Ubiquitous genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Ubiq.'], 
-                        "Genes with germline-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Germline],
-                        "Genes with neurons-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Neurons],
-                        "Genes with muscle-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Muscle],
-                        "Genes with hypodermis-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Hypod.],
-                        "Genes with intestine-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Intest.],
-                        "Genes with Neurons & Muscle-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Neurons_Muscle],
-                        "Genes with Hypodermis & Intestine-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Hypod._Intest.],
-                        "Genes with soma-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Soma],
-                        "Genes with ubiquitous promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Ubiq.]
-                    )[as.numeric(input$checkGroupGeneClasses)]
-                )
-                # Fuse lists
-                genes <- unique(c(text_list, bsmodal_list))
-                return(genes[genes %in% names(genes.gtf)])
-            } 
-        )
-        # Reset gene lists when reset button clicked
-        observeEvent(input$resetGenes, {
-            updateTextAreaInput(
-                session, 
-                "searchMulitpleGenePaste", 
-                value = "", 
-                placeholder = 'Paste here (one gene per line)'
-            )
-            updateCheckboxGroupInput(
-                session, 
-                "checkGroupGeneClasses", 
-                choiceNames = c(
-                    "Germline-specific genes",
-                    "Neurons-specific genes",
-                    "Muscle-specific genes",
-                    "Hypodermis-specific genes",
-                    "Intestine-specific genes",
-                    "Soma-specific genes",
-                    "Ubiquitous genes",
-                    "Genes with germline-specific promoter(s)",
-                    "Genes with meurons-specific promoter(s)",
-                    "Genes with muscle-specific promoter(s)",
-                    "Genes with hypodermis-specific promoter(s)",
-                    "Genes with Intestine-specific promoter(s)",
-                    "Genes with Neurons & Muscle-specific promoter(s)",
-                    "Genes with Hypodermis & Intestine-specific promoter(s)",
-                    "Genes with soma-specific promoter(s)",
-                    "Genes with ubiquitous promoter(s)"
-                ),
-                choiceValues = 1:16,
-                selected = NULL
-            )
-        } )
-        # Text infos
-        output$multipleGenesPromsGroupsLength <- reactive ({ paste(length(input$checkGroupGeneClasses), "group(s) selected.") })
-        output$multipleGenesLength <- reactive({ 
-            l <- length(multipleGenes())
-            if (l == 0) {
-                'No input genes.\nEnter or select at least 2 genes and click on "Perform analysis" button.'
-            } else if (l == 1) {
-                'No genes found.\nEnter or select at least 2 genes and click on "Perform analysis" button.'
-            } else {
-                paste(l, "valid genes found.") 
-            }
-        })
-        output$genesList <- renderUI({ HTML(paste(c("<h3>Query genes</h3>", sort(WB2name(multipleGenes()))), collapse = '<br/>')) })
-        # Trigger the display of the information
-        output$displayPanelsTab2 <- renderText({ ifelse(length(multipleGenes()) > 0, 1, 0) })
-        outputOptions(output, "displayPanelsTab2", suspendWhenHidden = FALSE)
-    }
-    
-    # Get GOs plot (enriched in multiple genes) and button to download results
-    {
-        
-        pathways <- reactive ({ input$checkGroupGOs })
-        filteringSetting <- reactive ({ input$hierarchyFiltering })
-        gProfileR_results <- eventReactive( input$runGO, { gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering=filteringSetting()) } )
-        
-        output$GO.plot <- renderPlot({
-            
-            reduced_c <- gProfileR_results()
-            reduced_c <- reduced_c[order(reduced_c$p.value),]
-            d <- reduced_c[reduced_c$domain %in% pathways(),]
-            d <- d[!duplicated(d[, c("p.value", "overlap.size")],),]
-            d <- d[1:min(20, dim(d)[1]),]
-            if (nrow(d) > 0) {
-                par(las = 0, mar = c(4,30,4,1))
-                plot <- barplot(height=-log10(d$p.value), col=colorGO[d$domain], horiz=T, main = "Enrichment of associated GOs\n(gProfileR)", xlim = c(0, max(-log10(d$p.value))))
-                par(xpd=T)
-                #text(x=rep(-1, times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 40), ifelse(nchar(d$term.name) > 40, '...', ''), ' (n=', d$overlap.size, ')'), pos = 2)
-                text(x=rep(-1/25*max(-log10(d$p.value)), times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 60), ifelse(nchar(d$term.name) > 60, '...', '')), pos = 2)
-                par(xpd=F)
-                legend("topright", legend=names(colorGO), fill=colorGO, col="#00000000", pch=15, bty="n")
-                mtext(text="-log10(adj-p.val)",side=1,line=3,outer=FALSE, cex=0.85)
-            } else { plot.new() }
-        })
-        
-        output$downloadGO <- downloadHandler(
-            "gene-list_GO-summary.txt",
-            content = function(file) {
-                reduced_c <- gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering='none')
-                reduced_c <- reduced_c[order(reduced_c$p.value),]
-                write.table(reduced_c, file, row.names = F, quote = F, sep = "\t")
-            }
-        )
-        
-        
-    }
-    
-    # Get HMs.plot (multiple genes heatmaps of LCAP/ATAC fold-changes)
-    {
+        # Get HMs.plot (multiple genes heatmaps of LCAP/ATAC fold-changes)
         colorScale_LCAPdev <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAPdev,1], input$colorScale_LCAPdev))(100) })
         colorScale2_LCAPdev <- reactive ({ if( input$colorScale_doRev_LCAPdev ) { rev(colorScale_LCAPdev()) } else { colorScale_LCAPdev() } })
         titleLab_LCAPdev <- reactive ({ if( input$LCAPdev_TPMZscore ) { "log2TPM" } else { "z-score" } })
         clusterFUN_LCAPdev <- reactive ({ if( input$clusterFUN_LCAPdev ) { "hclust" } else { "kmeans" } })
         titleTAB_LCAPdev <- reactive ({ paste0("heatmap_dev-RNA-seq_", titleLab_LCAPdev(),"_", ifelse(clusterFUN_LCAPdev() == 'hclust', 'hclust', paste0(input$NCLUST_LCAPdev, "-clusters")),"_genesets.txt") })
-        
+        #
         colorScale_LCAP <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_LCAP,1], input$colorScale_LCAP))(100) })
         colorScale2_LCAP <- reactive ({ if( input$colorScale_doRev_LCAP ) { rev(colorScale_LCAP()) } else { colorScale_LCAP() } })
         titleLab_LCAP <- reactive ({ if( input$LCAP_TPMZscore ) { "log2TPM" } else { "z-score" } })
         clusterFUN_LCAP <- reactive ({ if( input$clusterFUN_LCAP ) { "hclust" } else { "kmeans" } })
         titleTAB_LCAP <- reactive ({ paste0("heatmap_tissues-RNA-seq_", titleLab_LCAP(),"_", ifelse(clusterFUN_LCAP() == 'hclust', 'hclust', paste0(input$NCLUST_LCAP, "-clusters")),"_genesets.txt") })
-        
+        #
         colorScale_ATAC <- reactive ({ colorRampPalette(brewer.pal(brewer.pal.info[input$colorScale_ATAC,1], input$colorScale_ATAC))(100) })
         colorScale2_ATAC <- reactive ({ if( input$colorScale_doRev_ATAC ) { rev(colorScale_ATAC()) } else { colorScale_ATAC() } })
         titleLab_ATAC <- reactive ({ if( input$ATAC_TPMZscore ) { "log2TPM" } else { "z-score" } })
         clusterFUN_ATAC <- reactive ({ if( input$clusterFUN_ATAC ) { "hclust" } else { "kmeans" } })
         titleTAB_ATAC <- reactive ({ paste0("heatmap_tissues-ATAC-seq_", titleLab_ATAC(),"_", ifelse(clusterFUN_ATAC() == 'hclust', 'hclust', paste0(input$NCLUST_ATAC, "-clusters")),"_genesets.txt") })
-        
         # Plot LCAPdev
         output$HMs.plot_LCAPdev <- renderPlot({
             par(mar = c(6,1,4,1))
@@ -537,7 +443,7 @@ shinyServer <- function(input, output, session) {
                 ANNOTS_COL <- list(Cluster = rep(brewer.pal('Set1', n = 11), 2)[1:NCLUST_LCAPdev])
             }
             colnames(mat) <- c('Emb.', 'L1', 'L2', 'L3', 'L4', 'YA')
-            pheatmap(
+            pheatmap::pheatmap(
                 mat,
                 color = colorScale2_LCAPdev(),
                 scale = "none", 
@@ -551,7 +457,6 @@ shinyServer <- function(input, output, session) {
                 annotation_colors = ANNOTS_COL
             )
         })
-        
         # Plot LCAP
         output$HMs.plot_LCAP <- renderPlot({
             par(mar = c(6,1,4,1))
@@ -576,7 +481,7 @@ shinyServer <- function(input, output, session) {
                 ANNOTS_DF <- data.frame(Cluster = ANNOTS)
                 ANNOTS_COL <- list(Cluster = rep(brewer.pal('Set1', n = 11), 2)[1:NCLUST_LCAP])
             }
-            pheatmap(
+            pheatmap::pheatmap(
                 mat,
                 color = colorScale2_LCAP(),
                 scale = "none", 
@@ -590,7 +495,6 @@ shinyServer <- function(input, output, session) {
                 annotation_colors = ANNOTS_COL
             )
         })
-        
         # Plot ATAC
         output$HMs.plot_ATAC <- renderPlot({
             par(mar = c(6,1,4,1))
@@ -614,7 +518,7 @@ shinyServer <- function(input, output, session) {
                 ANNOTS_DF <- data.frame(Cluster = ANNOTS)
                 ANNOTS_COL <- list(Cluster = rep(brewer.pal('Set1', n = 11), 2)[1:NCLUST_ATAC])
             }
-            pheatmap(
+            pheatmap::pheatmap(
                 mat,
                 color = colorScale2_ATAC(),
                 scale = "none", 
@@ -628,7 +532,6 @@ shinyServer <- function(input, output, session) {
                 annotation_colors = ANNOTS_COL
             )
         })
-        
         ## Generate HM tables to download
         output$downloadHM_LCAPdev <- downloadHandler( 
             titleTAB_LCAPdev, 
@@ -683,31 +586,118 @@ shinyServer <- function(input, output, session) {
             }
         )
         
+        # Get GOs plot (enriched in multiple genes) and button to download results
+        pathways <- reactive ({ input$checkGroupGOs })
+        filteringSetting <- reactive ({ input$hierarchyFiltering })
+        gProfileR_results <- eventReactive( input$runGO, { gProfileR::gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering=filteringSetting()) } )
+        output$GO.plot <- renderPlot({
+            
+            reduced_c <- gProfileR_results()
+            reduced_c <- reduced_c[order(reduced_c$p.value),]
+            d <- reduced_c[reduced_c$domain %in% pathways(),]
+            d <- d[!duplicated(d[, c("p.value", "overlap.size")],),]
+            d <- d[1:min(20, dim(d)[1]),]
+            if (nrow(d) > 0) {
+                par(las = 0, mar = c(4,30,4,1))
+                plot <- barplot(height=-log10(d$p.value), col=colorGO[d$domain], horiz=T, main = "Enrichment of associated GOs\n(gProfileR)", xlim = c(0, max(-log10(d$p.value))))
+                par(xpd=T)
+                #text(x=rep(-1, times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 40), ifelse(nchar(d$term.name) > 40, '...', ''), ' (n=', d$overlap.size, ')'), pos = 2)
+                text(x=rep(-1/25*max(-log10(d$p.value)), times = length(plot)), y = plot, paste0(substr(d$term.name, start = 1, stop = 60), ifelse(nchar(d$term.name) > 60, '...', '')), pos = 2)
+                par(xpd=F)
+                legend("topright", legend=names(colorGO), fill=colorGO, col="#00000000", pch=15, bty="n")
+                mtext(text="-log10(adj-p.val)",side=1,line=3,outer=FALSE, cex=0.85)
+            } else { plot.new() }
+        })
+        output$downloadGO <- downloadHandler(
+            "gene-list_GO-summary.txt",
+            content = function(file) {
+                reduced_c <- gprofiler(multipleGenes(), organism="celegans", max_p_value=0.05, correction_method="bonferroni", hier_filtering='none')
+                reduced_c <- reduced_c[order(reduced_c$p.value),]
+                write.table(reduced_c, file, row.names = F, quote = F, sep = "\t")
+            }
+        )
+        
+        # Trigger the display of the information
+        output$displayPanelsTab2 <- renderText({ ifelse(length(multipleGenes()) > 0, 1, 0) })
+        outputOptions(output, "displayPanelsTab2", suspendWhenHidden = FALSE)
     }
     
-    # Get intersection heatmap with my dataset
+    ### TAB 3
     {
-        output$intersection_bars <- renderPlot({
-            tissues_annotations <- data.frame(
-                class = factor(order.tissues[1:34], levels = order.tissues[1:34]), 
-                nb = table(genes.gtf[multipleGenes()]$which.tissues) %>% c() %>% ifelse(. == 'Sperm', 'Germline', .) %>% "["(c(1,4:36)), 
-                total = table(genes.gtf$which.tissues) %>% c()%>% ifelse(. == 'Sperm', 'Germline', .)  %>% "["(c(1,4:36))
-            ) 
-            levels(tissues_annotations$class) = paste0(levels(tissues_annotations$class), ' (n=', tissues_annotations$total, ')')
-            p <- ggplot(tissues_annotations, aes(x = class, y = nb, fill = class)) +
-                geom_col() + 
-                # geom_col(aes(y = total), alpha = 0.3) + 
-                scale_fill_manual(values = color.tissues[1:34]) + 
-                theme_bw() + 
-                labs(y = '# of genes', x = 'Gene expression classes', title = paste0(length(multipleGenes()), ' genes in the query (', length(multipleGenes())-sum(tissues_annotations$nb), ' not classified)')) + 
-                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
-                theme(legend.position = 'none')
-            return(p)
+        RE.coords <- reactive ({ c(
+            as.character(infos.gene()$Associated.REs[1,1]),
+            as.character(min(infos.gene()$Associated.REs[,2])-3000),
+            as.character(max(infos.gene()$Associated.REs[,3])+3000)
+        ) })
+        gene.coords <- reactive ({ c(
+            paste0('chr', as.character(seqnames(genes.gtf[infos.gene()$Gene.info[1]]))),
+            as.character(start(genes.gtf[infos.gene()$Gene.info[1]])-3000),
+            as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+3000)
+        ) })
+        coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
+        #-->
+        url <- reactive ({ getURL(as.character(coords()[1]), as.numeric(coords()[2]), as.numeric(coords()[3]), "1.12.5") })
+        output$jbrowser <- renderUI(
+            tags$div(
+                id="jbrowser", 
+                style="width: 100%; height: 100%; visibility: inherit;",
+                class="trewjb html-widget html-widget-output shiny-bound-output",
+                div(
+                    style = "width: 100%; height: calc(100vh - 100px);", 
+                    tags$iframe(
+                        style = "border: 1px solid black",
+                        width = "100%",
+                        height = "100%",
+                        src = url()
+                    )
+                )
+            )
+        )
+        #
+        observe({
+            if(input$tabs == 'browser' & counter$cnt < 2) {
+                showModal(
+                    modalDialog(
+                        p('Welcome to our embedded genome browser. This browser is built using ', a(href = 'https://jbrowse.org/', target = "_blank", "JBrowse"), '.'),
+                        p('The genome version currently in use is WBcel235/ce11.'),
+                        p('You can access the browser outside of our Shiny app by clicking ', a(href = 'http://ahringerlab.com/JBrowse-1.12.5/index.html?data=data%2Fjson%2Fce11&amp;menu=1&amp;nav=1&amp;tracklist=1&amp;overview=1', target = "_blank", "here"), '.'),
+                        hr(),
+                        h4("Quick tips:"),
+                        p("- Local files can be uploaded temporarily and anonymously to this browser using the button in the 'Track' tab."),
+                        p("- Each track can be individually re-scaled. Click on the dropdown button appearing when hovering over the track name for more options."),
+                        p("- Sessions can be shared with other using the 'Share' button located in the top right corner."),
+                        p("- Tissue annotations are available for REs and genes. Click on any element to display more information."),
+                        br(),
+                        h4('Important:'),
+                        h4('More tracks are available in the "Select tracks" tab located on the left side of the genome-browser!'),
+                        easyClose = TRUE, 
+                        fade = FALSE
+                    )
+                )
+            }
+        })
+        counter <- reactiveValues(cnt = 0)
+        observeEvent(input$tabs, { 
+            if(input$tabs == 'browser') {
+                counter$cnt <- counter$cnt + 1
+            } 
         })
     }
     
-    # Generate tables to display and button to download them
+    ### TAB 4
     {
+        output$downloadBWLCAP <- downloadHandler(
+            "tissue-specific-RNAseq_bigwig-tracks.tar.gz",
+            content = function(file) {
+                download.file("http://ahringerlab.com/public/RNAseq_tracks.tar.gz", file)
+            }
+        )
+        output$downloadBWATAC <- downloadHandler(
+            "tissue-specific-ATAC-seq_bigwig-tracks.tar.gz",
+            content = function(file) {
+                download.file("http://ahringerlab.com/public/ATACseq_tracks.tar.gz", file)
+            }
+        )
         output$downloadATAC.txt <- downloadHandler( "tissue-specific.ATAC-seq.dataset.txt", content = function(file) {write.table(atac.dt, file, quote = F, row = F, col = T, sep = '\t')} )
         output$downloadATAC.gff <- downloadHandler( "tissue-specific.ATAC-seq.dataset.gff", content = function(file) {
             infos <- paste0(
@@ -766,8 +756,7 @@ shinyServer <- function(input, output, session) {
             )
             write.table(rbind(c("##gffTags=on\n##displayName=Name\n##gff-version 3", rep(" ", 8)), GFF), file, quote = F, row = F, col = F, sep = '\t')
         }  )
-    }
-    {
+        #
         output$atac.table <- renderDataTable({
             colnames(atac.dt) <- c(
                 'chr', 'start', 'stop', 'geneID', 'Regulatory Class', 'Tissue annotation', paste0(order.tissues[1:5], ' (RPM, YA)'), "1st.max.tissue", "2nd.max.tissue", "3rd.max.tissue", "4th.max.tissue","5th.max.tissue"
