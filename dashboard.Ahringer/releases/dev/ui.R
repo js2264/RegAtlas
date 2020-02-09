@@ -630,7 +630,7 @@ SIDEBAR <- sidebarMenu(
         z-index: 1000;
         "),
         br(),
-        HTML(paste("Ahringer lab -", icon("copyright", lib = "font-awesome"), "2019")), 
+        HTML(paste("Ahringer lab -", icon("copyright", lib = "font-awesome"), "2020")), 
         align = "left",
         style = "
         position: fixed;
