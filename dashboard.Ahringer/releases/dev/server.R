@@ -13,29 +13,21 @@
 
 shinyServer <- function(input, output, session) {
     
-    # in server
-    show_modal_progress_line() # show the modal window
+    show_modal_progress_line()
+    
+    # Load libraries 
     suppressMessages(require(tidyr))
-    update_modal_progress(0.1) 
+    update_modal_progress(0.25) 
     suppressMessages(require(dplyr))
-    update_modal_progress(0.2) 
+    update_modal_progress(0.40) 
     suppressMessages(require(ggplot2))
-    update_modal_progress(0.3) 
+    update_modal_progress(0.55) 
     suppressMessages(require(magrittr))
-    update_modal_progress(0.4) 
+    update_modal_progress(0.65) 
     suppressMessages(require(RColorBrewer))
-    update_modal_progress(0.5) 
+    update_modal_progress(0.80) 
     suppressMessages(require(GenomicRanges))
-    update_modal_progress(0.75) 
-    germline.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Germline']
-    neurons.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Neurons']
-    muscle.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Muscle']
-    hypod.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Hypod.']
-    update_modal_progress(0.85) 
-    intest.genes <- names(genes.gtf)[genes.gtf$which.tissues == 'Intest.']
-    ubiq.genes <- names(genes.gtf)[genes.gtf$which.tissues %in% c('Ubiq.', 'Ubiq.-Biased')]
-    list.genes <- list(germline.genes, neurons.genes, muscle.genes, hypod.genes, intest.genes, ubiq.genes)
-    names(list.genes) <- c("germline.genes", "neurons.genes", "muscle.genes", "hypod.genes", 'intest.genes', 'ubiq.genes')
+    update_modal_progress(0.95) 
     remove_modal_progress() # remove it when done
 
     # Startup message
@@ -199,13 +191,13 @@ shinyServer <- function(input, output, session) {
                 # Get gene names from the bsModal (list of examples of gene lists)
                 bsmodal_list <- unlist(
                     list(
-                        "Germline-specific genes" = germline.genes, 
-                        "Neurons-specific genes" = neurons.genes, 
-                        "Muscle-specific genes" = muscle.genes, 
-                        "Hypodermis-specific genes" = hypod.genes, 
-                        "Intestine-specific genes" = intest.genes, 
+                        "Germline-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Germline'], 
+                        "Neurons-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Neurons'], 
+                        "Muscle-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Muscle'], 
+                        "Hypodermis-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Hypod.'], 
+                        "Intestine-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Intest.'], 
                         "Soma-specific genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Soma'], 
-                        "Ubiquitous genes" = names(genes.gtf)[genes.gtf$which.tissues == 'Ubiq.'], 
+                        "Ubiquitous genes" = names(genes.gtf)[genes.gtf$which.tissues %in% c('Ubiq.', 'Ubiq.-Biased')], 
                         "Genes with germline-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Germline],
                         "Genes with neurons-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Neurons],
                         "Genes with muscle-specific promoter(s)" = row.names(mat.proms.gene)[row.names(mat.proms.gene) %in% names(genes.gtf) & mat.proms.gene$Muscle],

@@ -8,6 +8,7 @@ library(magrittr)
 # Load custom functions
 source("./shared/bin/R/custom_R_functions.R")
 #
+all$regulatory_class <- readr::read_tsv('./shared/data/reg_elements_dev_ageing_tissues_20190824.tsv')$annot_dev_age_tissues
 all.deconv <- cbind(
     all, 
     ATAC, 

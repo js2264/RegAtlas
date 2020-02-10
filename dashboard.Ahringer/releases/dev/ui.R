@@ -11,6 +11,51 @@
 
 ## Define each dashbord tab individually ---------------------------------------------------------------------------
 
+# Home tab
+HOME <- tabItem(
+    tabName = 'home',
+    fluidPage(
+        HTML("<h1 style = 'text-align: center;'><b>Welcome to the Ahringer lab <em>C. elegans</em> tissue-specific database</b></h1>"), 
+        HTML("<h3 style = 'text-align: center;'>Explore and mine <em>C. elegans</em> gene expression and chromatin accessibility data<h3>"), 
+        br(), 
+        br(), 
+        fluidRow(
+            column(width = 1),
+            column(width = 2, {
+                img(
+                    src = "http://ahringerlab.com/assets/img/single_gene.png", 
+                    style = "max-width: 100%; max-height: 100%; display: block;"
+                )
+            }),
+            column(width = 2, {
+                img(
+                    src = "http://ahringerlab.com/assets/img/multi_genes.png", 
+                    style = "max-width: 100%; max-height: 100%; display: block;"
+                )
+            }),
+            column(width = 2, {
+                img(
+                    src = "http://ahringerlab.com/assets/img/browser.png", 
+                    style = "max-width: 100%; max-height: 100%; display: block;"
+                )
+            }),
+            column(width = 2, {
+                img(
+                    src = "http://ahringerlab.com/assets/img/download.png", 
+                    style = "max-width: 100%; max-height: 100%; display: block;"
+                )
+            }),
+            column(width = 2, {
+                img(
+                    src = "http://ahringerlab.com/assets/img/info.png", 
+                    style = "max-width: 100%; max-height: 100%; display: block;"
+                )
+            }),
+            column(width = 1)
+        )
+    )
+)
+
 # Single-gene entry
 TAB1 <- tabItem(
     add_busy_bar(color = "red", height = '10px'),
@@ -558,7 +603,7 @@ TAB6 <- tabItem(
                 HTML(
                     '
                     <div class="card">
-                    <img src="http://ahringerlab.com/assets/img/ahringer-group-2017.jpg" alt="Lab" style="height: 284.16px">
+                    <img src="http://ahringerlab.com/assets/img/ahringer-group-2018.jpg" alt="Lab" style="max-width: 100%; max-height: 100%; display: block;">
                     <h1>Ahringer Lab</h1>
                     <br/>
                     <p class="cardtitle"> </p>
@@ -575,7 +620,7 @@ TAB6 <- tabItem(
                 HTML(
                     '
                     <div class="card">
-                    <img src="http://ahringerlab.com/assets/img/JS.jpg" alt="JS" style="height: 147px; margin-top: 20px">
+                    <img src="http://ahringerlab.com/assets/img/JS.jpg" alt="JS" style="height: 155px; margin-top: 20px">
                     <h1>Jacques Serizay</h1>
                     <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
                     <span class="fa-stack fa-lg">
@@ -617,6 +662,7 @@ TAB6 <- tabItem(
 
 SIDEBAR <- sidebarMenu(
     id = "tabs", 
+    menuItem("Home", tabName = "home", icon = icon("home", lib = "font-awesome")),
     menuItem("Look-up gene", tabName = "genelookup", icon = icon("search", lib = "font-awesome")),
     menuItem("Gene set analyses", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
@@ -645,7 +691,7 @@ SIDEBAR <- sidebarMenu(
     )
 )
 
-BODY <- tabItems(TAB1, TAB2, TAB3, TAB4, TAB5, TAB6)
+BODY <- tabItems(HOME, TAB1, TAB2, TAB3, TAB4, TAB5, TAB6)
 
 shinyUI <- dashboardPage(
     dashboardHeader(
@@ -661,22 +707,22 @@ shinyUI <- dashboardPage(
     ),
     dashboardSidebar(SIDEBAR),
     dashboardBody(
-        ### Startup modal 
-        bsModal(
-            id = 'startupModal', 
-            title = NULL, 
-            trigger = '', 
-            size = 'large', 
-            HTML('<img src="http://ahringerlab.com/assets/img/startup_picture.png" title="" style="max-width: 100%; max-height: 100%; display: block; ">')
-        ),
+        # ### Startup modal 
+        # bsModal(
+        #     id = 'startupModal', 
+        #     title = NULL, 
+        #     trigger = '', 
+        #     size = 'large', 
+        #     HTML('<img src="http://ahringerlab.com/assets/img/startup_picture.png" title="" style="max-width: 100%; max-height: 100%; display: block; ">')
+        # ),
         # Quick search modal
-        bsModal(
-            id = "quickGENE", 
-            title = "Quick gene view",
-            trigger = '', 
-            size = "large", 
-            htmlOutput("quickResults")
-        ), 
+        # bsModal(
+        #     id = "quickGENE", 
+        #     title = "Quick gene view",
+        #     trigger = '', 
+        #     size = "large", 
+        #     htmlOutput("quickResults")
+        # ), 
         tags$script(inactivity),
         tags$head(includeCSS("assets/custom.css")),
         tags$head(tags$link(rel = "shortcut icon", href = "http://ahringerlab.com/assets/img/favicon.ico")),
@@ -687,8 +733,8 @@ shinyUI <- dashboardPage(
         tags$head(tags$style(HTML('.skin-blue .main-header .navbar .sidebar-toggle {background-color: #333;} .skin-blue .main-header .navbar .sidebar-toggle:hover {background-color: #444;}'))),
         tags$head(tags$style(HTML('.skin-blue .left-side, .skin-blue .main-sidebar, .skin-blue .wrapper {background-color: #333;}'))),
         tags$head(tags$style(HTML('.main-header .sidebar-toggle {size:100px}'))),
-        tags$head(tags$style(HTML('.main-header .sidebar-toggle:before {size:100px; content: "\\f0d9"}'))),
-        tags$head(tags$style(HTML('.main-header .sidebar-toggle:after {size:100px; content: "\\f0da"}'))),
+        tags$head(tags$style(HTML('.main-header .sidebar-toggle:before {size:100px; content: ""}'))),
+        tags$head(tags$style(HTML('.main-header .sidebar-toggle:after {size:100px; content: ""}'))),
         tags$head(tags$style(HTML("hr {border-top: 1px dashed #b7b7b7;}"))),
         tags$head(tags$style(HTML(".btn {border-radius: 30px;} .btn:hover {transform: scale(1.05);}"))),
         tags$head(tags$style(HTML(".bttn-fill.bttn-primary {background: #ddd;color: #333;}.bttn-fill.bttn-sm {padding: 4px 10px;font-size: 16px;font-family: inherit;}.bttn {border-radius: 0px;border-color: #555;}"))),
