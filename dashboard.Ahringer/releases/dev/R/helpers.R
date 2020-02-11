@@ -4,7 +4,7 @@ getURL <- function (
     tracks = c("genes", "regulatory_elements", "gonad.atac", "neurons.atac", "muscle.atac", "hypod.atac", "intest.atac", "gonad.lcap.fwd", "neurons.lcap.fwd", "muscle.lcap.fwd", "hypod.lcap.fwd", "intest.lcap.fwd", "gonad.lcap.rev", "neurons.lcap.rev", "muscle.lcap.rev", "hypod.lcap.rev", "intest.lcap.rev", "transcripts"),
     show_menu = TRUE, show_navigation = TRUE, show_tracklist = TRUE, show_overview = TRUE)
 {
-  baseurl <- paste0("http://ahringerlab.com/JBrowse-", release, "/index.html")
+  baseurl <- paste0("https://ahringerlab.com/JBrowse-", release, "/index.html")
   tracks <- paste(unique(tracks), collapse = "%2C")
   menu <- if (show_menu) {"&menu=1"} else {"&menu=0"}
   navigation <- if (show_navigation) {"&nav=1"} else {"&nav=0"}

@@ -18,6 +18,7 @@
 
 ## [0.5.2] - 2020-02-11
 - added clickable links to each vignette in home page
+- added support for SSL in the genome browser tab
 
 ## [0.5.1] - 2020-02-10
 - Added home tab
