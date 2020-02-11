@@ -16,11 +16,14 @@
 
 ------------ 
 
+## [0.5.2] - 2020-02-11
+- added links to each vignette in home page
+
 ## [0.5.1] - 2020-02-10
 - Added home tab
 - Speed up the loading
 - Corrected the "regulatory_class" column in the atac table (exploring tab)
-- Updated lab photo and 
+- Updated lab photo and icons
 
 ## [0.5.0] - 2020-02-09
 - Moved many loading functions to server file. Notably, GenomicRanges is loaded automatically, and only when needed.

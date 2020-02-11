@@ -626,7 +626,8 @@ shinyServer <- function(input, output, session) {
     
     ### TAB 3
     {
-        RE.coords <- reactive ({ c(
+        
+        RE.coords <- reactive({ c(
             as.character(infos.gene()$Associated.REs[1,1]),
             as.character(min(infos.gene()$Associated.REs[,2])-3000),
             as.character(max(infos.gene()$Associated.REs[,3])+3000)
@@ -637,7 +638,7 @@ shinyServer <- function(input, output, session) {
             as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+3000)
         ) })
         coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
-        #-->
+        #
         url <- reactive ({ getURL(as.character(coords()[1]), as.numeric(coords()[2]), as.numeric(coords()[3]), "1.12.5") })
         output$jbrowser <- renderUI(
             tags$div(
@@ -811,6 +812,43 @@ shinyServer <- function(input, output, session) {
     output$keepAlive <- renderText({
         req(input$count) 
         paste("")
+    })
+    
+    # Render clickable images for home page (with URLs)
+    output$img_link_genelookup <- renderUI({
+        img(
+            src = "http://ahringerlab.com/assets/img/single_gene.png", 
+            style = "max-width: 100%; max-height: 100%; display: block;", 
+            onclick="openTab('genelookup')", href="#", cursor="pointer"
+        )
+    })
+    output$img_link_geneslookup <- renderUI({
+        img(
+            src = "http://ahringerlab.com/assets/img/multi_genes.png", 
+            style = "max-width: 100%; max-height: 100%; display: block;", 
+            onclick="openTab('geneslookup')", href="#", cursor="pointer"
+        )
+    })
+    output$img_link_browser <- renderUI({
+        img(
+            src = "http://ahringerlab.com/assets/img/browser.png", 
+            style = "max-width: 100%; max-height: 100%; display: block;", 
+            onclick="openTab('browser')", href="#", cursor="pointer"
+        )
+    })
+    output$img_link_download <- renderUI({
+        img(
+            src = "http://ahringerlab.com/assets/img/download.png", 
+            style = "max-width: 100%; max-height: 100%; display: block;", 
+            onclick="openTab('download')", href="#", cursor="pointer"
+        )
+    })
+    output$img_link_infos <- renderUI({
+        img(
+            src = "http://ahringerlab.com/assets/img/info.png", 
+            style = "max-width: 100%; max-height: 100%; display: block;", 
+            onclick="openTab('infos')", href="#", cursor="pointer"
+        )
     })
     
 } #EOF

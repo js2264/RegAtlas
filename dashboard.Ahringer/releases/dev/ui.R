@@ -21,35 +21,20 @@ HOME <- tabItem(
         br(), 
         fluidRow(
             column(width = 1),
-            column(width = 2, {
-                img(
-                    src = "http://ahringerlab.com/assets/img/single_gene.png", 
-                    style = "max-width: 100%; max-height: 100%; display: block;"
-                )
+            column(width = 2, style = "cursor: pointer", {
+                uiOutput("img_link_genelookup")
             }),
-            column(width = 2, {
-                img(
-                    src = "http://ahringerlab.com/assets/img/multi_genes.png", 
-                    style = "max-width: 100%; max-height: 100%; display: block;"
-                )
+            column(width = 2, style = "cursor: pointer", {
+                uiOutput("img_link_geneslookup")
             }),
-            column(width = 2, {
-                img(
-                    src = "http://ahringerlab.com/assets/img/browser.png", 
-                    style = "max-width: 100%; max-height: 100%; display: block;"
-                )
+            column(id = 'browser_click', width = 2, style = "cursor: pointer", {
+                uiOutput("img_link_browser")
             }),
-            column(width = 2, {
-                img(
-                    src = "http://ahringerlab.com/assets/img/download.png", 
-                    style = "max-width: 100%; max-height: 100%; display: block;"
-                )
+            column(width = 2, style = "cursor: pointer", {
+                uiOutput("img_link_download")
             }),
-            column(width = 2, {
-                img(
-                    src = "http://ahringerlab.com/assets/img/info.png", 
-                    style = "max-width: 100%; max-height: 100%; display: block;"
-                )
+            column(width = 2, style = "cursor: pointer", {
+                uiOutput("img_link_infos")
             }),
             column(width = 1)
         )
@@ -658,6 +643,16 @@ TAB6 <- tabItem(
     )
 )
 
+# router <- make_router(
+#   route("home", HOME),
+#   route("genelookup", TAB1),
+#   route("geneslookup", TAB2),
+#   route("browser", TAB3),
+#   route("download", TAB4),
+#   route("infos", TAB5),
+#   route("contact", TAB6)
+# )
+
 ## Finalise UI ----------------------------------------------------------------------------------------------------
 
 SIDEBAR <- sidebarMenu(
@@ -752,7 +747,17 @@ shinyUI <- dashboardPage(
         tags$head(tags$style("#startupModal .modal-dialog{ width: 90vw; height: 90vh}")),
         tags$head(tags$style("#startupModal .modal-content{ background-color: #fff; }")),
         tags$head(tags$style("#startupModal .modal-header{ height: 0px; visibility: hidden; padding: 0px; }")),
+        tags$script(HTML("
+            var openTab = function(tabName){
+                $('a', $('.sidebar')).each(function() {
+                    if(this.getAttribute('data-value') == tabName) {
+                        this.click()
+                    };
+                });
+            }
+        ")), 
         BODY
+        # router_ui()
     )
 )
 
