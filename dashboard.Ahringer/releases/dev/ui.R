@@ -54,6 +54,7 @@ TAB1 <- tabItem(
                 searchInput(
                     inputId = "searchGene",
                     label = "Look up a gene:",
+                    # value = 'unc-120',
                     placeholder = 'e.g. WBGene00001251 or hlh-1', 
                     btnSearch = icon("search", lib = "glyphicon"),
                     btnReset = icon("remove", lib = "glyphicon"),
@@ -480,6 +481,10 @@ TAB3 <- tabItem(
     tabName = 'browser',
     fluidPage( 
         fluidRow(
+            textOutput('coords'),
+            textOutput('coords2')
+        ),
+        fluidRow(
             htmlOutput("jbrowser")
         )
     )
@@ -757,7 +762,6 @@ shinyUI <- dashboardPage(
             }
         ")), 
         BODY
-        # router_ui()
     )
 )
 

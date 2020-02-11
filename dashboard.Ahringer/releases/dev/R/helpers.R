@@ -1,19 +1,25 @@
 # Function to generate an URL to visit jserizay.site/JBrowse
-getURL <- function (chr, start, end, release = "1.12.5", 
-                    tracks = c("genes", "regulatory_elements", "hypod.atac", "neurons.atac", "gonad.atac", "muscle.atac", "intest.atac", "hypod.lcap.fwd", "neurons.lcap.fwd", "gonad.lcap.fwd", "muscle.lcap.fwd", "intest.lcap.fwd", "hypod.lcap.rev", "neurons.lcap.rev", "gonad.lcap.rev", "muscle.lcap.rev", "intest.lcap.rev", "transcripts"),
-                    show_menu = TRUE, show_navigation = TRUE, show_tracklist = TRUE, show_overview = TRUE)
+getURL <- function (
+    release = "1.12.5", 
+    tracks = c("genes", "regulatory_elements", "gonad.atac", "neurons.atac", "muscle.atac", "hypod.atac", "intest.atac", "gonad.lcap.fwd", "neurons.lcap.fwd", "muscle.lcap.fwd", "hypod.lcap.fwd", "intest.lcap.fwd", "gonad.lcap.rev", "neurons.lcap.rev", "muscle.lcap.rev", "hypod.lcap.rev", "intest.lcap.rev", "transcripts"),
+    show_menu = TRUE, show_navigation = TRUE, show_tracklist = TRUE, show_overview = TRUE)
 {
   baseurl <- paste0("http://ahringerlab.com/JBrowse-", release, "/index.html")
-  range <- if (missing(start) || missing(end)) {""} else { paste0("%3A", paste0( round(start - 0.25 * (end - start + 1)), "..", round(end + 0.25 * (end - start + 1)) )) }
   tracks <- paste(unique(tracks), collapse = "%2C")
   menu <- if (show_menu) {"&menu=1"} else {"&menu=0"}
   navigation <- if (show_navigation) {"&nav=1"} else {"&nav=0"}
   tracklist <- if (show_tracklist) {"&tracklist=1"} else {"&tracklist=0"}
   overview <- if (show_overview) {"&overview=1"} else {"&overview=0"}
   url <- param_set(baseurl, key = "data", value = "data%2Fjson%2Fce11")
-  url <- param_set(url, key = "loc", value = paste0(chr, range))
   url <- param_set(url, key = "tracks", value = tracks)
   return(paste0(url, "&highlight=", navigation, tracklist, overview))
+}
+
+addLoc <- function(url, chr, start, end) {
+    if (missing(chr) | missing(start) | missing(end)) return(url)
+    range <- if (missing(start) | missing(end)) {""} else { paste0("%3A", paste0( round(start - 0.25 * (end - start + 1)), "..", round(end + 0.25 * (end - start + 1)) )) }
+    url <- param_set(url, key = "loc", value = paste0(chr, range))
+    return(url)
 }
 
 # Function to input several genes separated by newlines

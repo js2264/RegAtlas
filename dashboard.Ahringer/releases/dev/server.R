@@ -626,37 +626,8 @@ shinyServer <- function(input, output, session) {
     
     ### TAB 3
     {
-        
-        RE.coords <- reactive({ c(
-            as.character(infos.gene()$Associated.REs[1,1]),
-            as.character(min(infos.gene()$Associated.REs[,2])-3000),
-            as.character(max(infos.gene()$Associated.REs[,3])+3000)
-        ) })
-        gene.coords <- reactive ({ c(
-            paste0('chr', as.character(seqnames(genes.gtf[infos.gene()$Gene.info[1]]))),
-            as.character(start(genes.gtf[infos.gene()$Gene.info[1]])-3000),
-            as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+3000)
-        ) })
-        coords <- reactive ({ c(RE.coords()[1], min(RE.coords()[2], gene.coords()[2]), max(RE.coords()[3], gene.coords()[3])) })
-        #
-        url <- reactive ({ getURL(as.character(coords()[1]), as.numeric(coords()[2]), as.numeric(coords()[3]), "1.12.5") })
-        output$jbrowser <- renderUI(
-            tags$div(
-                id="jbrowser", 
-                style="width: 100%; height: 100%; visibility: inherit;",
-                class="trewjb html-widget html-widget-output shiny-bound-output",
-                div(
-                    style = "width: 100%; height: calc(100vh - 100px);", 
-                    tags$iframe(
-                        style = "border: 1px solid black",
-                        width = "100%",
-                        height = "100%",
-                        src = url()
-                    )
-                )
-            )
-        )
-        #
+        # Show info modal if browser tab is opened for the first time
+        counter <- reactiveValues(cnt = 0)
         observe({
             if(input$tabs == 'browser' & counter$cnt < 2) {
                 showModal(
@@ -679,12 +650,42 @@ shinyServer <- function(input, output, session) {
                 )
             }
         })
-        counter <- reactiveValues(cnt = 0)
+        # Generate browser URL
         observeEvent(input$tabs, { 
             if(input$tabs == 'browser') {
                 counter$cnt <- counter$cnt + 1
+                #
+                RE.coords <- c(
+                    as.character(infos.gene()$Associated.REs[1,1]),
+                    as.character(min(infos.gene()$Associated.REs[,2])-3000),
+                    as.character(max(infos.gene()$Associated.REs[,3])+3000)
+                )
+                gene.coords <- c(
+                    paste0('chr', as.character(seqnames(genes.gtf[infos.gene()$Gene.info[1]]))),
+                    as.character(start(genes.gtf[infos.gene()$Gene.info[1]])-3000),
+                    as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+3000)
+                )
+                coords <- c(RE.coords[1], min(RE.coords[2], gene.coords[2]), max(RE.coords[3], gene.coords[3]))
+                #
+                URL <- addLoc(URL, as.character(coords[1]), as.numeric(coords[2]), as.numeric(coords[3]))
             } 
         })
+        output$jbrowser <- renderUI(
+            tags$div(
+                id="jbrowser", 
+                style="width: 100%; height: 100%; visibility: inherit;",
+                class="trewjb html-widget html-widget-output shiny-bound-output",
+                div(
+                    style = "width: 100%; height: calc(100vh - 100px);", 
+                    tags$iframe(
+                        style = "border: 1px solid black",
+                        width = "100%",
+                        height = "100%",
+                        src = URL
+                    )
+                )
+            )
+        )
     }
     
     ### TAB 4
