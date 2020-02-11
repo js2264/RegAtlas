@@ -37,4 +37,4 @@ NCLUST_LCAPdev <- 5
 NCLUST_LCAP <- 5
 NCLUST_ATAC <- 5
 version <- gsub("../dashboard.Ahringer_", "", list.dirs('..', recursive = F)[length(list.dirs('..', recursive = F)) - 1])
-URL <- getURL()
+base_URL <- getURL()

@@ -481,10 +481,6 @@ TAB3 <- tabItem(
     tabName = 'browser',
     fluidPage( 
         fluidRow(
-            textOutput('coords'),
-            textOutput('coords2')
-        ),
-        fluidRow(
             htmlOutput("jbrowser")
         )
     )

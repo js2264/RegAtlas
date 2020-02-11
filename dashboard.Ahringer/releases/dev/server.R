@@ -32,7 +32,8 @@ shinyServer <- function(input, output, session) {
 
     # Startup message
     toggleModal(session, "startupModal", toggle = "open")
-
+    URL <- reactiveValues(URL = base_URL)
+    
     ### TAB 1
     {
         gene <- eventReactive( input$searchGene_search, input$searchGene )
@@ -52,6 +53,19 @@ shinyServer <- function(input, output, session) {
         
         # Generate buttons to access to Genome Browser and WormBase
         observeEvent(input$switchToGenome, { 
+            RE.coords <- c(
+                as.character(infos.gene()$Associated.REs[1,1]),
+                as.character(min(infos.gene()$Associated.REs[,2])-3000),
+                as.character(max(infos.gene()$Associated.REs[,3])+3000)
+            )
+            gene.coords <- c(
+                paste0('chr', as.character(seqnames(genes.gtf[infos.gene()$Gene.info[1]]))),
+                as.character(start(genes.gtf[infos.gene()$Gene.info[1]])-3000),
+                as.character(end(genes.gtf[infos.gene()$Gene.info[1]])+3000)
+            )
+            coords <- c(RE.coords[1], min(RE.coords[2], gene.coords[2]), max(RE.coords[3], gene.coords[3]))
+            #
+            URL$URL <- addLoc(URL$URL, as.character(coords[1]), as.numeric(coords[2]), as.numeric(coords[3]))
             updateTabItems(session, "tabs", "browser")
         })
         output$Link <- renderUI({
@@ -667,7 +681,7 @@ shinyServer <- function(input, output, session) {
                 )
                 coords <- c(RE.coords[1], min(RE.coords[2], gene.coords[2]), max(RE.coords[3], gene.coords[3]))
                 #
-                URL <- addLoc(URL, as.character(coords[1]), as.numeric(coords[2]), as.numeric(coords[3]))
+                URL$URL <- addLoc(URL$URL, as.character(coords[1]), as.numeric(coords[2]), as.numeric(coords[3]))
             } 
         })
         output$jbrowser <- renderUI(
@@ -681,7 +695,7 @@ shinyServer <- function(input, output, session) {
                         style = "border: 1px solid black",
                         width = "100%",
                         height = "100%",
-                        src = URL
+                        src = URL$URL
                     )
                 )
             )
