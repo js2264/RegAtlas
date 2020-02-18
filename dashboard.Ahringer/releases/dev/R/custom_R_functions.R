@@ -436,7 +436,8 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         biotype <- genes.gtf[WBID]$gene_biotype
         # Get gene expression infos from cao and tissue.spe LCAP
         CAO.GENE <- cao03[WBID,]
-        LCAP.GENE <- LCAP_normalized[WBID,]
+        LCAP.GENE <- LCAP[WBID,]
+        LCAP.GENE_normalized <- LCAP_normalized[WBID,]
         if (nrow(CAO.GENE) == 0) {stop('Gene not found in Cao data. Aborting.')}
         if (nrow(LCAP.GENE) == 0) {stop('Gene not found in LCAP data. Aborting.')}
         l2mean.CAO.GENE <- log2((CAO.GENE+1)/rowMeans(CAO.GENE+1))
@@ -475,6 +476,7 @@ getGeneInfos <- function(GENES, verbose = T, saveTXT = F, exportResult = F) {
         res$valid <- TRUE
         res[['Gene.info']] <- c(WormBaseID = WBID, Locus = locusID, Annotation = tissue)
         res[['Gene.expr.YA']] <- tibble::remove_rownames(round(LCAP.GENE,2))
+        res[['Gene.expr.YA.normalized']] <- tibble::remove_rownames(round(LCAP.GENE_normalized,2))
         res[['Gene.expr.Cao']] <- tibble::remove_rownames(round(CAO.GENE,2))
         res[['Gene.expr.Janes']] <- tibble::remove_rownames(round(rbind(LCAPdev = LCAPdev.GENE),2))
         res[['Associated.REs']] <- tibble::remove_rownames(cbind(REs.coords, Annotation = REs.tissues, round(ATAC.GENE,2)))
