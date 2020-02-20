@@ -15,8 +15,8 @@
 HOME <- tabItem(
     tabName = 'home',
     fluidPage(
-        HTML("<h1 style = 'text-align: center;'><b>Welcome to the Ahringer lab <em>C. elegans</em> tissue-specific database</b></h1>"), 
-        HTML("<h3 style = 'text-align: center;'>Explore and mine <em>C. elegans</em> gene expression and chromatin accessibility data<h3>"), 
+        HTML("<h1 style = 'text-align: center;'><b>Welcome to the Ahringer lab <em>C. elegans</em> regulatory atlas</b></h1>"), 
+        HTML("<h3 style = 'text-align: center;'>Explore and mine <em>C. elegans</em> developmental and tissue-specific regulatory elements and genes<h3>"), 
         br(), 
         br(), 
         fluidRow(
@@ -524,7 +524,8 @@ TAB5 <- tabItem(
         fluidRow(
             column(width = 10, {
                 HTML(
-                    '<p>
+                    '
+                    <p>
                     <h2>General Information</h2>
                         <h3>Data availability</h3>
                         The tissue-specific accessibility and expression data displayed in this application are from Serizay et al, submitted; raw data are available from GEO accession number GSE141213. Processed data are downloadable from the "Explore/Download datasets" of this application.
@@ -549,13 +550,67 @@ TAB5 <- tabItem(
                                 - Intestine: Y106G6H.1, F46A8.11, ugt-6, T02B5.3.</br>
                             </br>
                     <h2>App development</h2>
-                        This app was built in R 3.5.1 "Feather Spray", with Shiny 1.1.0. The source code of this app is available on <a href = https://github.com/js2264/jadashboard/>Github</a>.
-                    </p>'
+                        This app was built in R 3.5.1 "Feather Spray", with Shiny 1.1.0. The source code of this app is available on <a href = https://github.com/js2264/RegAtlas/>Github</a>.
+                    </p>
+                    </br>
+                    </br>
+                    '
                 )
             })
         ), 
-        br(), 
-        br(), 
+        fluidRow(column(width = 5, h2('Contact information'))),
+        fluidRow(
+            column(width = 3, {
+                HTML(
+                    '
+                    <h3>Jacques Serizay</h3>
+                    <br/>
+                    <p class="cardtitle">Developer of RegAtlas</p>
+                    <br/>
+                    <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    <a itemprop="sameAs" href="https://www.linkedin.com/in/jacques-serizay-55103460/" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    <a itemprop="sameAs" href="https://scholar.google.co.uk/citations?user=e5QTBIAAAAAJ" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-google fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    <a itemprop="sameAs" href="mailto:js2264@cam.ac.uk" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    '
+                )
+            }),
+            column(width = 5, {
+                HTML(
+                    '
+                    <h3>Ahringer lab</h3>
+                    <br/>
+                    <p class="cardtitle">Gurdon Institute, University of Cambridge, UK</p>
+                    <br/>
+                    <a itemprop="sameAs" href="http://www.ahringer.group.gurdon.cam.ac.uk/" target="_blank">
+                    <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
+                    <i class="fa fa-home fa-stack-1x fa-inverse"></i>
+                    </span>
+                    </a>
+                    '
+                )
+            })
+        ),
         br(), 
         br(), 
         tags$head(
@@ -580,70 +635,6 @@ TAB5 <- tabItem(
     )
 )
 
-# Contact us
-TAB6 <- tabItem(
-    tabName = 'contact',
-    fluidPage(
-        fluidRow(
-            column(width = 6, {
-                HTML(
-                    '
-                    <div class="card">
-                    <img src="http://ahringerlab.com/assets/img/ahringer-group-2018.jpg" alt="Lab" style="max-width: 100%; max-height: 100%; display: block;">
-                    <h1>Ahringer Lab</h1>
-                    <br/>
-                    <p class="cardtitle"> </p>
-                    <p>Gurdon Institute, UK</p>
-                    <p>Cambridge University, UK</p>
-                    </br>
-                    <br/>
-                    <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="http://www.ahringer.group.gurdon.cam.ac.uk/" target="_blank">Visit us</a></button></p>
-                    </div>
-                    '
-                )
-            }),
-            column(width = 6, {
-                HTML(
-                    '
-                    <div class="card">
-                    <img src="http://ahringerlab.com/assets/img/JS.jpg" alt="JS" style="height: 155px; margin-top: 20px">
-                    <h1>Jacques Serizay</h1>
-                    <a itemprop="sameAs" href="https://github.com/js2264" target="_blank">
-                    <span class="fa-stack fa-lg">
-                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
-                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
-                    </span>
-                    </a>
-                    <a itemprop="sameAs" href="https://www.linkedin.com/in/jacques-serizay-55103460/" target="_blank">
-                    <span class="fa-stack fa-lg">
-                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
-                    <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
-                    </span>
-                    </a>
-                    <a itemprop="sameAs" href="https://scholar.google.co.uk/citations?user=e5QTBIAAAAAJ" target="_blank">
-                    <span class="fa-stack fa-lg">
-                    <i class="fa fa-circle fa-stack-2x" style="color:black"></i>
-                    <i class="fa fa-google fa-stack-1x fa-inverse"></i>
-                    </span>
-                    </a>
-                    <br/>
-                    <br/>
-                    <p class="cardtitle">PhD candidate</p>
-                    <p class="cardtitle">Developer/Maintenance of the tissue-specific database</p>
-                    <br/>
-                    <p>Gurdon Institute, UK</p>
-                    <p>Cambridge University, UK</p>
-                    <br/>
-                    <br/>
-                    <p><buttoncard><a style="text-decoration: none;font-size: 22px; color: white;" href="mailto:js2264@cam.ac.uk" target="_blank">Contact</a></button></p>
-                    </div>
-                    '
-                )
-            })
-        )
-    )
-)
-
 # router <- make_router(
 #   route("home", HOME),
 #   route("genelookup", TAB1),
@@ -662,9 +653,8 @@ SIDEBAR <- sidebarMenu(
     menuItem("Look-up gene", tabName = "genelookup", icon = icon("search", lib = "font-awesome")),
     menuItem("Gene set analyses", tabName = "geneslookup", icon = icon("ellipsis-h", lib = "font-awesome")),
     menuItem("Genome browser", tabName = "browser", icon = icon("area-chart", lib = "font-awesome")),
-    menuItem("Explore/Download datasets", tabName = "download", icon = icon("download", lib = "font-awesome")),
-    menuItem("Information", tabName = "infos", icon = icon("info", lib = "font-awesome")),
-    menuItem("Contact us", tabName = "contact", icon = icon("envelope-open", lib = "font-awesome")),
+    menuItem("Explore & download data", tabName = "download", icon = icon("download", lib = "font-awesome")),
+    menuItem("Information & contact", tabName = "infos", icon = icon("info", lib = "font-awesome")),
     # sidebarSearchForm(textId = "quickGene", buttonId = "quickSearch", label = "Quick gene search..."), 
     tags$footer(
         img(src = "http://ahringerlab.com/assets/img/sidebar-img_150x150.png", alt = "", style = "
@@ -687,11 +677,11 @@ SIDEBAR <- sidebarMenu(
     )
 )
 
-BODY <- tabItems(HOME, TAB1, TAB2, TAB3, TAB4, TAB5, TAB6)
+BODY <- tabItems(HOME, TAB1, TAB2, TAB3, TAB4, TAB5)
 
 shinyUI <- dashboardPage(
     dashboardHeader(
-        title = paste0("Ahringer lab C. elegans tissue-specific database ", version), titleWidth = 600,
+        title = HTML(paste0("Ahringer lab C. elegans regulatory atlas ", version)), titleWidth = 600,
         tags$li(
             a(
                 href = 'http://ahringerlab.com',

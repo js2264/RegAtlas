@@ -16,6 +16,11 @@
 
 ------------ 
 
+## [0.5.3] - 2020-02-20
+- removed contact tab, fused it with Infos tab
+- updated headers
+- updated link to github repo of RegAtlas
+
 ## [0.5.2] - 2020-02-11
 - added clickable links to each vignette in home page
 - added support for SSL in the genome browser tab
